@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { CompanionSelectScreen } from './screens/CompanionSelectScreen';
+import { ContentExploreScreen } from './screens/ContentExploreScreen';
 import { RegionSelectScreen } from './screens/RegionSelectScreen';
 import { TripDateScreen } from './screens/TripDateScreen';
 import type { CompanionType } from './types/companion';
 
-type Screen = 'region' | 'date' | 'companion';
+type Screen = 'region' | 'date' | 'companion' | 'explore';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('region');
@@ -37,11 +38,15 @@ export default function App() {
     );
   }
 
-  return (
-    <CompanionSelectScreen
-      onContinue={(companions: CompanionType[]) => {
-        console.log({ selectedRegions, tripDate, companions });
-      }}
-    />
-  );
+  if (screen === 'companion') {
+    return (
+      <CompanionSelectScreen
+        onContinue={(_companions: CompanionType[]) => {
+          setScreen('explore');
+        }}
+      />
+    );
+  }
+
+  return <ContentExploreScreen selectedRegions={selectedRegions} />;
 }
