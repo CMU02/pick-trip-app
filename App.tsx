@@ -1,19 +1,47 @@
-import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View } from "react-native";
-import styled from "styled-components";
+import { useState } from 'react';
+import { CompanionSelectScreen } from './screens/CompanionSelectScreen';
+import { RegionSelectScreen } from './screens/RegionSelectScreen';
+import { TripDateScreen } from './screens/TripDateScreen';
+import type { CompanionType } from './types/companion';
 
-const Container = styled(View)`
-  flex: 1;
-  background-color: #fff;
-  align-items: center;
-  justify-content: center;
-`;
+type Screen = 'region' | 'date' | 'companion';
 
 export default function App() {
+  const [screen, setScreen] = useState<Screen>('region');
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [tripDate, setTripDate] = useState<{
+    startDate: Date;
+    durationType: string;
+    nights: number;
+  } | null>(null);
+
+  if (screen === 'region') {
+    return (
+      <RegionSelectScreen
+        onContinue={(regions) => {
+          setSelectedRegions(regions);
+          setScreen('date');
+        }}
+      />
+    );
+  }
+
+  if (screen === 'date') {
+    return (
+      <TripDateScreen
+        onContinue={(date) => {
+          setTripDate(date);
+          setScreen('companion');
+        }}
+      />
+    );
+  }
+
   return (
-    <Container>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </Container>
+    <CompanionSelectScreen
+      onContinue={(companions: CompanionType[]) => {
+        console.log({ selectedRegions, tripDate, companions });
+      }}
+    />
   );
 }

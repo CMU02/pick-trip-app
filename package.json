@@ -16,10 +16,10 @@
     "prepare": "husky"
   },
   "dependencies": {
-    "expo": "~54.0.33",
-    "expo-status-bar": "~56.0.4",
-    "react": "19.2.7",
-    "react-native": "0.86.0",
+    "expo": "~54.0.35",
+    "expo-status-bar": "~3.0.9",
+    "react": "19.1.0",
+    "react-native": "0.81.5",
     "styled-components": "^6.4.1",
     "zustand": "^5.0.13"
   },
@@ -29,7 +29,7 @@
     "@types/styled-components": "^5.1.36",
     "@vitest/coverage-v8": "^4.1.8",
     "husky": "^9.1.7",
-    "typescript": "~6.0.3",
+    "typescript": "~5.9.2",
     "vitest": "^4.1.8"
   },
   "private": true
