@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { SafeAreaView, ScrollView, Text, TextInput, View } from 'react-native';
+import { SafeAreaView, ScrollView, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { CategoryFilter } from '../components/molecules/CategoryFilter';
 import { ContentCard } from '../components/molecules/ContentCard';
@@ -9,6 +9,7 @@ import type { ContentCategory } from '../types/content';
 
 interface ContentExploreScreenProps {
   selectedRegions: string[];
+  onContinue: (selectedIds: string[]) => void;
 }
 
 const ScreenContainer = styled(SafeAreaView)`
@@ -52,7 +53,6 @@ const FilterRow = styled(View)`
 
 const CardList = styled(View)`
   gap: 12px;
-  padding-bottom: 40px;
 `;
 
 const EmptyText = styled(Text)`
@@ -62,9 +62,41 @@ const EmptyText = styled(Text)`
   margin-top: 60px;
 `;
 
-export function ContentExploreScreen({ selectedRegions }: ContentExploreScreenProps) {
+const BottomBar = styled(View)`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding-top: 12px;
+  padding-horizontal: 20px;
+  padding-bottom: 28px;
+  background-color: ${COLORS.white};
+`;
+
+const BasketCount = styled(Text)`
+  font-size: 13px;
+  color: ${COLORS.gray500};
+  text-align: center;
+  margin-bottom: 8px;
+`;
+
+const CTAButton = styled(TouchableOpacity)<{ $disabled: boolean }>`
+  background-color: ${({ $disabled }) => ($disabled ? COLORS.gray200 : COLORS.amber500)};
+  border-radius: 12px;
+  padding-vertical: 14px;
+  align-items: center;
+`;
+
+const CTALabel = styled(Text)`
+  color: ${COLORS.white};
+  font-size: 16px;
+  font-weight: 500;
+`;
+
+export function ContentExploreScreen({ selectedRegions, onContinue }: ContentExploreScreenProps) {
   const [selectedCategory, setSelectedCategory] = useState<ContentCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const filtered = useMemo(() => {
     return CONTENTS.filter((c) => {
@@ -74,6 +106,12 @@ export function ContentExploreScreen({ selectedRegions }: ContentExploreScreenPr
       return inRegion && inCategory && inSearch;
     });
   }, [selectedRegions, selectedCategory, searchQuery]);
+
+  const handleToggle = (contentId: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(contentId) ? prev.filter((id) => id !== contentId) : [...prev, contentId],
+    );
+  };
 
   return (
     <ScreenContainer>
@@ -92,7 +130,10 @@ export function ContentExploreScreen({ selectedRegions }: ContentExploreScreenPr
       <FilterRow>
         <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
       </FilterRow>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: selectedIds.length > 0 ? 120 : 40 }}
+      >
         <CardList>
           {filtered.length === 0 ? (
             <EmptyText>조건에 맞는 콘텐츠가 없어요</EmptyText>
@@ -101,12 +142,29 @@ export function ContentExploreScreen({ selectedRegions }: ContentExploreScreenPr
               <ContentCard
                 key={content.id}
                 content={content}
-                onPress={() => console.log('selected:', content.id)}
+                selected={selectedIds.includes(content.id)}
+                onPress={() => handleToggle(content.id)}
               />
             ))
           )}
         </CardList>
       </ScrollView>
+      {selectedIds.length > 0 && (
+        <BottomBar>
+          <BasketCount>{selectedIds.length}개 담음</BasketCount>
+          <CTAButton
+            $disabled={selectedIds.length < 2}
+            onPress={() => {
+              if (selectedIds.length >= 2) onContinue(selectedIds);
+            }}
+            activeOpacity={selectedIds.length >= 2 ? 0.8 : 1}
+          >
+            <CTALabel>
+              {selectedIds.length < 2 ? '1개 더 담으면 일정 생성 가능' : '일정 만들기'}
+            </CTALabel>
+          </CTAButton>
+        </BottomBar>
+      )}
     </ScreenContainer>
   );
 }

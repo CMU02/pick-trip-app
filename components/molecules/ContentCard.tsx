@@ -6,14 +6,15 @@ import type { Content } from '../../types/content';
 
 interface ContentCardProps {
   content: Content;
+  selected?: boolean;
   onPress: () => void;
 }
 
-const Card = styled(TouchableOpacity)`
+const Card = styled(TouchableOpacity)<{ $selected: boolean }>`
   background-color: ${COLORS.white};
   border-radius: 12px;
-  border-width: 1px;
-  border-color: ${COLORS.gray200};
+  border-width: ${({ $selected }) => ($selected ? '2px' : '1px')};
+  border-color: ${({ $selected }) => ($selected ? COLORS.amber500 : COLORS.gray200)};
   overflow: hidden;
   margin-horizontal: 20px;
 `;
@@ -27,6 +28,24 @@ const Thumbnail = styled(View)<{ $color: string }>`
 
 const ThumbnailEmoji = styled(Text)`
   font-size: 36px;
+`;
+
+const CheckBadge = styled(View)`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background-color: ${COLORS.amber500};
+  border-radius: 100px;
+  width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+`;
+
+const CheckMark = styled(Text)`
+  font-size: 13px;
+  color: ${COLORS.white};
+  font-weight: 700;
 `;
 
 const Body = styled(View)`
@@ -83,13 +102,18 @@ const InfoText = styled(Text)`
   color: ${COLORS.gray500};
 `;
 
-export function ContentCard({ content, onPress }: ContentCardProps) {
+export function ContentCard({ content, selected = false, onPress }: ContentCardProps) {
   const category = CATEGORIES.find((c) => c.id === content.category);
 
   return (
-    <Card onPress={onPress} activeOpacity={0.8}>
+    <Card $selected={selected} onPress={onPress} activeOpacity={0.8}>
       <Thumbnail $color={content.color}>
         <ThumbnailEmoji>{category?.emoji ?? '📍'}</ThumbnailEmoji>
+        {selected && (
+          <CheckBadge>
+            <CheckMark>✓</CheckMark>
+          </CheckBadge>
+        )}
       </Thumbnail>
       <Body>
         <CategoryBadge>

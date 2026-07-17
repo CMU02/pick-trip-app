@@ -48,5 +48,13 @@ export default function App() {
     );
   }
 
-  return <ContentExploreScreen selectedRegions={selectedRegions} />;
+  return (
+    <ContentExploreScreen
+      selectedRegions={selectedRegions}
+      onContinue={(selectedIds) => {
+        console.log({ selectedRegions, selectedIds });
+        // 추후 우선순위 설정 화면으로 연결
+      }}
+    />
+  );
 }
