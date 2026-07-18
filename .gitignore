@@ -42,7 +42,10 @@ yarn-error.*
 
 .omc/*
 .codex/
+.superpowers/
 
 .claude/settings.local.json
 
 coverage/*
+
+.worktrees/
