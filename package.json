@@ -25,8 +25,8 @@
     "axios": "^1.18.1",
     "expo": "~54.0.35",
     "expo-status-bar": "~3.0.9",
-    "react": "19.1.0",
-    "react-native": "0.81.5",
+    "react": "19.2.7",
+    "react-native": "0.86.0",
     "react-native-gesture-handler": "~2.28.0",
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
@@ -34,7 +34,7 @@
     "zustand": "^5.0.13"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.0",
+    "@biomejs/biome": "2.5.4",
     "@types/react": "~19.1.0",
     "@types/styled-components": "^5.1.36",
     "@vitest/coverage-v8": "^4.1.8",
