@@ -1,12 +1,17 @@
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { ContentCard } from '../components/molecules/ContentCard';
+import { ContentDetailModal } from '../components/molecules/ContentDetailModal';
 import { COLORS } from '../constants/colors';
-import { CONTENTS } from '../constants/contents';
+import { useContentsByIds } from '../hooks/useContentsByIds';
+import type { Content } from '../types/content';
+import type { TripDate } from '../types/trip';
 
 interface BasketContentProps {
   selectedIds: string[];
-  onToggle: (contentId: string) => void;
+  tripDate: TripDate | null;
+  onToggle: (content: Content) => void;
   onCreateItinerary: () => void;
 }
 
@@ -44,6 +49,22 @@ const EmptyText = styled(Text)`
   margin-top: 60px;
 `;
 
+const RetryButton = styled(TouchableOpacity)`
+  align-self: center;
+  border-width: 1px;
+  border-color: ${COLORS.amber500};
+  border-radius: 8px;
+  padding-vertical: 8px;
+  padding-horizontal: 16px;
+  margin-top: 12px;
+`;
+
+const RetryLabel = styled(Text)`
+  color: ${COLORS.amber500};
+  font-size: 14px;
+  font-weight: 500;
+`;
+
 const BottomBar = styled(View)`
   padding-top: 12px;
   padding-horizontal: 20px;
@@ -71,9 +92,15 @@ const CTALabel = styled(Text)`
   font-weight: 500;
 `;
 
-export function BasketContent({ selectedIds, onToggle, onCreateItinerary }: BasketContentProps) {
-  const items = CONTENTS.filter((c) => selectedIds.includes(c.id));
+export function BasketContent({
+  selectedIds,
+  tripDate,
+  onToggle,
+  onCreateItinerary,
+}: BasketContentProps) {
+  const { contents: items, isLoading, isError, refetch } = useContentsByIds(selectedIds);
   const ready = selectedIds.length >= 2;
+  const [detailContentId, setDetailContentId] = useState<string | null>(null);
 
   return (
     <Container>
@@ -86,7 +113,16 @@ export function BasketContent({ selectedIds, onToggle, onCreateItinerary }: Bask
         contentContainerStyle={{ paddingBottom: 24 }}
       >
         <CardList>
-          {items.length === 0 ? (
+          {isLoading ? (
+            <ActivityIndicator color={COLORS.amber500} style={{ marginTop: 60 }} />
+          ) : isError ? (
+            <>
+              <EmptyText>컨텐츠를 불러오지 못했습니다. 다시 시도해주세요.</EmptyText>
+              <RetryButton onPress={() => refetch()} activeOpacity={0.8}>
+                <RetryLabel>다시 시도</RetryLabel>
+              </RetryButton>
+            </>
+          ) : items.length === 0 ? (
             <EmptyText>아직 담은 콘텐츠가 없어요</EmptyText>
           ) : (
             items.map((content) => (
@@ -94,12 +130,14 @@ export function BasketContent({ selectedIds, onToggle, onCreateItinerary }: Bask
                 key={content.id}
                 content={content}
                 selected
-                onPress={() => onToggle(content.id)}
+                onPress={() => onToggle(content)}
+                onPressDetail={() => setDetailContentId(content.id)}
               />
             ))
           )}
         </CardList>
       </ScrollView>
+      <ContentDetailModal contentId={detailContentId} onClose={() => setDetailContentId(null)} />
       {items.length > 0 && (
         <BottomBar>
           <BasketCount>
@@ -109,7 +147,16 @@ export function BasketContent({ selectedIds, onToggle, onCreateItinerary }: Bask
           <CTAButton
             $disabled={!ready}
             disabled={!ready}
-            onPress={onCreateItinerary}
+            onPress={() => {
+              if (!tripDate) {
+                Alert.alert(
+                  '날짜를 선택해주세요',
+                  '언제 떠나는지 알려주시면 일정을 만들 수 있어요.',
+                );
+                return;
+              }
+              onCreateItinerary();
+            }}
             activeOpacity={ready ? 0.8 : 1}
           >
             <CTALabel>일정 만들기</CTALabel>

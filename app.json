@@ -3,6 +3,7 @@
     "name": "pick-trip-app",
     "slug": "pick-trip-app",
     "version": "1.0.0",
+    "scheme": "picktrip",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -21,11 +22,18 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.anonymous.picktripapp"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": []
+    "plugins": ["expo-web-browser", "expo-secure-store"],
+    "extra": {
+      "eas": {
+        "projectId": "bb86ab12-ac99-427c-8944-d6f4e907ca52"
+      }
+    },
+    "owner": "qkrtldms0013"
   }
 }

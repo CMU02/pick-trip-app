@@ -1,0 +1,182 @@
+import { createContext, type ReactNode, useContext, useMemo, useState } from 'react';
+import { Alert } from 'react-native';
+import { COMPANIONS } from '../constants/companions';
+import { useBasket } from '../hooks/useBasket';
+import { logout } from '../services/authService';
+import type { CompanionType, StylePreference } from '../types/companion';
+import type { Content } from '../types/content';
+import type { ItineraryStop } from '../types/itinerary';
+import type { Priority } from '../types/priority';
+import type { SavedItinerary } from '../types/savedItinerary';
+import type { TripDate } from '../types/trip';
+
+export type { TripDate };
+
+interface AppStateValue {
+  isGuest: boolean;
+  setIsGuest: (value: boolean) => void;
+  selectedRegions: string[];
+  setSelectedRegions: (value: string[]) => void;
+  handleToggleRegion: (regionId: string) => void;
+  tripDate: TripDate | null;
+  setTripDate: (value: TripDate | null) => void;
+  companion: CompanionType | null;
+  setCompanion: (value: CompanionType | null) => void;
+  companionLabel: string;
+  stylePrefs: StylePreference[];
+  setStylePrefs: (value: StylePreference[]) => void;
+  handleToggleStylePref: (pref: StylePreference) => void;
+  savedItinerary: SavedItinerary | null;
+  setSavedItinerary: (value: SavedItinerary | null) => void;
+  initialStops: ItineraryStop[] | undefined;
+  setInitialStops: (value: ItineraryStop[] | undefined) => void;
+  initialItineraryId: string | undefined;
+  setInitialItineraryId: (value: string | undefined) => void;
+  isBasketLoading: boolean;
+  hasBasketItems: boolean;
+  basketConditions: {
+    region: string | null;
+    companion: CompanionType | null;
+    stylePrefs: StylePreference[];
+  } | null;
+  selectedIds: string[];
+  priorities: Record<string, Priority>;
+  itemIdByContentId: Record<string, string>;
+  handleToggleContent: (content: Content) => Promise<void>;
+  updateItemPriority: (itemId: string, priority: Priority) => Promise<void>;
+  updateConditions: (input: {
+    regionId: string | null;
+    travelDate: string | null;
+    duration: number | null;
+    companion: CompanionType | null;
+    stylePrefs: StylePreference[];
+  }) => Promise<void>;
+  resetSessionState: () => void;
+  handleLogout: () => void;
+}
+
+const AppStateContext = createContext<AppStateValue | null>(null);
+
+export function AppStateProvider({ children }: { children: ReactNode }) {
+  // 온보딩 없이 메인보드로 바로 진입하므로, 별도 로그인 전까지는 게스트 상태로 시작한다.
+  const [isGuest, setIsGuest] = useState(true);
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
+  const [tripDate, setTripDate] = useState<TripDate | null>(null);
+  const [companion, setCompanion] = useState<CompanionType | null>(null);
+  const [stylePrefs, setStylePrefs] = useState<StylePreference[]>([]);
+  const [savedItinerary, setSavedItinerary] = useState<SavedItinerary | null>(null);
+  const [initialStops, setInitialStops] = useState<ItineraryStop[] | undefined>(undefined);
+  const [initialItineraryId, setInitialItineraryId] = useState<string | undefined>(undefined);
+
+  const {
+    basket,
+    isLoading: isBasketLoading,
+    addItem,
+    removeItem,
+    updateItemPriority,
+    updateConditions,
+  } = useBasket();
+
+  const basketItems = basket?.items ?? [];
+  const selectedIds = basketItems.map((item) => item.contentId);
+  const priorities = Object.fromEntries(basketItems.map((item) => [item.contentId, item.priority]));
+  const itemIdByContentId = Object.fromEntries(
+    basketItems.map((item) => [item.contentId, item.itemId]),
+  );
+
+  const handleToggleContent = async (content: Content) => {
+    try {
+      const existingItemId = itemIdByContentId[content.id];
+      if (existingItemId) {
+        await removeItem(existingItemId);
+      } else {
+        await addItem(content, 'good');
+      }
+    } catch (error) {
+      const message =
+        error && typeof error === 'object' && 'message' in error
+          ? String((error as { message: unknown }).message)
+          : String(error);
+      Alert.alert('바구니 처리 실패', message);
+    }
+  };
+
+  const handleToggleRegion = (regionId: string) => {
+    setSelectedRegions((prev) =>
+      prev.includes(regionId) ? prev.filter((id) => id !== regionId) : [...prev, regionId],
+    );
+  };
+
+  const handleToggleStylePref = (pref: StylePreference) => {
+    setStylePrefs((prev) =>
+      prev.includes(pref) ? prev.filter((p) => p !== pref) : [...prev, pref],
+    );
+  };
+
+  const resetSessionState = () => {
+    // 로그아웃/세션 만료 시 인증 관련 상태만 초기화한다.
+    // 지역·날짜·동행 같은 여행 취향은 로그인 여부와 무관하게 메인보드에 남아있어야 하므로 건드리지 않는다.
+    setIsGuest(true);
+    setInitialStops(undefined);
+    setInitialItineraryId(undefined);
+  };
+
+  const handleLogout = () => {
+    logout();
+    resetSessionState();
+  };
+
+  const companionLabel = COMPANIONS.find((c) => c.id === companion)?.label ?? '가족';
+
+  const basketConditions = useMemo(() => {
+    if (!basket) return null;
+    return {
+      region: basket.conditions.region,
+      companion: basket.conditions.companion,
+      stylePrefs: basket.conditions.stylePrefs,
+    };
+  }, [basket]);
+
+  const value: AppStateValue = {
+    isGuest,
+    setIsGuest,
+    selectedRegions,
+    setSelectedRegions,
+    handleToggleRegion,
+    tripDate,
+    setTripDate,
+    companion,
+    setCompanion,
+    companionLabel,
+    stylePrefs,
+    setStylePrefs,
+    handleToggleStylePref,
+    savedItinerary,
+    setSavedItinerary,
+    initialStops,
+    setInitialStops,
+    initialItineraryId,
+    setInitialItineraryId,
+    isBasketLoading,
+    hasBasketItems: basketItems.length > 0,
+    basketConditions,
+    selectedIds,
+    priorities,
+    itemIdByContentId,
+    handleToggleContent,
+    updateItemPriority,
+    updateConditions,
+    resetSessionState,
+    handleLogout,
+  };
+
+  return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;
+}
+
+export function useAppState(): AppStateValue {
+  const context = useContext(AppStateContext);
+  if (!context) {
+    throw new Error('useAppState must be used within AppStateProvider');
+  }
+  return context;
+}

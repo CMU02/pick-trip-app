@@ -8,7 +8,7 @@ interface PriorityChipsProps {
   onChange: (priority: Priority) => void;
 }
 
-const PRIORITY_ACTIVE_COLORS: Record<Priority, { bg: string; fg: string }> = {
+export const PRIORITY_ACTIVE_COLORS: Record<Priority, { bg: string; fg: string }> = {
   must: { bg: COLORS.amber500, fg: COLORS.white },
   good: { bg: COLORS.teal600, fg: COLORS.white },
   optional: { bg: COLORS.gray200, fg: COLORS.gray700 },
@@ -20,9 +20,11 @@ const Row = styled(View)`
 `;
 
 const Chip = styled(TouchableOpacity)<{ $active: boolean; $priority: Priority }>`
+  flex: 1;
   padding-vertical: 8px;
-  padding-horizontal: 14px;
+  padding-horizontal: 10px;
   border-radius: 20px;
+  align-items: center;
   background-color: ${({ $active, $priority }) =>
     $active ? PRIORITY_ACTIVE_COLORS[$priority].bg : COLORS.gray100};
 `;

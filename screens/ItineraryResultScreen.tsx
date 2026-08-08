@@ -1,14 +1,27 @@
-import { useMemo, useState } from 'react';
-import { SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components';
-import { ProgressChecklist } from '../components/molecules/ProgressChecklist';
+import {
+  DEFAULT_STEP_INTERVAL_MS,
+  ProgressChecklist,
+} from '../components/molecules/ProgressChecklist';
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
-import { CONTENTS } from '../constants/contents';
+import { REGIONS } from '../constants/regions';
+import { useContents } from '../hooks/useContents';
+import { useContentsByIds } from '../hooks/useContentsByIds';
 import { generateItinerary } from '../services/generateItinerary';
+import {
+  generateItineraryPlan,
+  saveItineraryPlan,
+  updateItineraryPlan,
+} from '../services/itineraryService';
 import { saveItinerary } from '../services/itineraryStorage';
 import { addStop, moveStop, removeStop } from '../services/scheduleActions';
 import { buildShareText, shareItinerary } from '../services/shareItinerary';
+import { createShareLink } from '../services/shareService';
+import type { CompanionType, StylePreference } from '../types/companion';
 import type { ItineraryStop } from '../types/itinerary';
 import type { Priority } from '../types/priority';
 
@@ -16,7 +29,14 @@ interface ItineraryResultScreenProps {
   selectedRegions: string[];
   selectedIds: string[];
   priorities: Record<string, Priority>;
+  travelDate: string | null;
+  duration: number | null;
+  companion: CompanionType | null;
+  stylePrefs: StylePreference[];
   initialStops?: ItineraryStop[];
+  initialItineraryId?: string;
+  isGuest: boolean;
+  onRequireLogin: () => void;
 }
 
 const GENERATING_STEPS = [
@@ -25,6 +45,40 @@ const GENERATING_STEPS = [
   { label: '운영 시간 확인', sub: '방문 가능 시간 매칭' },
   { label: '일정 구성', sub: '우선순위·흐름 반영' },
 ];
+
+// ProgressChecklist가 단계를 다 보여주는 데 걸리는 실제 시간(체크리스트 애니메이션 총 길이).
+// 실제 생성이 이보다 먼저 끝나도 화면이 애니메이션 도중에 뚝 끊기지 않도록 최소 이 시간만큼은 로딩 화면을 유지한다.
+const MIN_LOADING_MS = GENERATING_STEPS.length * DEFAULT_STEP_INTERVAL_MS + 700;
+
+const STEPS = [
+  { key: 'basket', label: '담기' },
+  { key: 'date', label: '날짜' },
+  { key: 'priority', label: '우선순위' },
+  { key: 'done', label: '완성' },
+] as const;
+
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+function addDays(date: Date, amount: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
+}
+
+function formatShort(date: Date): string {
+  return `${date.getMonth() + 1}.${date.getDate()}`;
+}
+
+function formatDayDate(date: Date): string {
+  return `${formatShort(date)} (${WEEKDAYS[date.getDay()]})`;
+}
+
+function formatDateRange(travelDate: string | null, duration: number | null): string | null {
+  if (!travelDate) return null;
+  const start = new Date(travelDate);
+  if (!duration || duration <= 0) return formatShort(start);
+  return `${formatShort(start)} - ${formatShort(addDays(start, duration))}`;
+}
 
 const ScreenContainer = styled(SafeAreaView)`
   flex: 1;
@@ -38,10 +92,59 @@ const LoadingContainer = styled(View)`
   padding: 24px;
 `;
 
+const RetryButton = styled(TouchableOpacity)`
+  margin-top: 16px;
+  border-width: 1px;
+  border-color: ${COLORS.amber500};
+  border-radius: 8px;
+  padding-vertical: 8px;
+  padding-horizontal: 16px;
+`;
+
+const RetryLabel = styled(Text)`
+  color: ${COLORS.amber500};
+  font-size: 14px;
+  font-weight: 500;
+`;
+
 const Header = styled(View)`
-  padding-top: 24px;
+  padding-top: 20px;
   padding-horizontal: 20px;
   padding-bottom: 12px;
+`;
+
+const StepperRow = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+`;
+
+const StepBadge = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+`;
+
+const StepCircle = styled(View)<{ $active: boolean }>`
+  width: 22px;
+  height: 22px;
+  border-radius: 100px;
+  align-items: center;
+  justify-content: center;
+  background-color: ${({ $active }) => ($active ? COLORS.amber500 : COLORS.success)};
+`;
+
+const StepCircleLabel = styled(Text)`
+  font-size: 11px;
+  font-weight: 700;
+  color: ${COLORS.white};
+`;
+
+const StepLabel = styled(Text)<{ $active: boolean }>`
+  font-size: 13px;
+  font-weight: ${({ $active }) => ($active ? '700' : '500')};
+  color: ${COLORS.gray900};
 `;
 
 const Title = styled(Text)`
@@ -56,11 +159,64 @@ const Subtitle = styled(Text)`
   margin-top: 6px;
 `;
 
-const DayLabel = styled(Text)`
-  font-size: 17px;
-  font-weight: 700;
+const SummaryCard = styled(View)`
+  background-color: ${COLORS.white};
+  border-radius: 14px;
+  border-width: 1px;
+  border-color: ${COLORS.gray200};
+  margin: 16px 20px 4px;
+  padding: 14px 16px;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+`;
+
+const SummaryItem = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+`;
+
+const SummaryEmoji = styled(Text)`
+  font-size: 13px;
+`;
+
+const SummaryText = styled(Text)`
+  font-size: 13px;
+  font-weight: 600;
   color: ${COLORS.gray900};
+`;
+
+const SummaryDivider = styled(View)`
+  width: 1px;
+  height: 12px;
+  background-color: ${COLORS.gray200};
+`;
+
+const DayHeaderRow = styled(View)`
+  flex-direction: row;
+  align-items: baseline;
+  gap: 10px;
   margin: 20px 20px 12px;
+`;
+
+const DayBadge = styled(View)`
+  background-color: ${COLORS.gray900};
+  border-radius: 100px;
+  padding-vertical: 4px;
+  padding-horizontal: 12px;
+`;
+
+const DayBadgeLabel = styled(Text)`
+  color: ${COLORS.white};
+  font-size: 13px;
+  font-weight: 700;
+`;
+
+const DayMeta = styled(Text)`
+  font-size: 13px;
+  color: ${COLORS.gray500};
 `;
 
 const StopRow = styled(View)`
@@ -81,11 +237,19 @@ const TimeText = styled(Text)`
   color: ${COLORS.gray700};
 `;
 
+const TimeDot = styled(View)`
+  width: 7px;
+  height: 7px;
+  border-radius: 100px;
+  background-color: ${COLORS.amber500};
+  margin-top: 6px;
+`;
+
 const TimeConnector = styled(View)`
   flex: 1;
   width: 2px;
   background-color: ${COLORS.gray200};
-  margin-top: 8px;
+  margin-top: 4px;
 `;
 
 const StopCard = styled(View)`
@@ -118,6 +282,12 @@ const StopName = styled(Text)`
   color: ${COLORS.gray900};
 `;
 
+const StopAddress = styled(Text)`
+  font-size: 12px;
+  color: ${COLORS.gray500};
+  margin-top: 2px;
+`;
+
 const ReasonBox = styled(View)`
   flex-direction: row;
   gap: 6px;
@@ -140,6 +310,7 @@ const ReasonText = styled(Text)`
 
 const ActionRow = styled(View)`
   flex-direction: row;
+  align-items: center;
   gap: 8px;
   margin-top: 10px;
 `;
@@ -156,20 +327,37 @@ const ActionLabel = styled(Text)`
   color: ${COLORS.gray700};
 `;
 
+const DeleteButton = styled(TouchableOpacity)`
+  margin-left: auto;
+  padding-vertical: 6px;
+  padding-horizontal: 12px;
+  border-radius: 8px;
+  border-width: 1px;
+  border-color: ${COLORS.error};
+`;
+
+const DeleteLabel = styled(Text)`
+  font-size: 13px;
+  color: ${COLORS.error};
+  font-weight: 500;
+`;
+
 const AddButton = styled(TouchableOpacity)`
   margin-horizontal: 20px;
   margin-bottom: 16px;
-  padding-vertical: 10px;
-  border-radius: 8px;
-  border-width: 1px;
+  padding-vertical: 12px;
+  border-radius: 10px;
+  border-width: 1.5px;
+  border-style: dashed;
   border-color: ${COLORS.amber500};
+  background-color: ${COLORS.amber50};
   align-items: center;
 `;
 
 const AddButtonLabel = styled(Text)`
   font-size: 14px;
-  color: ${COLORS.amber500};
-  font-weight: 500;
+  color: ${COLORS.amber700};
+  font-weight: 600;
 `;
 
 const CandidateRow = styled(TouchableOpacity)`
@@ -185,6 +373,38 @@ const CandidateRow = styled(TouchableOpacity)`
 const CandidateName = styled(Text)`
   font-size: 14px;
   color: ${COLORS.gray900};
+`;
+
+const StatsCard = styled(View)`
+  flex-direction: row;
+  background-color: ${COLORS.white};
+  border-radius: 14px;
+  border-width: 1px;
+  border-color: ${COLORS.gray200};
+  margin: 8px 20px 16px;
+  padding: 16px 0;
+`;
+
+const StatItem = styled(View)`
+  flex: 1;
+  align-items: center;
+  gap: 4px;
+`;
+
+const StatDivider = styled(View)`
+  width: 1px;
+  background-color: ${COLORS.gray200};
+`;
+
+const StatValue = styled(Text)`
+  font-size: 16px;
+  font-weight: 700;
+  color: ${COLORS.gray900};
+`;
+
+const StatLabel = styled(Text)`
+  font-size: 11px;
+  color: ${COLORS.gray500};
 `;
 
 const SaveButton = styled(TouchableOpacity)`
@@ -224,23 +444,124 @@ export function ItineraryResultScreen({
   selectedRegions,
   selectedIds,
   priorities,
+  travelDate,
+  duration,
+  companion,
+  stylePrefs,
   initialStops,
+  initialItineraryId,
+  isGuest,
+  onRequireLogin,
 }: ItineraryResultScreenProps) {
-  const [status, setStatus] = useState<'loading' | 'done'>(initialStops ? 'done' : 'loading');
-  const [stops, setStops] = useState<ItineraryStop[]>(
-    () => initialStops ?? generateItinerary({ selectedIds, priorities }).stops,
+  const [status, setStatus] = useState<'loading' | 'done' | 'error'>(
+    initialStops ? 'done' : 'loading',
   );
+  const [errorMessage, setErrorMessage] = useState('');
+  const [stops, setStops] = useState<ItineraryStop[]>(initialStops ?? []);
+  const [plan, setPlan] = useState<{
+    itineraryId: string | null;
+    title: string;
+    region: string;
+    travelDate: string | null;
+    duration: number | null;
+  } | null>(null);
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
-  const [saveState, setSaveState] = useState<'idle' | 'saved' | 'error'>('idle');
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+
+  const runGenerate = async () => {
+    setStatus('loading');
+    // 실제 생성이 아무리 빨리 끝나도, 진행 단계 체크리스트 애니메이션이 끝까지 재생될
+    // 시간은 확보해준다(그래야 화면이 애니메이션 도중에 뚝 끊기지 않는다).
+    const minDelay = new Promise((resolve) => setTimeout(resolve, MIN_LOADING_MS));
+    try {
+      if (isGuest) {
+        // 백엔드 AI 일정 생성은 로그인이 필요하다. 게스트는 로그인 없이도 바로 일정을
+        // 볼 수 있도록 프론트 규칙 기반 생성기를 대신 쓴다.
+        const result = generateItinerary({ selectedIds, priorities });
+        await minDelay;
+        setStops(result.stops);
+        setPlan({
+          itineraryId: null,
+          title: '나만의 여행 일정',
+          region: selectedRegions[0] ?? '',
+          travelDate,
+          duration,
+        });
+      } else {
+        const items = selectedIds.map((contentId) => ({
+          contentId,
+          priority: priorities[contentId] ?? 'good',
+        }));
+        const generated = await generateItineraryPlan({
+          region: selectedRegions[0] ?? '',
+          travelDate,
+          duration,
+          companion,
+          stylePrefs,
+          items,
+        });
+        await minDelay;
+        setStops(generated.stops);
+        setPlan({
+          itineraryId: generated.itineraryId,
+          title: generated.title,
+          region: generated.region,
+          travelDate: generated.travelDate,
+          duration: generated.duration,
+        });
+      }
+      setStatus('done');
+    } catch {
+      setErrorMessage('일정 생성에 실패했습니다. 컨텐츠를 추가하거나 다시 시도해주세요.');
+      setStatus('error');
+    }
+  };
+
+  // biome-ignore lint/correctness/useExhaustiveDependencies: 마운트 시 1회만 생성 요청
+  useEffect(() => {
+    if (initialStops) return;
+    runGenerate();
+  }, []);
+
+  const { contents: selectedContents } = useContentsByIds(selectedIds);
+  const titleByContentId = useMemo(
+    () => Object.fromEntries(selectedContents.map((c) => [c.id, c.name])),
+    [selectedContents],
+  );
 
   const handleSave = async () => {
+    if (isGuest) {
+      onRequireLogin();
+      return;
+    }
+    setSaveState('saving');
     try {
+      const itineraryId = plan?.itineraryId ?? initialItineraryId;
+      const input = {
+        title: plan?.title ?? '나만의 여행 일정',
+        region: plan?.region ?? selectedRegions[0] ?? '',
+        travelDate: plan?.travelDate ?? null,
+        duration: plan?.duration ?? null,
+        stops,
+        titleByContentId,
+      };
+      const saved = itineraryId
+        ? await updateItineraryPlan(itineraryId, input)
+        : await saveItineraryPlan(input);
+      setPlan({
+        itineraryId: saved.itineraryId,
+        title: saved.title,
+        region: saved.region,
+        travelDate: saved.travelDate,
+        duration: saved.duration,
+      });
       await saveItinerary({
         selectedRegions,
         selectedIds,
-        priorities,
+        priorities: {},
         stops,
         savedAt: new Date().toISOString(),
+        itineraryId: saved.itineraryId ?? undefined,
       });
       setSaveState('saved');
     } catch {
@@ -248,12 +569,39 @@ export function ItineraryResultScreen({
     }
   };
 
-  const contentById = useMemo(() => Object.fromEntries(CONTENTS.map((c) => [c.id, c])), []);
+  const [isSharing, setIsSharing] = useState(false);
+
+  const handleShare = async () => {
+    if (isGuest) {
+      onRequireLogin();
+      return;
+    }
+    const itineraryId = plan?.itineraryId ?? initialItineraryId;
+    if (!itineraryId) {
+      Alert.alert('저장이 필요해요', '공유하려면 먼저 일정을 저장해주세요.');
+      return;
+    }
+    setIsSharing(true);
+    try {
+      const link = await createShareLink(itineraryId);
+      const text = `${buildShareText({ stops, contentById })}\n\n일정 보기: ${link}`;
+      await shareItinerary(text);
+    } catch {
+      Alert.alert('공유 링크 생성 실패', '잠시 후 다시 시도해주세요.');
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const { contents: regionContents } = useContents(selectedRegions);
+  const contentById = useMemo(() => {
+    const map = Object.fromEntries(regionContents.map((c) => [c.id, c]));
+    for (const content of selectedContents) map[content.id] = content;
+    return map;
+  }, [regionContents, selectedContents]);
 
   const usedIds = stops.map((s) => s.contentId);
-  const candidates = CONTENTS.filter(
-    (c) => selectedRegions.includes(c.regionId) && !usedIds.includes(c.id),
-  );
+  const candidates = regionContents.filter((c) => !usedIds.includes(c.id));
 
   if (status === 'loading') {
     return (
@@ -261,39 +609,113 @@ export function ItineraryResultScreen({
         <LoadingContainer>
           <ProgressChecklist
             icon="🪄"
-            heading="AI가 일정을 만들고 있어요"
+            heading="일정을 만들고 있어요"
             subText={`${selectedIds.length}곳 맞춤 구성 중`}
             steps={GENERATING_STEPS}
-            onDone={() => setStatus('done')}
+            onDone={() => {}}
           />
         </LoadingContainer>
       </ScreenContainer>
     );
   }
 
+  if (status === 'error') {
+    return (
+      <ScreenContainer>
+        <LoadingContainer>
+          <Subtitle style={{ textAlign: 'center', marginBottom: 4 }}>{errorMessage}</Subtitle>
+          <RetryButton onPress={runGenerate} activeOpacity={0.8}>
+            <RetryLabel>다시 시도</RetryLabel>
+          </RetryButton>
+        </LoadingContainer>
+      </ScreenContainer>
+    );
+  }
+
+  const planRegion = plan?.region ?? selectedRegions[0] ?? null;
+  const planTravelDate = plan?.travelDate ?? travelDate;
+  const planDuration = plan?.duration ?? duration;
+  const regionName = REGIONS.find((r) => r.id === planRegion)?.name ?? null;
+  const dateRange = formatDateRange(planTravelDate, planDuration);
+  const totalDays =
+    planDuration != null ? planDuration + 1 : Math.max(1, ...stops.map((s) => s.day));
+  const dayList = Array.from({ length: totalDays }, (_, i) => i + 1);
+
   return (
     <ScreenContainer>
-      <Header>
-        <Title>일정이 완성됐어요</Title>
-        <Subtitle>1박 2일 기준으로 만들었어요</Subtitle>
-      </Header>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 40 }}
       >
-        {[1, 2].map((day) => {
+        <Header>
+          <StepperRow>
+            {STEPS.map((step, index) => {
+              const active = index === STEPS.length - 1;
+              return (
+                <StepBadge key={step.key}>
+                  <StepCircle $active={active}>
+                    <StepCircleLabel>✓</StepCircleLabel>
+                  </StepCircle>
+                  <StepLabel $active={active}>{step.label}</StepLabel>
+                </StepBadge>
+              );
+            })}
+          </StepperRow>
+          <Title>🎉 일정이 완성됐어요</Title>
+          <Subtitle>
+            {planDuration != null
+              ? `${planDuration}박 ${planDuration + 1}일 기준으로 ${isGuest ? '만들었어요' : 'AI가 만들었어요'}`
+              : isGuest
+                ? '나만의 일정이 완성됐어요'
+                : 'AI가 나만의 일정을 만들었어요'}
+          </Subtitle>
+        </Header>
+
+        {(regionName || dateRange) && (
+          <SummaryCard>
+            {regionName && (
+              <SummaryItem>
+                <SummaryEmoji>📍</SummaryEmoji>
+                <SummaryText>{regionName}</SummaryText>
+              </SummaryItem>
+            )}
+            {dateRange && (
+              <>
+                {regionName && <SummaryDivider />}
+                <SummaryItem>
+                  <SummaryEmoji>📅</SummaryEmoji>
+                  <SummaryText>{dateRange}</SummaryText>
+                </SummaryItem>
+              </>
+            )}
+            <SummaryDivider />
+            <SummaryText>총 {stops.length}곳</SummaryText>
+          </SummaryCard>
+        )}
+
+        {dayList.map((day) => {
           const dayStops = stops.filter((stop) => stop.day === day);
+          const dayDate = planTravelDate ? addDays(new Date(planTravelDate), day - 1) : null;
           return (
             <View key={day}>
-              <DayLabel>{day}일차</DayLabel>
+              <DayHeaderRow>
+                <DayBadge>
+                  <DayBadgeLabel>{day}일차</DayBadgeLabel>
+                </DayBadge>
+                <DayMeta>
+                  {dayDate ? `${formatDayDate(dayDate)} · ` : ''}
+                  {dayStops.length}곳
+                </DayMeta>
+              </DayHeaderRow>
               {dayStops.map((stop, index) => {
                 const content = contentById[stop.contentId];
                 const category = content && CATEGORIES.find((c) => c.id === content.category);
-                const accentColor = content?.color ?? COLORS.gray500;
+                const accentColor = category?.color ?? COLORS.gray500;
                 return (
                   <StopRow key={stop.contentId}>
                     <TimeColumn>
                       <TimeText>{stop.startTime}</TimeText>
+                      <TimeDot />
                       {index < dayStops.length - 1 && <TimeConnector />}
                     </TimeColumn>
                     <StopCard>
@@ -305,6 +727,9 @@ export function ItineraryResultScreen({
                         </CategoryBadge>
                       )}
                       <StopName>{content?.name}</StopName>
+                      {content?.address && (
+                        <StopAddress numberOfLines={1}>{content.address}</StopAddress>
+                      )}
                       <ReasonBox>
                         <ReasonEmoji>🪄</ReasonEmoji>
                         <ReasonText>{stop.reason}</ReasonText>
@@ -320,11 +745,11 @@ export function ItineraryResultScreen({
                         >
                           <ActionLabel>▼</ActionLabel>
                         </ActionButton>
-                        <ActionButton
+                        <DeleteButton
                           onPress={() => setStops((prev) => removeStop(prev, stop.contentId))}
                         >
-                          <ActionLabel>삭제</ActionLabel>
-                        </ActionButton>
+                          <DeleteLabel>삭제</DeleteLabel>
+                        </DeleteButton>
                       </ActionRow>
                     </StopCard>
                   </StopRow>
@@ -348,21 +773,41 @@ export function ItineraryResultScreen({
             </View>
           );
         })}
+
+        <StatsCard>
+          <StatItem>
+            <StatValue>{totalDays}일</StatValue>
+            <StatLabel>기간</StatLabel>
+          </StatItem>
+          <StatDivider />
+          <StatItem>
+            <StatValue>{stops.length}곳</StatValue>
+            <StatLabel>방문지</StatLabel>
+          </StatItem>
+          <StatDivider />
+          <StatItem>
+            <StatValue>{regionName ?? '-'}</StatValue>
+            <StatLabel>지역</StatLabel>
+          </StatItem>
+        </StatsCard>
       </ScrollView>
-      <SaveButton onPress={handleSave} activeOpacity={0.8}>
+      <SaveButton onPress={handleSave} activeOpacity={0.8} disabled={saveState === 'saving'}>
         <SaveButtonLabel>
-          {saveState === 'saved'
-            ? '저장 완료'
-            : saveState === 'error'
-              ? '저장 실패했습니다. 다시 시도해주세요.'
-              : '일정 저장'}
+          {saveState === 'saving'
+            ? '저장 중...'
+            : saveState === 'saved'
+              ? '저장 완료'
+              : saveState === 'error'
+                ? '저장 실패했습니다. 다시 시도해주세요.'
+                : isGuest
+                  ? '로그인하고 일정 저장'
+                  : '일정 저장'}
         </SaveButtonLabel>
       </SaveButton>
-      <ShareButton
-        onPress={() => shareItinerary(buildShareText({ stops, contentById }))}
-        activeOpacity={0.8}
-      >
-        <ShareButtonLabel>공유하기</ShareButtonLabel>
+      <ShareButton onPress={handleShare} activeOpacity={0.8} disabled={isSharing}>
+        <ShareButtonLabel>
+          {isSharing ? '공유 링크 만드는 중...' : isGuest ? '↗ 로그인하고 공유하기' : '↗ 공유하기'}
+        </ShareButtonLabel>
       </ShareButton>
     </ScreenContainer>
   );

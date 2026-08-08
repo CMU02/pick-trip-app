@@ -1,12 +1,15 @@
-import { SafeAreaView, Text, TouchableOpacity, View } from 'react-native';
+import { useState } from 'react';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components';
 import { COLORS } from '../constants/colors';
+import { type AuthProvider, loginWithProvider } from '../services/authService';
 
-export type AuthProvider = 'kakao' | 'google';
+export type { AuthProvider };
 
 interface AuthScreenProps {
-  onAuthed: (provider: AuthProvider) => void;
-  onGuest: () => void;
+  onAuthed: () => void;
+  onGuest?: () => void;
 }
 
 const ScreenContainer = styled(SafeAreaView)`
@@ -129,6 +132,13 @@ const TermsHighlight = styled(Text)`
   text-decoration-line: underline;
 `;
 
+const ErrorText = styled(Text)`
+  font-size: 13px;
+  color: ${COLORS.error};
+  text-align: center;
+  margin-bottom: 12px;
+`;
+
 const GuestButton = styled(TouchableOpacity)`
   margin-top: auto;
   padding: 12px;
@@ -142,6 +152,21 @@ const GuestButtonLabel = styled(Text)`
 `;
 
 export function AuthScreen({ onAuthed, onGuest }: AuthScreenProps) {
+  const [loadingProvider, setLoadingProvider] = useState<AuthProvider | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const handleLogin = async (provider: AuthProvider) => {
+    setErrorMessage('');
+    setLoadingProvider(provider);
+    const result = await loginWithProvider(provider);
+    setLoadingProvider(null);
+    if (result.success) {
+      onAuthed();
+    } else {
+      setErrorMessage(result.message);
+    }
+  };
+
   return (
     <ScreenContainer>
       <BrandSection>
@@ -160,14 +185,36 @@ export function AuthScreen({ onAuthed, onGuest }: AuthScreenProps) {
       <ButtonSection>
         <HelperText>소셜 계정으로 3초 만에 시작하세요.</HelperText>
 
-        <KakaoButton onPress={() => onAuthed('kakao')} activeOpacity={0.85}>
-          <ButtonEmoji>💬</ButtonEmoji>
-          <KakaoButtonLabel>카카오로 시작하기</KakaoButtonLabel>
+        {errorMessage !== '' && <ErrorText>{errorMessage}</ErrorText>}
+
+        <KakaoButton
+          onPress={() => handleLogin('kakao')}
+          activeOpacity={0.85}
+          disabled={loadingProvider !== null}
+        >
+          {loadingProvider === 'kakao' ? (
+            <ActivityIndicator color="rgba(0, 0, 0, 0.85)" />
+          ) : (
+            <>
+              <ButtonEmoji>💬</ButtonEmoji>
+              <KakaoButtonLabel>카카오로 시작하기</KakaoButtonLabel>
+            </>
+          )}
         </KakaoButton>
 
-        <GoogleButton onPress={() => onAuthed('google')} activeOpacity={0.85}>
-          <ButtonEmoji>🔍</ButtonEmoji>
-          <GoogleButtonLabel>Google로 시작하기</GoogleButtonLabel>
+        <GoogleButton
+          onPress={() => handleLogin('google')}
+          activeOpacity={0.85}
+          disabled={loadingProvider !== null}
+        >
+          {loadingProvider === 'google' ? (
+            <ActivityIndicator color={COLORS.gray700} />
+          ) : (
+            <>
+              <ButtonEmoji>🔍</ButtonEmoji>
+              <GoogleButtonLabel>Google로 시작하기</GoogleButtonLabel>
+            </>
+          )}
         </GoogleButton>
 
         <TermsText>
@@ -175,9 +222,11 @@ export function AuthScreen({ onAuthed, onGuest }: AuthScreenProps) {
           <TermsHighlight>개인정보 처리방침</TermsHighlight>에{'\n'}동의하게 됩니다.
         </TermsText>
 
-        <GuestButton onPress={onGuest} activeOpacity={0.7}>
-          <GuestButtonLabel>먼저 둘러보기 →</GuestButtonLabel>
-        </GuestButton>
+        {onGuest && (
+          <GuestButton onPress={onGuest} activeOpacity={0.7}>
+            <GuestButtonLabel>먼저 둘러보기 →</GuestButtonLabel>
+          </GuestButton>
+        )}
       </ButtonSection>
     </ScreenContainer>
   );

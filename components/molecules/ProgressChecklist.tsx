@@ -1,3 +1,4 @@
+import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Text, View } from 'react-native';
 import styled from 'styled-components';
@@ -23,22 +24,51 @@ const Container = styled(View)`
   width: 100%;
 `;
 
-const SpinnerWrapper = styled(View)`
-  width: 104px;
-  height: 104px;
-  margin-bottom: 24px;
+const SpinnerGlow = styled(View)`
+  width: 132px;
+  height: 132px;
+  border-radius: 66px;
+  margin-bottom: 26px;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  shadow-color: ${COLORS.amber500};
+  shadow-opacity: 0.25;
+  shadow-radius: 16px;
+  shadow-offset: 0px 6px;
+  elevation: 6;
+`;
+
+const SpinnerGlowFill = styled(LinearGradient)`
+  position: absolute;
+  width: 132px;
+  height: 132px;
+  border-radius: 66px;
 `;
 
 const SpinnerRing = styled(Animated.View)`
   position: absolute;
-  width: 104px;
-  height: 104px;
-  border-radius: 52px;
-  border-width: 6px;
+  width: 100px;
+  height: 100px;
+  border-radius: 50px;
+  border-width: 5px;
   border-color: ${COLORS.amber100};
   border-top-color: ${COLORS.amber500};
+  border-right-color: ${COLORS.amber500};
+`;
+
+const SpinnerEmojiBadge = styled(View)`
+  width: 74px;
+  height: 74px;
+  border-radius: 37px;
+  background-color: ${COLORS.white};
+  align-items: center;
+  justify-content: center;
+  shadow-color: #000;
+  shadow-opacity: 0.06;
+  shadow-radius: 6px;
+  shadow-offset: 0px 2px;
+  elevation: 2;
 `;
 
 const SpinnerEmoji = styled(Text)`
@@ -46,7 +76,7 @@ const SpinnerEmoji = styled(Text)`
 `;
 
 const HeadingText = styled(Text)`
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 700;
   color: ${COLORS.gray900};
   letter-spacing: -0.3px;
@@ -57,66 +87,68 @@ const HeadingText = styled(Text)`
 const SubText = styled(Text)`
   font-size: 14px;
   color: ${COLORS.gray500};
-  margin-bottom: 22px;
+  margin-bottom: 24px;
   text-align: center;
 `;
 
 const ProgressTrack = styled(View)`
   width: 100%;
   max-width: 320px;
-  height: 6px;
+  height: 8px;
   border-radius: 100px;
   background-color: ${COLORS.gray200};
   overflow: hidden;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 `;
 
-const ProgressFill = styled(View)<{ $percent: number }>`
+const ProgressFill = styled(LinearGradient)<{ $percent: number }>`
   height: 100%;
   width: ${({ $percent }) => `${$percent}%`};
   border-radius: 100px;
-  background-color: ${COLORS.amber500};
 `;
 
 const StepCard = styled(View)`
   width: 100%;
   max-width: 320px;
   background-color: ${COLORS.white};
-  border-radius: 14px;
-  border-width: 1px;
-  border-color: ${COLORS.gray200};
-  padding: 6px 16px;
+  border-radius: 18px;
+  padding: 6px 18px;
+  shadow-color: #000;
+  shadow-opacity: 0.06;
+  shadow-radius: 14px;
+  shadow-offset: 0px 6px;
+  elevation: 3;
 `;
 
 const StepRow = styled(View)<{ $last: boolean; $dimmed: boolean }>`
   flex-direction: row;
   align-items: center;
   gap: 12px;
-  padding: 11px 0;
+  padding: 13px 0;
   border-bottom-width: ${({ $last }) => ($last ? '0px' : '1px')};
   border-bottom-color: ${COLORS.gray100};
-  opacity: ${({ $dimmed }) => ($dimmed ? 0.45 : 1)};
+  opacity: ${({ $dimmed }) => ($dimmed ? 0.4 : 1)};
 `;
 
 const StepIconBox = styled(View)`
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   align-items: center;
   justify-content: center;
 `;
 
 const StepDoneCircle = styled(View)`
-  width: 24px;
-  height: 24px;
-  border-radius: 12px;
-  background-color: ${COLORS.teal600};
+  width: 26px;
+  height: 26px;
+  border-radius: 13px;
+  background-color: ${COLORS.teal50};
   align-items: center;
   justify-content: center;
 `;
 
 const StepDoneCheck = styled(Text)`
-  font-size: 12px;
-  color: ${COLORS.white};
+  font-size: 13px;
+  color: ${COLORS.teal600};
   font-weight: 700;
 `;
 
@@ -142,7 +174,7 @@ const StepSub = styled(Text)`
   color: ${COLORS.gray400};
 `;
 
-const DEFAULT_STEP_INTERVAL_MS = 650;
+export const DEFAULT_STEP_INTERVAL_MS = 650;
 
 export function ProgressChecklist({
   icon,
@@ -181,14 +213,22 @@ export function ProgressChecklist({
 
   return (
     <Container>
-      <SpinnerWrapper>
+      <SpinnerGlow>
+        <SpinnerGlowFill colors={[COLORS.amber50, COLORS.amber100]} />
         <SpinnerRing style={{ transform: [{ rotate }] }} />
-        <SpinnerEmoji>{icon}</SpinnerEmoji>
-      </SpinnerWrapper>
+        <SpinnerEmojiBadge>
+          <SpinnerEmoji>{icon}</SpinnerEmoji>
+        </SpinnerEmojiBadge>
+      </SpinnerGlow>
       <HeadingText>{heading}</HeadingText>
       <SubText>{subText}</SubText>
       <ProgressTrack>
-        <ProgressFill $percent={pct} />
+        <ProgressFill
+          $percent={pct}
+          colors={[COLORS.amber300, COLORS.amber600]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+        />
       </ProgressTrack>
       <StepCard>
         {steps.map((step, i) => {

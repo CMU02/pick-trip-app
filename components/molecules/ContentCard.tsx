@@ -1,4 +1,4 @@
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { CATEGORIES } from '../../constants/categories';
 import { COLORS } from '../../constants/colors';
@@ -8,6 +8,7 @@ interface ContentCardProps {
   content: Content;
   selected?: boolean;
   onPress: () => void;
+  onPressDetail?: () => void;
 }
 
 const Card = styled(TouchableOpacity)<{ $selected: boolean }>`
@@ -24,6 +25,11 @@ const Thumbnail = styled(View)<{ $color: string }>`
   background-color: ${({ $color }) => `${$color}33`};
   align-items: center;
   justify-content: center;
+`;
+
+const ThumbnailImage = styled(Image)`
+  height: 100px;
+  width: 100%;
 `;
 
 const ThumbnailEmoji = styled(Text)`
@@ -74,10 +80,9 @@ const ContentName = styled(Text)`
   margin-bottom: 4px;
 `;
 
-const Tagline = styled(Text)`
-  font-size: 13px;
-  color: ${COLORS.gray500};
-  line-height: 18px;
+const Address = styled(Text)`
+  font-size: 12px;
+  color: ${COLORS.gray400};
   margin-bottom: 12px;
 `;
 
@@ -102,48 +107,46 @@ const InfoText = styled(Text)`
   color: ${COLORS.gray500};
 `;
 
-export function ContentCard({ content, selected = false, onPress }: ContentCardProps) {
+const DetailLink = styled(TouchableOpacity)`
+  align-self: flex-start;
+  margin-top: 12px;
+`;
+
+const DetailLinkLabel = styled(Text)`
+  font-size: 12px;
+  font-weight: 600;
+  color: ${COLORS.amber700};
+`;
+
+export function ContentCard({
+  content,
+  selected = false,
+  onPress,
+  onPressDetail,
+}: ContentCardProps) {
   const category = CATEGORIES.find((c) => c.id === content.category);
 
   return (
     <Card $selected={selected} onPress={onPress} activeOpacity={0.8}>
-      <Thumbnail $color={content.color}>
-        <ThumbnailEmoji>{category?.emoji ?? '📍'}</ThumbnailEmoji>
-        {selected && (
-          <CheckBadge>
-            <CheckMark>✓</CheckMark>
-          </CheckBadge>
-        )}
-      </Thumbnail>
+      {content.imageUrl ? (
+        <ThumbnailImage source={{ uri: content.imageUrl }} resizeMode="cover" />
+      ) : (
+        <Thumbnail $color={category?.color ?? COLORS.gray400}>
+          <ThumbnailEmoji>{category?.emoji ?? '📍'}</ThumbnailEmoji>
+        </Thumbnail>
+      )}
+      {selected && (
+        <CheckBadge>
+          <CheckMark>✓</CheckMark>
+        </CheckBadge>
+      )}
       <Body>
         <CategoryBadge>
           <CategoryLabel>{category?.label ?? content.category}</CategoryLabel>
         </CategoryBadge>
         <ContentName>{content.name}</ContentName>
-        <Tagline numberOfLines={2}>{content.tagline}</Tagline>
+        <Address numberOfLines={1}>{content.address}</Address>
         <InfoRow>
-          <InfoChip>
-            <InfoEmoji>⏱️</InfoEmoji>
-            <InfoText>{content.duration}</InfoText>
-          </InfoChip>
-          {content.parking && (
-            <InfoChip>
-              <InfoEmoji>🅿️</InfoEmoji>
-              <InfoText>주차 가능</InfoText>
-            </InfoChip>
-          )}
-          {content.kidsRecommended && (
-            <InfoChip>
-              <InfoEmoji>👶</InfoEmoji>
-              <InfoText>아이 추천</InfoText>
-            </InfoChip>
-          )}
-          {content.seniorsRecommended && (
-            <InfoChip>
-              <InfoEmoji>👴</InfoEmoji>
-              <InfoText>부모님 추천</InfoText>
-            </InfoChip>
-          )}
           {content.indoor && (
             <InfoChip>
               <InfoEmoji>🏠</InfoEmoji>
@@ -151,6 +154,11 @@ export function ContentCard({ content, selected = false, onPress }: ContentCardP
             </InfoChip>
           )}
         </InfoRow>
+        {onPressDetail && (
+          <DetailLink onPress={onPressDetail} activeOpacity={0.7}>
+            <DetailLinkLabel>자세히 보기 →</DetailLinkLabel>
+          </DetailLink>
+        )}
       </Body>
     </Card>
   );

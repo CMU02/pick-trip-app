@@ -4,9 +4,11 @@ import styled from 'styled-components';
 import { COLORS } from '../constants/colors';
 import { COMPANIONS, STYLE_OPTIONS } from '../constants/companions';
 import { REGIONS } from '../constants/regions';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import type { CompanionType, StylePreference } from '../types/companion';
 
 interface ProfileContentProps {
+  isGuest: boolean;
   companion: CompanionType | null;
   stylePrefs: StylePreference[];
   selectedRegions: string[];
@@ -175,6 +177,7 @@ const NOTIFY_ROWS = [
 ] as const;
 
 export function ProfileContent({
+  isGuest,
   companion,
   stylePrefs,
   selectedRegions,
@@ -188,17 +191,20 @@ export function ProfileContent({
     festival: true,
     trip: false,
   });
+  const { user } = useCurrentUser(!isGuest);
+  const displayName = isGuest ? 'PickTrip 여행자' : (user?.nickname ?? '불러오는 중...');
+  const displaySub = isGuest ? '게스트로 둘러보는 중' : (user?.email ?? '');
 
   return (
     <Scroll showsVerticalScrollIndicator={false}>
       <Content>
         <IdentityCard>
           <Avatar>
-            <AvatarLabel>P</AvatarLabel>
+            <AvatarLabel>{displayName.charAt(0)}</AvatarLabel>
           </Avatar>
           <View>
-            <IdentityName>PickTrip 여행자</IdentityName>
-            <IdentitySub>게스트로 둘러보는 중</IdentitySub>
+            <IdentityName>{displayName}</IdentityName>
+            <IdentitySub>{displaySub}</IdentitySub>
           </View>
         </IdentityCard>
 

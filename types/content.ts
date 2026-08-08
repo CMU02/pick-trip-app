@@ -1,22 +1,20 @@
 export type ContentCategory =
   | 'food'
   | 'festival'
-  | 'nature'
+  | 'attraction'
   | 'culture'
-  | 'experience'
-  | 'market'
-  | 'indoor';
+  | 'nature'
+  | 'experience';
 
 export interface Content {
   id: string;
   regionId: string;
   name: string;
   category: ContentCategory;
-  tagline: string;
-  duration: string;
-  parking: boolean;
-  kidsRecommended: boolean;
-  seniorsRecommended: boolean;
+  summary: string;
+  address: string;
+  imageUrl: string | null;
   indoor: boolean;
-  color: string;
+  latitude: number;
+  longitude: number;
 }

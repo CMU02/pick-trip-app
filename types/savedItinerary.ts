@@ -7,4 +7,5 @@ export interface SavedItinerary {
   priorities: Record<string, Priority>;
   stops: ItineraryStop[];
   savedAt: string;
+  itineraryId?: string;
 }
