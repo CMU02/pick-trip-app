@@ -21,7 +21,7 @@ export async function loginWithProvider(
 ): Promise<{ success: true } | { success: false; message: string }> {
   const nonce = generateNonce();
   const redirectUri = Linking.createURL('auth/callback');
-  const authUrl = `${API_BASE_URL}/oauth2/authorization/${provider}?nonce=${encodeURIComponent(nonce)}`;
+  const authUrl = `${API_BASE_URL}/oauth2/authorization/${provider}?client=app&nonce=${encodeURIComponent(nonce)}`;
 
   const result = await WebBrowser.openAuthSessionAsync(authUrl, redirectUri);
   if (result.type !== 'success') {
