@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "pick-trip-app",
-    "slug": "pick-trip-app",
+    "slug": "picktrip",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -26,6 +26,18 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": []
+    "plugins": [],
+    "extra": {
+      "eas": {
+        "projectId": "e67f3138-1f7b-4831-880f-b9852baafabb"
+      }
+    },
+    "owner": "hyeonjun1968",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e67f3138-1f7b-4831-880f-b9852baafabb"
+    }
   }
 }
