@@ -28,23 +28,23 @@
 작업은 4개 이슈로 나눈다. 화살표는 의존 관계다.
 
 ```
-chore/30  New Architecture 전환  ─┐
-                                  ├─→  feat/32  하단 탭바 리디자인
-style/31  색상 amber → coral    ─┘
+chore/new-architecture ──┐
+                         ├──→ feat/bottom-tab-bar
+style/coral-palette ─────┘
 
-chore/33  Paperlogy 폰트 전역 적용   (독립, 마지막)
+chore/paperlogy-font        (독립, 마지막)
 ```
 
 | 이슈 | 브랜치 | 범위 | 분리 근거 |
 |---|------|------|----------|
-| [#30](https://github.com/CMU02/pick-trip-app/issues/30) | `chore/30` | `app.json` 1줄 + `expo prebuild --clean` + 전 화면 회귀 확인 | 실패 시 롤백 단위가 탭바와 달라야 한다. Reanimated 4의 전제 조건 |
-| [#31](https://github.com/CMU02/pick-trip-app/issues/31) | `style/31` | `COLORS` 토큰 6개 개명 + 69건 치환 (18개 파일) | 기계적 치환 diff에 설계 리뷰가 섞이면 안 된다 |
-| [#32](https://github.com/CMU02/pick-trip-app/issues/32) | `feat/32` | 탭바 + 아이콘 + CTA 겹침 해소 (파일 9개) | 실제 설계·리뷰 대상 |
-| [#33](https://github.com/CMU02/pick-trip-app/issues/33) | `chore/33` | 폰트 3종 + `font-weight` → `font-family` 전역 치환 (73곳 이상) | 폰트가 바뀌면 탭 라벨 너비가 달라지므로 탭바 확정 후 착수 |
+| [#30](https://github.com/CMU02/pick-trip-app/issues/30) | `chore/new-architecture` | `app.json` 1줄 + `expo prebuild --clean` + 전 화면 회귀 확인 | 실패 시 롤백 단위가 탭바와 달라야 한다. Reanimated 4의 전제 조건 |
+| [#31](https://github.com/CMU02/pick-trip-app/issues/31) | `style/coral-palette` | `COLORS` 토큰 6개 개명 + 69건 치환 (18개 파일) | 기계적 치환 diff에 설계 리뷰가 섞이면 안 된다 |
+| [#32](https://github.com/CMU02/pick-trip-app/issues/32) | `feat/bottom-tab-bar` | 탭바 + 아이콘 + CTA 겹침 해소 (파일 9개) | 실제 설계·리뷰 대상 |
+| [#33](https://github.com/CMU02/pick-trip-app/issues/33) | `chore/paperlogy-font` | 폰트 3종 + `font-weight` → `font-family` 전역 치환 (73곳 이상) | 폰트가 바뀌면 탭 라벨 너비가 달라지므로 탭바 확정 후 착수 |
 
 #30과 #31은 서로 독립이라 병렬 진행할 수 있다. 둘 다 머지된 뒤 #32를 시작하면 탭바를 처음부터 coral + Reanimated로 만들 수 있어 재작업이 없다.
 
-`git-convention`의 브랜치 규칙에 따라 브랜치명은 `<type>/<이슈번호>` 형식을 따른다.
+`git-convention`의 브랜치 규칙에 따라 브랜치명은 `<type>/<작업명>` 형식을 따르고, 이슈 번호는 브랜치명에 넣지 않는다.
 
 > #31의 브랜치 타입은 `style`이지만 이슈 라벨은 `chore`다. 저장소에 `style` 라벨이 없어 가장 가까운 기존 라벨을 썼다. 커밋 메시지는 `git-convention`의 `style` 타입을 따른다.
 
