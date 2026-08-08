@@ -1,0 +1,22 @@
+name: Deploy
+
+on:
+  push:
+    branches: ['main']
+
+jobs:
+  check:
+    name: Lint & Test
+    type: custom
+    steps:
+      - uses: eas/checkout
+      - uses: eas/install_node_modules
+      - run: bun run lint
+      - run: bun run test:run
+
+  publish_update:
+    name: Publish update
+    needs: [check]
+    type: update
+    params:
+      branch: production

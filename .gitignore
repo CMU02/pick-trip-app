@@ -51,4 +51,5 @@ coverage/*
 
 .worktrees/
 
+# Graphify
 graphify-out

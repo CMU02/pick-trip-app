@@ -50,7 +50,6 @@ AI가 여행 날짜 및 동행 조건에 맞춰 현실적인 여행 일정을 �
 | ------------- | ---------------------------------- |
 | 코드 규칙     | `.agents/rules/code-convention.md` |
 | 깃 규칙       | `.agents/rules/git-convention.md`  |
-| 브랜치 포커스 | `.agents/rules/branch-focus.md`    |
 | Biome 설정    | `biome.json`                       |
 
 # GitHub Issue & PR

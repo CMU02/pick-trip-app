@@ -1,15 +1,9 @@
 {
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node .claude/hooks/check-branch-focus.mjs"
-          }
-        ]
-      }
-    ]
+  "worktree": {
+    "baseRef": "head",
+    "bgIsolation": "worktree"
+  },
+  "enabledPlugins": {
+    "expo@claude-plugins-official": true
   }
 }
