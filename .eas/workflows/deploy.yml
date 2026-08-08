@@ -3,8 +3,6 @@ name: Deploy
 on:
   push:
     branches: ['main']
-  pull_request:
-    branches: ['main']
 
 jobs:
   check:
@@ -19,7 +17,6 @@ jobs:
   publish_update:
     name: Publish update
     needs: [check]
-    if: ${{ github.event_name == 'push' }}
     type: update
     params:
       branch: production
