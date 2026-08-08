@@ -50,3 +50,5 @@ yarn-error.*
 coverage/*
 
 .worktrees/
+
+graphify-out
