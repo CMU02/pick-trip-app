@@ -12,6 +12,7 @@ import { CategoryFilter } from '../components/molecules/CategoryFilter';
 import { ContentCard } from '../components/molecules/ContentCard';
 import { ContentDetailModal } from '../components/molecules/ContentDetailModal';
 import { COLORS } from '../constants/colors';
+import { TAB_BAR_CLEARANCE, TAB_BAR_TOTAL } from '../constants/layout';
 import { useContents } from '../hooks/useContents';
 import type { Content, ContentCategory } from '../types/content';
 
@@ -80,14 +81,15 @@ const RetryLabel = styled(Text)`
   font-weight: 500;
 `;
 
+// 플로팅 탭바 위로 올려 겹치지 않게 한다.
 const BottomBar = styled(View)`
   position: absolute;
-  bottom: 0;
+  bottom: ${TAB_BAR_TOTAL}px;
   left: 0;
   right: 0;
   padding-top: 12px;
   padding-horizontal: 20px;
-  padding-bottom: 28px;
+  padding-bottom: 12px;
   background-color: ${COLORS.white};
 `;
 
@@ -146,7 +148,9 @@ export function ContentExploreScreen({
       </FilterRow>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: selectedIds.length > 0 ? 120 : 40 }}
+        contentContainerStyle={{
+          paddingBottom: selectedIds.length > 0 ? 120 + TAB_BAR_TOTAL : 40 + TAB_BAR_CLEARANCE,
+        }}
         onScroll={({ nativeEvent }) => {
           if (hasNextPage && !isFetchingNextPage && isCloseToBottom(nativeEvent)) {
             fetchNextPage();

@@ -4,6 +4,7 @@ import styled from 'styled-components';
 import { ContentCard } from '../components/molecules/ContentCard';
 import { ContentDetailModal } from '../components/molecules/ContentDetailModal';
 import { COLORS } from '../constants/colors';
+import { TAB_BAR_CLEARANCE, TAB_BAR_TOTAL } from '../constants/layout';
 import { useContentsByIds } from '../hooks/useContentsByIds';
 import type { Content } from '../types/content';
 import type { TripDate } from '../types/trip';
@@ -65,10 +66,12 @@ const RetryLabel = styled(Text)`
   font-weight: 500;
 `;
 
+// 흐름 최하단에 있으므로 아래 여백으로 플로팅 탭바를 피한다.
 const BottomBar = styled(View)`
   padding-top: 12px;
   padding-horizontal: 20px;
   padding-bottom: 16px;
+  margin-bottom: ${TAB_BAR_TOTAL}px;
   background-color: ${COLORS.white};
 `;
 
@@ -110,7 +113,7 @@ export function BasketContent({
       </Header>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 24 }}
+        contentContainerStyle={{ paddingBottom: 24 + TAB_BAR_CLEARANCE }}
       >
         <CardList>
           {isLoading ? (

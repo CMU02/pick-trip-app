@@ -8,6 +8,7 @@ import {
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
 import { COMPANIONS } from '../constants/companions';
+import { TAB_BAR_CLEARANCE } from '../constants/layout';
 import { REGIONS } from '../constants/regions';
 import { useContents } from '../hooks/useContents';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -88,8 +89,9 @@ const GreetingSub = styled(Text)`
   color: rgba(255, 255, 255, 0.85);
 `;
 
+// 하단 여백은 플로팅 탭바가 가리는 높이를 확보한다.
 const Content = styled(View)`
-  padding: 0 20px 32px;
+  padding: 0 20px ${TAB_BAR_CLEARANCE}px;
 `;
 
 const StatusCard = styled(View)`

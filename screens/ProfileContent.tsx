@@ -3,6 +3,7 @@ import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { COLORS } from '../constants/colors';
 import { COMPANIONS, STYLE_OPTIONS } from '../constants/companions';
+import { TAB_BAR_CLEARANCE } from '../constants/layout';
 import { REGIONS } from '../constants/regions';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import type { CompanionType, StylePreference } from '../types/companion';
@@ -23,8 +24,9 @@ const Scroll = styled(ScrollView)`
   background-color: ${COLORS.gray50};
 `;
 
+// 하단 여백은 플로팅 탭바가 가리는 높이를 확보한다.
 const Content = styled(View)`
-  padding: 16px 20px 32px;
+  padding: 16px 20px ${TAB_BAR_CLEARANCE}px;
 `;
 
 const IdentityCard = styled(View)`
