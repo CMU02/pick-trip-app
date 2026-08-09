@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { COMPANIONS } from '../constants/companions';
 import { useBasket } from '../hooks/useBasket';
@@ -10,6 +10,7 @@ import type { ItineraryStop } from '../types/itinerary';
 import type { Priority } from '../types/priority';
 import type { SavedItinerary } from '../types/savedItinerary';
 import type { TripDate } from '../types/trip';
+import { fromDateString, toDateString, toDurationType } from '../utils/tripDate';
 
 export type { TripDate };
 
@@ -36,11 +37,6 @@ interface AppStateValue {
   setInitialItineraryId: (value: string | undefined) => void;
   isBasketLoading: boolean;
   hasBasketItems: boolean;
-  basketConditions: {
-    region: string | null;
-    companion: CompanionType | null;
-    stylePrefs: StylePreference[];
-  } | null;
   selectedIds: string[];
   priorities: Record<string, Priority>;
   itemIdByContentId: Record<string, string>;
@@ -101,6 +97,41 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     updateConditions,
   } = useBasket();
 
+  // 여행 조건(지역·날짜·동행·스타일)은 바구니와 같은 곳에 저장한다.
+  // 바구니 로딩이 끝나면 1회만 화면 상태로 되돌린다.
+  const hasRestoredConditions = useRef(false);
+
+  useEffect(() => {
+    if (isBasketLoading || !basket || hasRestoredConditions.current) return;
+    hasRestoredConditions.current = true;
+
+    const conditions = basket.conditions;
+    if (conditions.region) setSelectedRegions([conditions.region]);
+    setCompanion(conditions.companion);
+    setStylePrefs(conditions.stylePrefs);
+    if (conditions.travelDate) {
+      const nights = conditions.duration ?? 0;
+      setTripDate({
+        startDate: fromDateString(conditions.travelDate),
+        durationType: toDurationType(nights),
+        nights,
+      });
+    }
+  }, [isBasketLoading, basket]);
+
+  // 조건이 바뀌면 저장한다. 복원 전에 쓰면 초기 빈 값이 저장된 값을 덮어쓰므로
+  // 복원이 끝난 뒤부터만 쓴다.
+  useEffect(() => {
+    if (!hasRestoredConditions.current) return;
+    updateConditions({
+      regionId: selectedRegions[0] ?? null,
+      travelDate: tripDate ? toDateString(tripDate.startDate) : null,
+      duration: tripDate?.nights ?? null,
+      companion,
+      stylePrefs,
+    });
+  }, [selectedRegions, tripDate, companion, stylePrefs, updateConditions]);
+
   const basketItems = basket?.items ?? [];
   const selectedIds = basketItems.map((item) => item.contentId);
   const priorities = Object.fromEntries(basketItems.map((item) => [item.contentId, item.priority]));
@@ -152,15 +183,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const companionLabel = COMPANIONS.find((c) => c.id === companion)?.label ?? '가족';
 
-  const basketConditions = useMemo(() => {
-    if (!basket) return null;
-    return {
-      region: basket.conditions.region,
-      companion: basket.conditions.companion,
-      stylePrefs: basket.conditions.stylePrefs,
-    };
-  }, [basket]);
-
   const value: AppStateValue = {
     isGuest,
     setIsGuest,
@@ -184,7 +206,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setInitialItineraryId,
     isBasketLoading,
     hasBasketItems: basketItems.length > 0,
-    basketConditions,
     selectedIds,
     priorities,
     itemIdByContentId,
