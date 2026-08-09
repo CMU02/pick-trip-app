@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components';
-import { TabBar, type TabKey } from '../components/molecules/TabBar';
+import { TabBar } from '../components/molecules/TabBar';
 import { COLORS } from '../constants/colors';
 import { useAppState } from '../contexts/AppStateContext';
 import { BasketContent } from '../screens/BasketContent';
@@ -12,6 +12,7 @@ import { ContentExploreScreen } from '../screens/ContentExploreScreen';
 import { HomeContent } from '../screens/HomeContent';
 import { ProfileContent } from '../screens/ProfileContent';
 import type { MainTabParamList, RootStackParamList } from '../types/navigation';
+import { routeNameToTabKey, tabKeyToRouteName } from './tabRoutes';
 
 const ScreenContainer = styled(SafeAreaView)`
   flex: 1;
@@ -19,21 +20,6 @@ const ScreenContainer = styled(SafeAreaView)`
 `;
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
-
-const TAB_ROUTE_PAIRS: [keyof MainTabParamList, TabKey][] = [
-  ['Home', 'home'],
-  ['Explore', 'explore'],
-  ['Basket', 'basket'],
-  ['Profile', 'profile'],
-];
-
-function routeNameToTabKey(routeName: keyof MainTabParamList): TabKey {
-  return TAB_ROUTE_PAIRS.find(([route]) => route === routeName)?.[1] ?? 'home';
-}
-
-function tabKeyToRouteName(key: TabKey): keyof MainTabParamList {
-  return TAB_ROUTE_PAIRS.find(([, tabKey]) => tabKey === key)?.[0] ?? 'Home';
-}
 
 function CustomTabBar({ state, navigation }: BottomTabBarProps) {
   const { selectedIds } = useAppState();
