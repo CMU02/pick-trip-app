@@ -1,8 +1,9 @@
-import { createContext, type ReactNode, useContext, useMemo, useState } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 import { Alert } from 'react-native';
 import { COMPANIONS } from '../constants/companions';
 import { useBasket } from '../hooks/useBasket';
 import { logout } from '../services/authService';
+import { hasStoredSession } from '../services/authStorage';
 import type { CompanionType, StylePreference } from '../types/companion';
 import type { Content } from '../types/content';
 import type { ItineraryStop } from '../types/itinerary';
@@ -15,6 +16,7 @@ export type { TripDate };
 interface AppStateValue {
   isGuest: boolean;
   setIsGuest: (value: boolean) => void;
+  isAuthLoading: boolean;
   selectedRegions: string[];
   setSelectedRegions: (value: string[]) => void;
   handleToggleRegion: (regionId: string) => void;
@@ -59,7 +61,9 @@ const AppStateContext = createContext<AppStateValue | null>(null);
 
 export function AppStateProvider({ children }: { children: ReactNode }) {
   // 온보딩 없이 메인보드로 바로 진입하므로, 별도 로그인 전까지는 게스트 상태로 시작한다.
+  // 단 SecureStore에 토큰이 남아 있으면 아래 useEffect가 로그인 상태로 되돌린다.
   const [isGuest, setIsGuest] = useState(true);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
   const [tripDate, setTripDate] = useState<TripDate | null>(null);
   const [companion, setCompanion] = useState<CompanionType | null>(null);
@@ -67,6 +71,26 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [savedItinerary, setSavedItinerary] = useState<SavedItinerary | null>(null);
   const [initialStops, setInitialStops] = useState<ItineraryStop[] | undefined>(undefined);
   const [initialItineraryId, setInitialItineraryId] = useState<string | undefined>(undefined);
+
+  // 앱을 다시 켰을 때 저장된 토큰으로 로그인 상태를 복원한다.
+  // 이 확인이 끝나기 전에 화면을 그리면 게스트 UI가 잠깐 보였다 바뀌므로,
+  // isAuthLoading을 진입 게이트(RootNavigator의 AuthGate)에서 기다린다.
+  useEffect(() => {
+    let cancelled = false;
+
+    hasStoredSession()
+      .then((restored) => {
+        if (cancelled || !restored) return;
+        setIsGuest(false);
+      })
+      .finally(() => {
+        if (!cancelled) setIsAuthLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const {
     basket,
@@ -140,6 +164,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const value: AppStateValue = {
     isGuest,
     setIsGuest,
+    isAuthLoading,
     selectedRegions,
     setSelectedRegions,
     handleToggleRegion,

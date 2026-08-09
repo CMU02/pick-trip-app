@@ -21,6 +21,7 @@ type Nav = StackNavigationProp<RootStackParamList>;
 function AuthGate() {
   const navigation = useNavigation<Nav>();
   const {
+    isAuthLoading,
     isBasketLoading,
     basketConditions,
     setSelectedRegions,
@@ -31,7 +32,8 @@ function AuthGate() {
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: 마운트 시 1회만 진입 경로를 결정한다
   useEffect(() => {
-    if (isBasketLoading) return;
+    // 로그인 복원이 끝나기 전에 메인으로 보내면 게스트 UI가 잠깐 보였다 바뀐다.
+    if (isAuthLoading || isBasketLoading) return;
 
     // 바구니에 저장된 지역·동행 조건이 있으면 메인보드 상태로 복원한다.
     if (basketConditions) {
@@ -48,7 +50,7 @@ function AuthGate() {
         navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
       }
     });
-  }, [isBasketLoading, basketConditions]);
+  }, [isAuthLoading, isBasketLoading, basketConditions]);
 
   return null;
 }
