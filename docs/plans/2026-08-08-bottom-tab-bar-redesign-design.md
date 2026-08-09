@@ -78,8 +78,9 @@ chore/paperlogy-font        (독립, 마지막)
 | `react-native-safe-area-context` | 5.6.2 | O |
 | `react-native-screens` | 4.16.0 | O |
 | `react-native-worklets` | 0.8.3 | O |
-| `react-native-reanimated` | 4.1.7 | O |
 | `@react-native-masked-view/masked-view` | 0.3.2 | X |
+
+`react-native-reanimated` 4.1.7이 `node_modules/`에 보이지만 **의존성이 아니라 잔재다.** `bun.lock`에 0건이고, `gesture-handler`·`screens`도 `devDependencies`로만 참조하며, 오토링킹 대상에도 없다. 깨끗한 워크트리에서 `bun install`하면 아예 설치되지 않는 것으로 확인했다. 따라서 이번 조사 대상이 아니다.
 
 `masked-view`만 `codegenConfig`가 없으나, Expo 문서가 비호환으로 지목한 것은 `@react-native-community/masked-view`이고 **대체재로 권장하는 것이 우리가 쓰는 `@react-native-masked-view/masked-view`** 다. 앱 코드에서 직접 import하지 않는 `@react-navigation/stack`의 전이 의존성이며, RN 0.74부터 기본 활성화된 인터롭 레이어로 동작한다.
 
@@ -227,7 +228,7 @@ Safe Area는 `MainTabNavigator`의 `ScreenContainer`가 이미 `SafeAreaView`라
 
 ### 애니메이션
 
-`react-native-reanimated`를 **직접 의존성으로 추가**한다 (현재는 전이 의존성). `bunx expo install react-native-reanimated`.
+`react-native-reanimated`를 **새 의존성으로 추가**한다. `node_modules/`에 4.1.7이 보이지만 전이 의존성이 아니라 잔재이므로(위 참조), 실제로는 신규 설치다. `bunx expo install react-native-reanimated react-native-worklets`.
 
 탭 하나가 자기 활성 여부만 알고 스스로 애니메이션한다.
 
