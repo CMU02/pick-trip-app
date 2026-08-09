@@ -1,5 +1,6 @@
 import type { Itinerary, ItineraryStop } from '../types/itinerary';
 import { PRIORITY_LABELS, type Priority } from '../types/priority';
+import { withRo } from '../utils/josa';
 
 interface GenerateItineraryInput {
   selectedIds: string[];
@@ -27,7 +28,7 @@ export function generateItinerary({ selectedIds, priorities }: GenerateItinerary
       day,
       startTime: `${String(startHour).padStart(2, '0')}:00`,
       endTime: `${String(startHour + 2).padStart(2, '0')}:00`,
-      reason: `${PRIORITY_LABELS[priority]}로 표시하셔서 ${day}일차에 배치했습니다.`,
+      reason: `${withRo(PRIORITY_LABELS[priority])} 표시하셔서 ${day}일차에 배치했습니다.`,
     };
   });
 
