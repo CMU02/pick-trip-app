@@ -317,7 +317,7 @@ Refs #30"
 - Consumes: Task 2의 New Architecture 빌드
 - Produces: Reanimated 4가 이 환경에서 초기화되고 UI 스레드 애니메이션이 도는지에 대한 판정
 
-- [ ] **Step 1: Reanimated를 임시 설치**
+- [x] **Step 1: Reanimated를 임시 설치**
 
 `node_modules/`에 4.1.7이 보이지만 **전이 의존성이 아니라 잔재다.** `bun.lock`에 없고 오토링킹 대상에도 없어서 실제로는 링크되지 않는다. 워크트리에서 `bun install`했다면 아예 없다.
 
@@ -334,7 +334,26 @@ node -e "const j=require('./android/build/generated/autolinking/autolinking.json
 
 기대: 목록에 `react-native-reanimated`와 `react-native-worklets`가 나타난다. 없으면 Step 2로 가봐야 소용없다.
 
-- [ ] **Step 2: `App.tsx`에 임시 검증 컴포넌트 추가**
+> **주의:** `autolinking.json`은 `prebuild`가 아니라 **Gradle 실행 시점에** 생성된다. `prebuild` 직후에 읽으면 `MODULE_NOT_FOUND`가 난다. 빌드를 한 번 돌린 뒤에 확인해야 한다.
+
+**결과:** 설치된 버전은 `react-native-reanimated@4.1.7`, `react-native-worklets@0.5.1`이다. 빌드 후 오토링킹 목록이 6개에서 8개로 늘었다.
+
+```
+@react-native-async-storage/async-storage
+@react-native-masked-view/masked-view
+expo
+react-native-gesture-handler
+react-native-reanimated      ← 추가됨
+react-native-safe-area-context
+react-native-screens
+react-native-worklets        ← 추가됨
+```
+
+**이것이 `node_modules/`의 4.1.7이 잔재였다는 결정적 증거다.** 설치 전 오토링킹 목록에는 둘 다 없었다.
+
+`babel.config.js`가 없어도 동작한다. `babel-preset-expo`가 Reanimated 설치를 감지해 worklets 플러그인을 자동으로 넣는다.
+
+- [x] **Step 2: `App.tsx`에 임시 검증 컴포넌트 추가**
 
 `App.tsx`의 최상단 import에 아래 한 줄을 넣는다.
 
@@ -369,7 +388,7 @@ function ReanimatedSmokeTest() {
 
 `width`를 애니메이션하는 것이 핵심이다. **레이아웃 값**이라 RN 내장 `Animated`로는 네이티브 드라이버에 못 올리는 바로 그 케이스이고, #32의 탭바 캡슐 확장과 동일한 성격이다.
 
-- [ ] **Step 3: 실행 및 확인**
+- [x] **Step 3: 실행 및 확인**
 
 ```bash
 bun expo run:android
@@ -383,7 +402,20 @@ bun expo run:android
 
 **막대가 아예 안 움직이거나 크래시가 나면 #30의 전제가 무너진 것이다.** 여기서 멈추고 보고한다. #32의 애니메이션 방식을 다시 정해야 한다.
 
-- [ ] **Step 4: 검증 코드 되돌리기**
+**결과: 세 가지 모두 통과.**
+
+연속 스크린샷으로 막대 폭을 측정했다. 200dp는 이 기기(1080px, density 2.625)에서 약 525px이고 60dp는 약 158px이다.
+
+| 프레임 | 막대 끝 x좌표 | 상태 |
+|---|---|---|
+| f1 | 약 525px | 확장 (200dp) |
+| f6 | 약 160px | 축소 (60dp) |
+
+**레이아웃 값인 `width`가 실제로 애니메이션된다.** Metro 콘솔에 Reanimated·worklets 관련 경고는 한 건도 없다.
+
+> **빌드 중 만난 문제:** 첫 시도가 `Unable to delete file ... expo-modules-core/.../classes.jar`로 실패했다. Windows 파일 잠금이며 Reanimated와 무관하다. `android/gradlew.bat --stop`으로 데몬을 종료하고 해당 `intermediates` 디렉터리를 지운 뒤 재시도해 성공했다(3m 10s). #32 작업 중에도 재현될 수 있으니 기록해둔다.
+
+- [x] **Step 4: 검증 코드 되돌리기**
 
 ```bash
 git checkout -- App.tsx
@@ -393,9 +425,13 @@ bun install
 
 `git status`가 깨끗한지 확인한다. `app.json`만 Task 2에서 이미 커밋된 상태여야 한다.
 
-- [ ] **Step 5: 커밋 없음**
+**결과: `git status` 깨끗.** 다만 `node_modules/react-native-reanimated`는 남는다. `bun install`이 lockfile에서 빠진 패키지를 지우지 않기 때문이다. **처음에 우리를 헷갈리게 했던 그 잔재가 다시 생긴 것이므로**, 이후 이 디렉터리의 존재를 의존성 근거로 삼으면 안 된다. 판단 기준은 항상 `bun.lock`과 오토링킹 목록이다.
+
+- [x] **Step 5: 커밋 없음**
 
 되돌렸으므로 커밋할 변경이 없다. 판정 결과만 기록한다.
+
+**판정: #32 착수 가능.** Reanimated 4가 New Architecture에서 초기화되고, 레이아웃 값 애니메이션이 동작한다. 설계 명세의 탭바 캡슐 확장 방식을 그대로 진행해도 된다.
 
 ---
 
