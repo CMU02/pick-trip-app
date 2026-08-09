@@ -9,6 +9,7 @@ import {
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
 import { REGIONS } from '../constants/regions';
+import { FONT } from '../constants/typography';
 import { useContents } from '../hooks/useContents';
 import { useContentsByIds } from '../hooks/useContentsByIds';
 import { toErrorMessage } from '../services/apiError';
@@ -106,7 +107,7 @@ const RetryButton = styled(TouchableOpacity)`
 const RetryLabel = styled(Text)`
   color: ${COLORS.coral500};
   font-size: 14px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 const Header = styled(View)`
@@ -139,23 +140,24 @@ const StepCircle = styled(View)<{ $active: boolean }>`
 
 const StepCircleLabel = styled(Text)`
   font-size: 11px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.white};
 `;
 
 const StepLabel = styled(Text)<{ $active: boolean }>`
   font-size: 13px;
-  font-weight: ${({ $active }) => ($active ? '700' : '500')};
+  font-family: ${({ $active }) => ($active ? FONT.bold : FONT.medium)};
   color: ${COLORS.gray900};
 `;
 
 const Title = styled(Text)`
   font-size: 24px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
   color: ${COLORS.gray900};
 `;
 
 const Subtitle = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 15px;
   color: ${COLORS.gray500};
   margin-top: 6px;
@@ -186,7 +188,7 @@ const SummaryEmoji = styled(Text)`
 
 const SummaryText = styled(Text)`
   font-size: 13px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.gray900};
 `;
 
@@ -213,10 +215,11 @@ const DayBadge = styled(View)`
 const DayBadgeLabel = styled(Text)`
   color: ${COLORS.white};
   font-size: 13px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
 `;
 
 const DayMeta = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 13px;
   color: ${COLORS.gray500};
 `;
@@ -235,7 +238,7 @@ const TimeColumn = styled(View)`
 
 const TimeText = styled(Text)`
   font-size: 13px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.gray700};
 `;
 
@@ -274,17 +277,18 @@ const CategoryBadge = styled(View)<{ $color: string }>`
 
 const CategoryLabel = styled(Text)<{ $color: string }>`
   font-size: 11px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${({ $color }) => $color};
 `;
 
 const StopName = styled(Text)`
   font-size: 16px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.gray900};
 `;
 
 const StopAddress = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 12px;
   color: ${COLORS.gray500};
   margin-top: 2px;
@@ -304,6 +308,7 @@ const ReasonEmoji = styled(Text)`
 `;
 
 const ReasonText = styled(Text)`
+  font-family: ${FONT.regular};
   flex: 1;
   font-size: 12px;
   color: ${COLORS.teal700};
@@ -325,6 +330,7 @@ const ActionButton = styled(TouchableOpacity)`
 `;
 
 const ActionLabel = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 13px;
   color: ${COLORS.gray700};
 `;
@@ -341,7 +347,7 @@ const DeleteButton = styled(TouchableOpacity)`
 const DeleteLabel = styled(Text)`
   font-size: 13px;
   color: ${COLORS.error};
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 const AddButton = styled(TouchableOpacity)`
@@ -359,7 +365,7 @@ const AddButton = styled(TouchableOpacity)`
 const AddButtonLabel = styled(Text)`
   font-size: 14px;
   color: ${COLORS.coral700};
-  font-weight: 600;
+  font-family: ${FONT.semibold};
 `;
 
 const CandidateRow = styled(TouchableOpacity)`
@@ -373,6 +379,7 @@ const CandidateRow = styled(TouchableOpacity)`
 `;
 
 const CandidateName = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 14px;
   color: ${COLORS.gray900};
 `;
@@ -400,11 +407,12 @@ const StatDivider = styled(View)`
 
 const StatValue = styled(Text)`
   font-size: 16px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.gray900};
 `;
 
 const StatLabel = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 11px;
   color: ${COLORS.gray500};
 `;
@@ -422,7 +430,7 @@ const SaveButton = styled(TouchableOpacity)`
 const SaveButtonLabel = styled(Text)`
   color: ${COLORS.white};
   font-size: 16px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 const ShareButton = styled(TouchableOpacity)`
@@ -439,7 +447,7 @@ const ShareButton = styled(TouchableOpacity)`
 const ShareButtonLabel = styled(Text)`
   color: ${COLORS.gray700};
   font-size: 16px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 export function ItineraryResultScreen({

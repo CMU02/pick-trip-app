@@ -1,6 +1,7 @@
 import { Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { COLORS } from '../../constants/colors';
+import { FONT } from '../../constants/typography';
 import { PRIORITY_LABELS, PRIORITY_ORDER, type Priority } from '../../types/priority';
 
 interface PriorityChipsProps {
@@ -31,7 +32,7 @@ const Chip = styled(TouchableOpacity)<{ $active: boolean; $priority: Priority }>
 
 const ChipLabel = styled(Text)<{ $active: boolean; $priority: Priority }>`
   font-size: 13px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
   color: ${({ $active, $priority }) =>
     $active ? PRIORITY_ACTIVE_COLORS[$priority].fg : COLORS.gray500};
 `;

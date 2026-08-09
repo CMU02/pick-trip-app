@@ -3,6 +3,7 @@ import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components';
 import { COLORS } from '../constants/colors';
+import { FONT } from '../constants/typography';
 import { fetchSharedItinerary, type SharedItinerary } from '../services/shareService';
 
 interface SharedItineraryScreenProps {
@@ -31,11 +32,12 @@ const Header = styled(View)`
 
 const Title = styled(Text)`
   font-size: 24px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
   color: ${COLORS.gray900};
 `;
 
 const Subtitle = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 15px;
   color: ${COLORS.gray500};
   margin-top: 6px;
@@ -43,7 +45,7 @@ const Subtitle = styled(Text)`
 
 const DayLabel = styled(Text)`
   font-size: 17px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.gray900};
   margin: 20px 20px 12px;
 `;
@@ -60,11 +62,12 @@ const StopCard = styled(View)`
 
 const StopName = styled(Text)`
   font-size: 16px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.gray900};
 `;
 
 const ReasonText = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 12px;
   color: ${COLORS.teal700};
   margin-top: 6px;
@@ -85,7 +88,7 @@ const CloseButton = styled(TouchableOpacity)`
 const CloseButtonLabel = styled(Text)`
   color: ${COLORS.white};
   font-size: 16px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 export function SharedItineraryScreen({ token, onClose }: SharedItineraryScreenProps) {

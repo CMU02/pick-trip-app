@@ -11,6 +11,7 @@ import {
 import styled from 'styled-components';
 import { CATEGORIES } from '../../constants/categories';
 import { COLORS } from '../../constants/colors';
+import { FONT } from '../../constants/typography';
 import { fetchContentDetail } from '../../services/contentService';
 
 interface ContentDetailModalProps {
@@ -47,7 +48,7 @@ const CloseButton = styled(TouchableOpacity)`
 const CloseButtonLabel = styled(Text)`
   color: ${COLORS.white};
   font-size: 15px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
 `;
 
 const DetailImage = styled(Image)`
@@ -86,18 +87,19 @@ const CategoryBadge = styled(View)`
 
 const CategoryLabel = styled(Text)`
   font-size: 12px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.coral700};
 `;
 
 const ContentName = styled(Text)`
   font-size: 20px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.gray900};
   margin-bottom: 10px;
 `;
 
 const Summary = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 14px;
   color: ${COLORS.gray700};
   line-height: 21px;
@@ -116,6 +118,7 @@ const InfoEmoji = styled(Text)`
 `;
 
 const InfoText = styled(Text)`
+  font-family: ${FONT.regular};
   flex: 1;
   font-size: 13px;
   color: ${COLORS.gray700};
@@ -129,6 +132,7 @@ const CenterBox = styled(View)`
 `;
 
 const ErrorText = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 13px;
   color: ${COLORS.gray500};
 `;

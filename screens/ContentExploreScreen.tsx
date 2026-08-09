@@ -13,6 +13,7 @@ import { ContentCard } from '../components/molecules/ContentCard';
 import { ContentDetailModal } from '../components/molecules/ContentDetailModal';
 import { COLORS } from '../constants/colors';
 import { TAB_BAR_CLEARANCE, TAB_BAR_TOTAL } from '../constants/layout';
+import { FONT } from '../constants/typography';
 import { useContents } from '../hooks/useContents';
 import type { Content, ContentCategory } from '../types/content';
 
@@ -36,11 +37,12 @@ const Header = styled(View)`
 
 const Title = styled(Text)`
   font-size: 24px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
   color: ${COLORS.gray900};
 `;
 
 const Subtitle = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 15px;
   color: ${COLORS.gray500};
   margin-top: 6px;
@@ -55,6 +57,7 @@ const CardList = styled(View)`
 `;
 
 const EmptyText = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 15px;
   color: ${COLORS.gray500};
   text-align: center;
@@ -78,7 +81,7 @@ const RetryButton = styled(TouchableOpacity)`
 const RetryLabel = styled(Text)`
   color: ${COLORS.coral500};
   font-size: 14px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 // 플로팅 탭바 위로 올려 겹치지 않게 한다.
@@ -94,6 +97,7 @@ const BottomBar = styled(View)`
 `;
 
 const BasketCount = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 13px;
   color: ${COLORS.gray500};
   text-align: center;
@@ -110,7 +114,7 @@ const CTAButton = styled(TouchableOpacity)<{ $disabled: boolean }>`
 const CTALabel = styled(Text)`
   color: ${COLORS.white};
   font-size: 16px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 const FooterLoading = styled(View)`

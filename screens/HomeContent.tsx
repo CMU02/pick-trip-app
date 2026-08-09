@@ -10,6 +10,7 @@ import { COLORS } from '../constants/colors';
 import { COMPANIONS } from '../constants/companions';
 import { TAB_BAR_CLEARANCE } from '../constants/layout';
 import { REGIONS } from '../constants/regions';
+import { FONT } from '../constants/typography';
 import { useContents } from '../hooks/useContents';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import type { CompanionType } from '../types/companion';
@@ -59,7 +60,7 @@ const LoginBar = styled(TouchableOpacity)`
 
 const LoginBarText = styled(Text)`
   font-size: 13px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
   color: ${COLORS.white};
 `;
 
@@ -72,19 +73,20 @@ const LoginBarButton = styled(View)`
 
 const LoginBarButtonLabel = styled(Text)`
   font-size: 12px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.coral600};
 `;
 
 const Greeting = styled(Text)`
   font-size: 22px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.white};
   letter-spacing: -0.3px;
   margin-bottom: 4px;
 `;
 
 const GreetingSub = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 14px;
   color: rgba(255, 255, 255, 0.85);
 `;
@@ -135,13 +137,13 @@ const StatusIconEmoji = styled(Text)`
 
 const StatusLabel = styled(Text)`
   font-size: 15px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.gray900};
 `;
 
 const StatusCount = styled(Text)`
   font-size: 14px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.coral600};
 `;
 
@@ -160,6 +162,7 @@ const RegionBadge = styled(View)`
 `;
 
 const RegionBadgeLabel = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 12px;
   color: ${COLORS.gray700};
 `;
@@ -186,6 +189,7 @@ const DateRowEmoji = styled(Text)`
 `;
 
 const DateRowText = styled(Text)<{ $placeholder: boolean }>`
+  font-family: ${FONT.regular};
   font-size: 14px;
   color: ${({ $placeholder }) => ($placeholder ? COLORS.gray500 : COLORS.gray900)};
 `;
@@ -208,7 +212,7 @@ const PrimaryButton = styled(TouchableOpacity)`
 const PrimaryButtonLabel = styled(Text)`
   color: ${COLORS.white};
   font-size: 14px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
 `;
 
 const SecondaryButton = styled(TouchableOpacity)`
@@ -223,7 +227,7 @@ const SecondaryButton = styled(TouchableOpacity)`
 const SecondaryButtonLabel = styled(Text)`
   color: ${COLORS.gray700};
   font-size: 14px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
 `;
 
 const PrefCard = styled(View)`
@@ -235,12 +239,13 @@ const PrefCard = styled(View)`
 
 const PrefCardTitle = styled(Text)`
   font-size: 15px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.gray900};
   margin-bottom: 4px;
 `;
 
 const PrefCardDesc = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 12px;
   color: ${COLORS.gray500};
   margin-bottom: 14px;
@@ -248,7 +253,7 @@ const PrefCardDesc = styled(Text)`
 
 const FieldLabel = styled(Text)`
   font-size: 13px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.gray500};
   margin-bottom: 8px;
 `;
@@ -271,7 +276,7 @@ const Chip = styled(TouchableOpacity)<{ $active: boolean }>`
 
 const ChipLabel = styled(Text)<{ $active: boolean }>`
   font-size: 13px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
   color: ${({ $active }) => ($active ? COLORS.coral700 : COLORS.gray700)};
 `;
 
@@ -281,7 +286,7 @@ const SectionHead = styled(View)`
 
 const SectionEyebrow = styled(Text)`
   font-size: 11px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.coral600};
   letter-spacing: 0.5px;
   margin-bottom: 3px;
@@ -289,7 +294,7 @@ const SectionEyebrow = styled(Text)`
 
 const SectionTitle = styled(Text)`
   font-size: 17px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.gray900};
   letter-spacing: -0.2px;
 `;
@@ -328,7 +333,7 @@ const RecommendBody = styled(View)`
 
 const RecommendName = styled(Text)`
   font-size: 13px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.gray900};
 `;
 

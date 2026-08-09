@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { COLORS } from '../../constants/colors';
+import { FONT } from '../../constants/typography';
 import type { DurationType } from '../../types/trip';
 import { DurationSelector } from './DurationSelector';
 
@@ -58,12 +59,13 @@ const ModalSheet = styled(View)`
 
 const ModalTitle = styled(Text)`
   font-size: 17px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.gray900};
   margin-bottom: 4px;
 `;
 
 const ModalSubtitle = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 13px;
   color: ${COLORS.gray500};
   margin-bottom: 20px;
@@ -71,7 +73,7 @@ const ModalSubtitle = styled(Text)`
 
 const SectionLabel = styled(Text)`
   font-size: 13px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.gray500};
   margin-bottom: 10px;
 `;
@@ -82,6 +84,7 @@ const PickerRow = styled(View)`
 `;
 
 const PickerColumnLabel = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 12px;
   color: ${COLORS.gray500};
   text-align: center;
@@ -89,6 +92,7 @@ const PickerColumnLabel = styled(Text)`
 `;
 
 const SummaryText = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 13px;
   color: ${COLORS.gray700};
   margin-top: 12px;
@@ -106,7 +110,7 @@ const ConfirmButton = styled(TouchableOpacity)<{ $disabled: boolean }>`
 const ConfirmButtonLabel = styled(Text)<{ $disabled: boolean }>`
   color: ${({ $disabled }) => ($disabled ? COLORS.gray400 : COLORS.white)};
   font-size: 16px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 interface ScrollPickerProps {
@@ -163,7 +167,7 @@ function ScrollPicker({ items, selectedIndex, onValueChange }: ScrollPickerProps
             <Text
               style={{
                 fontSize: i === selectedIndex ? 16 : 13,
-                fontWeight: i === selectedIndex ? '600' : '400',
+                fontFamily: i === selectedIndex ? FONT.semibold : FONT.regular,
                 color: i === selectedIndex ? COLORS.gray900 : COLORS.gray500,
               }}
             >

@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Text, View } from 'react-native';
 import styled from 'styled-components';
 import { COLORS } from '../../constants/colors';
+import { FONT } from '../../constants/typography';
 
 export interface ProgressStep {
   label: string;
@@ -77,7 +78,7 @@ const SpinnerEmoji = styled(Text)`
 
 const HeadingText = styled(Text)`
   font-size: 21px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.gray900};
   letter-spacing: -0.3px;
   margin-bottom: 6px;
@@ -85,6 +86,7 @@ const HeadingText = styled(Text)`
 `;
 
 const SubText = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 14px;
   color: ${COLORS.gray500};
   margin-bottom: 24px;
@@ -149,7 +151,7 @@ const StepDoneCircle = styled(View)`
 const StepDoneCheck = styled(Text)`
   font-size: 13px;
   color: ${COLORS.teal600};
-  font-weight: 700;
+  font-family: ${FONT.bold};
 `;
 
 const StepPendingDot = styled(View)`
@@ -165,11 +167,12 @@ const StepTextColumn = styled(View)`
 
 const StepLabel = styled(Text)<{ $active: boolean }>`
   font-size: 14px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
   color: ${({ $active }) => ($active ? COLORS.gray900 : COLORS.gray700)};
 `;
 
 const StepSub = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 11px;
   color: ${COLORS.gray400};
 `;

@@ -1,6 +1,7 @@
 import { Text, View } from 'react-native';
 import styled from 'styled-components';
 import { COLORS } from '../../constants/colors';
+import { FONT } from '../../constants/typography';
 
 interface BadgeProps {
   label: string;
@@ -18,7 +19,7 @@ const BadgeContainer = styled(View)<{ $bg: string }>`
 const BadgeLabel = styled(Text)<{ $color: string }>`
   color: ${(p) => p.$color};
   font-size: 12px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 export function Badge({ label, color = COLORS.gray700, bg = COLORS.gray100 }: BadgeProps) {

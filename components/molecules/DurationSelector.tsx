@@ -1,6 +1,7 @@
 import { Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { COLORS } from '../../constants/colors';
+import { FONT } from '../../constants/typography';
 import type { DurationType } from '../../types/trip';
 
 interface DurationSelectorProps {
@@ -28,7 +29,7 @@ const Chip = styled(TouchableOpacity)<{ $active: boolean }>`
 const ChipLabel = styled(Text)<{ $active: boolean }>`
   font-size: 14px;
   color: ${({ $active }) => ($active ? COLORS.white : COLORS.gray700)};
-  font-weight: ${({ $active }) => ($active ? '600' : '400')};
+  font-family: ${({ $active }) => ($active ? FONT.semibold : FONT.regular)};
 `;
 
 const CounterRow = styled(View)`
@@ -50,6 +51,7 @@ const CounterButton = styled(TouchableOpacity)`
 `;
 
 const CounterButtonLabel = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 18px;
   color: ${COLORS.gray700};
   line-height: 20px;
@@ -58,7 +60,7 @@ const CounterButtonLabel = styled(Text)`
 const CounterLabel = styled(Text)`
   font-size: 15px;
   color: ${COLORS.gray900};
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 const CHIPS: { type: DurationType; label: string }[] = [
