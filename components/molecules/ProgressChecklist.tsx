@@ -32,7 +32,7 @@ const SpinnerGlow = styled(View)`
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  shadow-color: ${COLORS.amber500};
+  shadow-color: ${COLORS.coral500};
   shadow-opacity: 0.25;
   shadow-radius: 16px;
   shadow-offset: 0px 6px;
@@ -52,9 +52,9 @@ const SpinnerRing = styled(Animated.View)`
   height: 100px;
   border-radius: 50px;
   border-width: 5px;
-  border-color: ${COLORS.amber100};
-  border-top-color: ${COLORS.amber500};
-  border-right-color: ${COLORS.amber500};
+  border-color: ${COLORS.coral100};
+  border-top-color: ${COLORS.coral500};
+  border-right-color: ${COLORS.coral500};
 `;
 
 const SpinnerEmojiBadge = styled(View)`
@@ -214,7 +214,7 @@ export function ProgressChecklist({
   return (
     <Container>
       <SpinnerGlow>
-        <SpinnerGlowFill colors={[COLORS.amber50, COLORS.amber100]} />
+        <SpinnerGlowFill colors={[COLORS.coral50, COLORS.coral100]} />
         <SpinnerRing style={{ transform: [{ rotate }] }} />
         <SpinnerEmojiBadge>
           <SpinnerEmoji>{icon}</SpinnerEmoji>
@@ -225,7 +225,7 @@ export function ProgressChecklist({
       <ProgressTrack>
         <ProgressFill
           $percent={pct}
-          colors={[COLORS.amber300, COLORS.amber600]}
+          colors={[COLORS.coral300, COLORS.coral600]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
         />

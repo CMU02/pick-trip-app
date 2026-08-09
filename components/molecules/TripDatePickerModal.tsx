@@ -96,7 +96,7 @@ const SummaryText = styled(Text)`
 `;
 
 const ConfirmButton = styled(TouchableOpacity)<{ $disabled: boolean }>`
-  background-color: ${({ $disabled }) => ($disabled ? COLORS.gray200 : COLORS.amber500)};
+  background-color: ${({ $disabled }) => ($disabled ? COLORS.gray200 : COLORS.coral500)};
   border-radius: 12px;
   padding-vertical: 14px;
   align-items: center;
@@ -142,7 +142,7 @@ function ScrollPicker({ items, selectedIndex, onValueChange }: ScrollPickerProps
           left: 4,
           right: 4,
           height: ITEM_HEIGHT,
-          backgroundColor: COLORS.amber50,
+          backgroundColor: COLORS.coral50,
           borderRadius: 8,
         }}
         pointerEvents="none"

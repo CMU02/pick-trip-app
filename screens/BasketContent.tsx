@@ -52,7 +52,7 @@ const EmptyText = styled(Text)`
 const RetryButton = styled(TouchableOpacity)`
   align-self: center;
   border-width: 1px;
-  border-color: ${COLORS.amber500};
+  border-color: ${COLORS.coral500};
   border-radius: 8px;
   padding-vertical: 8px;
   padding-horizontal: 16px;
@@ -60,7 +60,7 @@ const RetryButton = styled(TouchableOpacity)`
 `;
 
 const RetryLabel = styled(Text)`
-  color: ${COLORS.amber500};
+  color: ${COLORS.coral500};
   font-size: 14px;
   font-weight: 500;
 `;
@@ -80,7 +80,7 @@ const BasketCount = styled(Text)`
 `;
 
 const CTAButton = styled(TouchableOpacity)<{ $disabled: boolean }>`
-  background-color: ${({ $disabled }) => ($disabled ? COLORS.gray200 : COLORS.amber500)};
+  background-color: ${({ $disabled }) => ($disabled ? COLORS.gray200 : COLORS.coral500)};
   border-radius: 12px;
   padding-vertical: 14px;
   align-items: center;
@@ -114,7 +114,7 @@ export function BasketContent({
       >
         <CardList>
           {isLoading ? (
-            <ActivityIndicator color={COLORS.amber500} style={{ marginTop: 60 }} />
+            <ActivityIndicator color={COLORS.coral500} style={{ marginTop: 60 }} />
           ) : isError ? (
             <>
               <EmptyText>컨텐츠를 불러오지 못했습니다. 다시 시도해주세요.</EmptyText>

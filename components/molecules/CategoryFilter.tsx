@@ -17,8 +17,8 @@ const Chip = styled(TouchableOpacity)<{ $active: boolean }>`
   padding-horizontal: 14px;
   border-radius: 100px;
   border-width: 1px;
-  background-color: ${({ $active }) => ($active ? COLORS.amber500 : COLORS.white)};
-  border-color: ${({ $active }) => ($active ? COLORS.amber500 : COLORS.gray200)};
+  background-color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.white)};
+  border-color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.gray200)};
 `;
 
 const ChipEmoji = styled(Text)`

@@ -20,7 +20,7 @@ const IconBox = styled(View)`
   width: 64px;
   height: 64px;
   border-radius: 20px;
-  background-color: ${COLORS.amber50};
+  background-color: ${COLORS.coral50};
   align-items: center;
   justify-content: center;
   align-self: center;
@@ -47,7 +47,7 @@ const Subtitle = styled(Text)`
 `;
 
 const ResumeButton = styled(TouchableOpacity)`
-  background-color: ${COLORS.amber500};
+  background-color: ${COLORS.coral500};
   border-radius: 12px;
   padding-vertical: 14px;
   align-items: center;

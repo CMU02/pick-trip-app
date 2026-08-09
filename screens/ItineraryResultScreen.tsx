@@ -95,14 +95,14 @@ const LoadingContainer = styled(View)`
 const RetryButton = styled(TouchableOpacity)`
   margin-top: 16px;
   border-width: 1px;
-  border-color: ${COLORS.amber500};
+  border-color: ${COLORS.coral500};
   border-radius: 8px;
   padding-vertical: 8px;
   padding-horizontal: 16px;
 `;
 
 const RetryLabel = styled(Text)`
-  color: ${COLORS.amber500};
+  color: ${COLORS.coral500};
   font-size: 14px;
   font-weight: 500;
 `;
@@ -132,7 +132,7 @@ const StepCircle = styled(View)<{ $active: boolean }>`
   border-radius: 100px;
   align-items: center;
   justify-content: center;
-  background-color: ${({ $active }) => ($active ? COLORS.amber500 : COLORS.success)};
+  background-color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.success)};
 `;
 
 const StepCircleLabel = styled(Text)`
@@ -241,7 +241,7 @@ const TimeDot = styled(View)`
   width: 7px;
   height: 7px;
   border-radius: 100px;
-  background-color: ${COLORS.amber500};
+  background-color: ${COLORS.coral500};
   margin-top: 6px;
 `;
 
@@ -349,14 +349,14 @@ const AddButton = styled(TouchableOpacity)`
   border-radius: 10px;
   border-width: 1.5px;
   border-style: dashed;
-  border-color: ${COLORS.amber500};
-  background-color: ${COLORS.amber50};
+  border-color: ${COLORS.coral500};
+  background-color: ${COLORS.coral50};
   align-items: center;
 `;
 
 const AddButtonLabel = styled(Text)`
   font-size: 14px;
-  color: ${COLORS.amber700};
+  color: ${COLORS.coral700};
   font-weight: 600;
 `;
 
@@ -414,7 +414,7 @@ const SaveButton = styled(TouchableOpacity)`
   padding-vertical: 14px;
   border-radius: 12px;
   align-items: center;
-  background-color: ${COLORS.amber500};
+  background-color: ${COLORS.coral500};
 `;
 
 const SaveButtonLabel = styled(Text)`
