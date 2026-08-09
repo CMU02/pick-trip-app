@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { EMPTY_BASKET, loadBasket, saveBasket } from '../services/basketStorage';
 import type { Basket, BasketItem } from '../types/basket';
 import type { CompanionType, StylePreference } from '../types/companion';
@@ -10,52 +10,61 @@ import type { Priority } from '../types/priority';
 export function useBasket() {
   const [basket, setBasket] = useState<Basket | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
+  // 갱신 기준값을 state가 아니라 ref에서 읽는다. state를 읽으면 같은 렌더에서 만들어진
+  // 클로저들이 모두 같은 옛 바구니를 보게 되어, 병렬로 호출됐을 때(예: 우선순위 일괄 저장)
+  // 마지막 호출이 앞선 변경을 덮어쓴다.
+  const latest = useRef<Basket>(EMPTY_BASKET);
 
   useEffect(() => {
     loadBasket().then((loaded) => {
+      latest.current = loaded;
       setBasket(loaded);
       setIsLoading(false);
     });
   }, []);
 
-  const persist = useCallback(async (next: Basket) => {
+  const persist = useCallback(async (update: (current: Basket) => Basket) => {
+    const next = update(latest.current);
+    latest.current = next;
     setBasket(next);
     await saveBasket(next);
   }, []);
 
   const addItem = useCallback(
     async (content: Content, priority: Priority) => {
-      const current = basket ?? EMPTY_BASKET;
-      if (current.items.some((item) => item.contentId === content.id)) return;
-      const item: BasketItem = {
-        itemId: content.id,
-        contentId: content.id,
-        title: content.name,
-        thumbnailUrl: content.imageUrl,
-        priority,
-      };
-      await persist({ ...current, items: [...current.items, item] });
+      await persist((current) => {
+        if (current.items.some((item) => item.contentId === content.id)) return current;
+        const item: BasketItem = {
+          itemId: content.id,
+          contentId: content.id,
+          title: content.name,
+          thumbnailUrl: content.imageUrl,
+          priority,
+        };
+        return { ...current, items: [...current.items, item] };
+      });
     },
-    [basket, persist],
+    [persist],
   );
 
   const removeItem = useCallback(
     async (itemId: string) => {
-      const current = basket ?? EMPTY_BASKET;
-      await persist({ ...current, items: current.items.filter((item) => item.itemId !== itemId) });
+      await persist((current) => ({
+        ...current,
+        items: current.items.filter((item) => item.itemId !== itemId),
+      }));
     },
-    [basket, persist],
+    [persist],
   );
 
   const updateItemPriority = useCallback(
     async (itemId: string, priority: Priority) => {
-      const current = basket ?? EMPTY_BASKET;
-      await persist({
+      await persist((current) => ({
         ...current,
         items: current.items.map((item) => (item.itemId === itemId ? { ...item, priority } : item)),
-      });
+      }));
     },
-    [basket, persist],
+    [persist],
   );
 
   const updateConditions = useCallback(
@@ -66,8 +75,7 @@ export function useBasket() {
       companion: CompanionType | null;
       stylePrefs: StylePreference[];
     }) => {
-      const current = basket ?? EMPTY_BASKET;
-      await persist({
+      await persist((current) => ({
         ...current,
         conditions: {
           region: input.regionId,
@@ -76,9 +84,9 @@ export function useBasket() {
           companion: input.companion,
           stylePrefs: input.stylePrefs,
         },
-      });
+      }));
     },
-    [basket, persist],
+    [persist],
   );
 
   return {
