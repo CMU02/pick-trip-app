@@ -11,6 +11,7 @@ import { COLORS } from '../constants/colors';
 import { REGIONS } from '../constants/regions';
 import { useContents } from '../hooks/useContents';
 import { useContentsByIds } from '../hooks/useContentsByIds';
+import { toErrorMessage } from '../services/apiError';
 import { generateItinerary } from '../services/generateItinerary';
 import {
   generateItineraryPlan,
@@ -587,8 +588,10 @@ export function ItineraryResultScreen({
       const link = await createShareLink(itineraryId);
       const text = `${buildShareText({ stops, contentById })}\n\n일정 보기: ${link}`;
       await shareItinerary(text);
-    } catch {
-      Alert.alert('공유 링크 생성 실패', '잠시 후 다시 시도해주세요.');
+    } catch (error) {
+      // 원인을 남기지 않으면 서버 응답인지 네트워크 문제인지 구분할 수 없다.
+      console.warn('[share] 공유 링크 생성 실패', { itineraryId, error });
+      Alert.alert('공유 링크 생성 실패', toErrorMessage(error, '잠시 후 다시 시도해주세요.'));
     } finally {
       setIsSharing(false);
     }
