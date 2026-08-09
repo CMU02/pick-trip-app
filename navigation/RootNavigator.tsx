@@ -10,6 +10,7 @@ import { ResumeItineraryScreen } from '../screens/ResumeItineraryScreen';
 import { SharedItineraryScreen } from '../screens/SharedItineraryScreen';
 import { loadItinerary } from '../services/itineraryStorage';
 import type { RootStackParamList } from '../types/navigation';
+import { toDateString } from '../utils/tripDate';
 import { MainTabNavigator } from './MainTabNavigator';
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -20,27 +21,13 @@ type Nav = StackNavigationProp<RootStackParamList>;
 // 이전에 이어보던 일정이 있으면 그것만 먼저 물어보고, 없으면 곧장 메인으로 보낸다.
 function AuthGate() {
   const navigation = useNavigation<Nav>();
-  const {
-    isAuthLoading,
-    isBasketLoading,
-    basketConditions,
-    setSelectedRegions,
-    setCompanion,
-    setStylePrefs,
-    setSavedItinerary,
-  } = useAppState();
+  const { isAuthLoading, isBasketLoading, setSavedItinerary } = useAppState();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: 마운트 시 1회만 진입 경로를 결정한다
   useEffect(() => {
-    // 로그인 복원이 끝나기 전에 메인으로 보내면 게스트 UI가 잠깐 보였다 바뀐다.
+    // 로그인·여행 조건 복원이 끝나기 전에 메인으로 보내면
+    // 게스트 UI와 빈 취향 칩이 잠깐 보였다 바뀐다. 복원은 AppStateProvider가 한다.
     if (isAuthLoading || isBasketLoading) return;
-
-    // 바구니에 저장된 지역·동행 조건이 있으면 메인보드 상태로 복원한다.
-    if (basketConditions) {
-      if (basketConditions.region) setSelectedRegions([basketConditions.region]);
-      setCompanion(basketConditions.companion);
-      setStylePrefs(basketConditions.stylePrefs);
-    }
 
     loadItinerary().then((saved) => {
       if (saved) {
@@ -50,7 +37,7 @@ function AuthGate() {
         navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
       }
     });
-  }, [isAuthLoading, isBasketLoading, basketConditions]);
+  }, [isAuthLoading, isBasketLoading]);
 
   return null;
 }
@@ -125,7 +112,7 @@ function ItineraryGate() {
       selectedRegions={selectedRegions}
       selectedIds={selectedIds}
       priorities={priorities}
-      travelDate={tripDate ? tripDate.startDate.toISOString().slice(0, 10) : null}
+      travelDate={tripDate ? toDateString(tripDate.startDate) : null}
       duration={tripDate?.nights ?? null}
       companion={companion}
       stylePrefs={stylePrefs}

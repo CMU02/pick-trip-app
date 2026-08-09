@@ -24,6 +24,7 @@ import { createShareLink } from '../services/shareService';
 import type { CompanionType, StylePreference } from '../types/companion';
 import type { ItineraryStop } from '../types/itinerary';
 import type { Priority } from '../types/priority';
+import { fromDateString } from '../utils/tripDate';
 
 interface ItineraryResultScreenProps {
   selectedRegions: string[];
@@ -75,7 +76,7 @@ function formatDayDate(date: Date): string {
 
 function formatDateRange(travelDate: string | null, duration: number | null): string | null {
   if (!travelDate) return null;
-  const start = new Date(travelDate);
+  const start = fromDateString(travelDate);
   if (!duration || duration <= 0) return formatShort(start);
   return `${formatShort(start)} - ${formatShort(addDays(start, duration))}`;
 }
@@ -695,7 +696,7 @@ export function ItineraryResultScreen({
 
         {dayList.map((day) => {
           const dayStops = stops.filter((stop) => stop.day === day);
-          const dayDate = planTravelDate ? addDays(new Date(planTravelDate), day - 1) : null;
+          const dayDate = planTravelDate ? addDays(fromDateString(planTravelDate), day - 1) : null;
           return (
             <View key={day}>
               <DayHeaderRow>
