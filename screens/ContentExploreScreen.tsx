@@ -68,14 +68,14 @@ const CenterBox = styled(View)`
 
 const RetryButton = styled(TouchableOpacity)`
   border-width: 1px;
-  border-color: ${COLORS.amber500};
+  border-color: ${COLORS.coral500};
   border-radius: 8px;
   padding-vertical: 8px;
   padding-horizontal: 16px;
 `;
 
 const RetryLabel = styled(Text)`
-  color: ${COLORS.amber500};
+  color: ${COLORS.coral500};
   font-size: 14px;
   font-weight: 500;
 `;
@@ -99,7 +99,7 @@ const BasketCount = styled(Text)`
 `;
 
 const CTAButton = styled(TouchableOpacity)<{ $disabled: boolean }>`
-  background-color: ${({ $disabled }) => ($disabled ? COLORS.gray200 : COLORS.amber500)};
+  background-color: ${({ $disabled }) => ($disabled ? COLORS.gray200 : COLORS.coral500)};
   border-radius: 12px;
   padding-vertical: 14px;
   align-items: center;
@@ -157,7 +157,7 @@ export function ContentExploreScreen({
         <CardList>
           {isLoading ? (
             <CenterBox>
-              <ActivityIndicator color={COLORS.amber500} />
+              <ActivityIndicator color={COLORS.coral500} />
             </CenterBox>
           ) : isError ? (
             <CenterBox>
@@ -184,7 +184,7 @@ export function ContentExploreScreen({
         </CardList>
         {isFetchingNextPage && (
           <FooterLoading>
-            <ActivityIndicator color={COLORS.amber500} />
+            <ActivityIndicator color={COLORS.coral500} />
           </FooterLoading>
         )}
       </ScrollView>

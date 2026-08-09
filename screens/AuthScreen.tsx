@@ -19,7 +19,7 @@ const ScreenContainer = styled(SafeAreaView)`
 
 const BrandSection = styled(View)`
   padding: 48px 28px 40px;
-  background-color: ${COLORS.amber600};
+  background-color: ${COLORS.coral600};
   overflow: hidden;
 `;
 

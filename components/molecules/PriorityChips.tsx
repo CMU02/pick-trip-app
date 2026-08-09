@@ -9,7 +9,7 @@ interface PriorityChipsProps {
 }
 
 export const PRIORITY_ACTIVE_COLORS: Record<Priority, { bg: string; fg: string }> = {
-  must: { bg: COLORS.amber500, fg: COLORS.white },
+  must: { bg: COLORS.coral500, fg: COLORS.white },
   good: { bg: COLORS.teal600, fg: COLORS.white },
   optional: { bg: COLORS.gray200, fg: COLORS.gray700 },
 };

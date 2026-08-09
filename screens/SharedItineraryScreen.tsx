@@ -76,7 +76,7 @@ const CloseButton = styled(TouchableOpacity)`
   padding-vertical: 14px;
   border-radius: 12px;
   align-items: center;
-  background-color: ${COLORS.amber500};
+  background-color: ${COLORS.coral500};
 `;
 
 const CloseButtonLabel = styled(Text)`
@@ -102,7 +102,7 @@ export function SharedItineraryScreen({ token, onClose }: SharedItineraryScreenP
     return (
       <ScreenContainer>
         <CenterBox>
-          <ActivityIndicator color={COLORS.amber500} />
+          <ActivityIndicator color={COLORS.coral500} />
         </CenterBox>
       </ScreenContainer>
     );

@@ -107,14 +107,14 @@ const Chip = styled(TouchableOpacity)<{ $active: boolean }>`
   padding-horizontal: 14px;
   border-radius: 100px;
   border-width: 1px;
-  background-color: ${({ $active }) => ($active ? COLORS.amber50 : COLORS.white)};
-  border-color: ${({ $active }) => ($active ? COLORS.amber500 : COLORS.gray200)};
+  background-color: ${({ $active }) => ($active ? COLORS.coral50 : COLORS.white)};
+  border-color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.gray200)};
 `;
 
 const ChipLabel = styled(Text)<{ $active: boolean }>`
   font-size: 13px;
   font-weight: 500;
-  color: ${({ $active }) => ($active ? COLORS.amber700 : COLORS.gray700)};
+  color: ${({ $active }) => ($active ? COLORS.coral700 : COLORS.gray700)};
 `;
 
 const NotifyRow = styled(View)<{ $last: boolean }>`
@@ -143,7 +143,7 @@ const Toggle = styled(TouchableOpacity)<{ $on: boolean }>`
   width: 46px;
   height: 28px;
   border-radius: 100px;
-  background-color: ${({ $on }) => ($on ? COLORS.amber500 : COLORS.gray200)};
+  background-color: ${({ $on }) => ($on ? COLORS.coral500 : COLORS.gray200)};
   padding: 3px;
 `;
 

@@ -77,7 +77,7 @@ const Body = styled(View)`
 
 const CategoryBadge = styled(View)`
   align-self: flex-start;
-  background-color: ${COLORS.amber50};
+  background-color: ${COLORS.coral50};
   border-radius: 100px;
   padding-vertical: 4px;
   padding-horizontal: 10px;
@@ -87,7 +87,7 @@ const CategoryBadge = styled(View)`
 const CategoryLabel = styled(Text)`
   font-size: 12px;
   font-weight: 600;
-  color: ${COLORS.amber700};
+  color: ${COLORS.coral700};
 `;
 
 const ContentName = styled(Text)`
@@ -158,7 +158,7 @@ export function ContentDetailModal({ contentId, onClose }: ContentDetailModalPro
           <ScrollView showsVerticalScrollIndicator={false}>
             {isLoading && (
               <CenterBox>
-                <ActivityIndicator color={COLORS.amber500} />
+                <ActivityIndicator color={COLORS.coral500} />
               </CenterBox>
             )}
             {isError && (

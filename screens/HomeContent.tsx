@@ -40,7 +40,7 @@ const Scroll = styled(ScrollView)`
 `;
 
 const HeaderSection = styled(View)`
-  background-color: ${COLORS.amber500};
+  background-color: ${COLORS.coral500};
   padding: 16px 20px 48px;
   border-bottom-left-radius: 28px;
   border-bottom-right-radius: 28px;
@@ -72,7 +72,7 @@ const LoginBarButton = styled(View)`
 const LoginBarButtonLabel = styled(Text)`
   font-size: 12px;
   font-weight: 700;
-  color: ${COLORS.amber600};
+  color: ${COLORS.coral600};
 `;
 
 const Greeting = styled(Text)`
@@ -122,7 +122,7 @@ const StatusIconBadge = styled(View)`
   width: 30px;
   height: 30px;
   border-radius: 100px;
-  background-color: ${COLORS.amber50};
+  background-color: ${COLORS.coral50};
   align-items: center;
   justify-content: center;
 `;
@@ -140,7 +140,7 @@ const StatusLabel = styled(Text)`
 const StatusCount = styled(Text)`
   font-size: 14px;
   font-weight: 600;
-  color: ${COLORS.amber600};
+  color: ${COLORS.coral600};
 `;
 
 const RegionBadgeRow = styled(View)`
@@ -194,7 +194,7 @@ const DateRowChevron = styled(Text)`
 `;
 
 const PrimaryButton = styled(TouchableOpacity)`
-  background-color: ${COLORS.amber500};
+  background-color: ${COLORS.coral500};
   border-radius: 10px;
   padding-vertical: 12px;
   align-items: center;
@@ -263,14 +263,14 @@ const Chip = styled(TouchableOpacity)<{ $active: boolean }>`
   padding-horizontal: 14px;
   border-radius: 100px;
   border-width: 1px;
-  background-color: ${({ $active }) => ($active ? COLORS.amber50 : COLORS.white)};
-  border-color: ${({ $active }) => ($active ? COLORS.amber500 : COLORS.gray200)};
+  background-color: ${({ $active }) => ($active ? COLORS.coral50 : COLORS.white)};
+  border-color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.gray200)};
 `;
 
 const ChipLabel = styled(Text)<{ $active: boolean }>`
   font-size: 13px;
   font-weight: 500;
-  color: ${({ $active }) => ($active ? COLORS.amber700 : COLORS.gray700)};
+  color: ${({ $active }) => ($active ? COLORS.coral700 : COLORS.gray700)};
 `;
 
 const SectionHead = styled(View)`
@@ -280,7 +280,7 @@ const SectionHead = styled(View)`
 const SectionEyebrow = styled(Text)`
   font-size: 11px;
   font-weight: 600;
-  color: ${COLORS.amber600};
+  color: ${COLORS.coral600};
   letter-spacing: 0.5px;
   margin-bottom: 3px;
 `;

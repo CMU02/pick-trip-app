@@ -51,7 +51,7 @@ const CountBadge = styled(View)`
   position: absolute;
   top: -4px;
   right: -10px;
-  background-color: ${COLORS.amber500};
+  background-color: ${COLORS.coral500};
   border-radius: 100px;
   min-width: 15px;
   padding-horizontal: 4px;
@@ -67,7 +67,7 @@ const CountBadgeLabel = styled(Text)`
 const TabLabel = styled(Text)<{ $active: boolean }>`
   font-size: 11px;
   font-weight: ${({ $active }) => ($active ? '600' : '500')};
-  color: ${({ $active }) => ($active ? COLORS.amber600 : COLORS.gray400)};
+  color: ${({ $active }) => ($active ? COLORS.coral600 : COLORS.gray400)};
 `;
 
 export function TabBar({ active, onChange, basketCount }: TabBarProps) {

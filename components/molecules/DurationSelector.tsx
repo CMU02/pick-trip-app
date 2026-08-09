@@ -20,9 +20,9 @@ const Chip = styled(TouchableOpacity)<{ $active: boolean }>`
   padding-vertical: 8px;
   padding-horizontal: 16px;
   border-radius: 20px;
-  background-color: ${({ $active }) => ($active ? COLORS.amber500 : COLORS.white)};
+  background-color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.white)};
   border-width: 1px;
-  border-color: ${({ $active }) => ($active ? COLORS.amber500 : COLORS.gray200)};
+  border-color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.gray200)};
 `;
 
 const ChipLabel = styled(Text)<{ $active: boolean }>`

@@ -68,7 +68,7 @@ const StepCircle = styled(View)<{ $variant: 'done' | 'active' | 'pending' }>`
     $variant === 'done'
       ? COLORS.success
       : $variant === 'active'
-        ? COLORS.amber500
+        ? COLORS.coral500
         : COLORS.gray200};
 `;
 
@@ -135,7 +135,7 @@ const InfoBanner = styled(View)`
   flex-direction: row;
   align-items: center;
   gap: 8px;
-  background-color: ${COLORS.amber50};
+  background-color: ${COLORS.coral50};
   border-radius: 12px;
   margin: 12px 20px 0;
   padding: 12px 14px;
@@ -148,7 +148,7 @@ const InfoBannerEmoji = styled(Text)`
 const InfoBannerText = styled(Text)`
   flex: 1;
   font-size: 13px;
-  color: ${COLORS.amber700};
+  color: ${COLORS.coral700};
   font-weight: 500;
 `;
 
@@ -189,7 +189,7 @@ const LegendLabel = styled(Text)`
 `;
 
 const CTAButton = styled(TouchableOpacity)`
-  background-color: ${COLORS.amber500};
+  background-color: ${COLORS.coral500};
   border-radius: 12px;
   padding-vertical: 14px;
   align-items: center;
@@ -320,7 +320,7 @@ export function PrioritySelectScreen({
       </InfoBanner>
 
       {isLoading ? (
-        <ActivityIndicator color={COLORS.amber500} style={{ marginTop: 60 }} />
+        <ActivityIndicator color={COLORS.coral500} style={{ marginTop: 60 }} />
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}

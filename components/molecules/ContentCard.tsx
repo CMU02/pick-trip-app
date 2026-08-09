@@ -15,7 +15,7 @@ const Card = styled(TouchableOpacity)<{ $selected: boolean }>`
   background-color: ${COLORS.white};
   border-radius: 12px;
   border-width: ${({ $selected }) => ($selected ? '2px' : '1px')};
-  border-color: ${({ $selected }) => ($selected ? COLORS.amber500 : COLORS.gray200)};
+  border-color: ${({ $selected }) => ($selected ? COLORS.coral500 : COLORS.gray200)};
   overflow: hidden;
   margin-horizontal: 20px;
 `;
@@ -40,7 +40,7 @@ const CheckBadge = styled(View)`
   position: absolute;
   top: 8px;
   right: 8px;
-  background-color: ${COLORS.amber500};
+  background-color: ${COLORS.coral500};
   border-radius: 100px;
   width: 24px;
   height: 24px;
@@ -59,7 +59,7 @@ const Body = styled(View)`
 `;
 
 const CategoryBadge = styled(View)`
-  background-color: ${COLORS.amber50};
+  background-color: ${COLORS.coral50};
   border-radius: 100px;
   padding-vertical: 2px;
   padding-horizontal: 8px;
@@ -70,7 +70,7 @@ const CategoryBadge = styled(View)`
 const CategoryLabel = styled(Text)`
   font-size: 12px;
   font-weight: 500;
-  color: ${COLORS.amber700};
+  color: ${COLORS.coral700};
 `;
 
 const ContentName = styled(Text)`
@@ -115,7 +115,7 @@ const DetailLink = styled(TouchableOpacity)`
 const DetailLinkLabel = styled(Text)`
   font-size: 12px;
   font-weight: 600;
-  color: ${COLORS.amber700};
+  color: ${COLORS.coral700};
 `;
 
 export function ContentCard({
