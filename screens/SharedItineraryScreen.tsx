@@ -71,9 +71,12 @@ const ReasonText = styled(Text)`
   line-height: 17px;
 `;
 
+// 에러 화면에서는 align-items: center인 CenterBox 안에 놓여 폭이 글자 크기로 줄어든다.
+// 가로 여백이 없으면 '닫기'가 두 줄로 쪼개지므로 padding-horizontal이 필요하다.
 const CloseButton = styled(TouchableOpacity)`
   margin: 12px 20px 24px;
   padding-vertical: 14px;
+  padding-horizontal: 32px;
   border-radius: 12px;
   align-items: center;
   background-color: ${COLORS.coral500};
