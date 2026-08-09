@@ -2,6 +2,7 @@ import { ScrollView, Text, TouchableOpacity } from 'react-native';
 import styled from 'styled-components';
 import { CATEGORIES } from '../../constants/categories';
 import { COLORS } from '../../constants/colors';
+import { FONT } from '../../constants/typography';
 import type { ContentCategory } from '../../types/content';
 
 interface CategoryFilterProps {
@@ -27,7 +28,7 @@ const ChipEmoji = styled(Text)`
 
 const ChipLabel = styled(Text)<{ $active: boolean }>`
   font-size: 13px;
-  font-weight: ${({ $active }) => ($active ? '600' : '400')};
+  font-family: ${({ $active }) => ($active ? FONT.semibold : FONT.regular)};
   color: ${({ $active }) => ($active ? COLORS.white : COLORS.gray700)};
 `;
 

@@ -6,6 +6,7 @@ import { PRIORITY_ACTIVE_COLORS, PriorityChips } from '../components/molecules/P
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
 import { REGIONS } from '../constants/regions';
+import { FONT } from '../constants/typography';
 import { useContentsByIds } from '../hooks/useContentsByIds';
 import { PRIORITY_LABELS, PRIORITY_ORDER, type Priority } from '../types/priority';
 import type { TripDate } from '../types/trip';
@@ -74,23 +75,24 @@ const StepCircle = styled(View)<{ $variant: 'done' | 'active' | 'pending' }>`
 
 const StepCircleLabel = styled(Text)<{ $variant: 'done' | 'active' | 'pending' }>`
   font-size: 11px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${({ $variant }) => ($variant === 'pending' ? COLORS.gray500 : COLORS.white)};
 `;
 
 const StepLabel = styled(Text)<{ $variant: 'done' | 'active' | 'pending' }>`
   font-size: 13px;
-  font-weight: ${({ $variant }) => ($variant === 'active' ? '700' : '500')};
+  font-family: ${({ $variant }) => ($variant === 'active' ? FONT.bold : FONT.medium)};
   color: ${({ $variant }) => ($variant === 'pending' ? COLORS.gray400 : COLORS.gray900)};
 `;
 
 const Title = styled(Text)`
   font-size: 24px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
   color: ${COLORS.gray900};
 `;
 
 const Subtitle = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 15px;
   color: ${COLORS.gray500};
   margin-top: 6px;
@@ -121,7 +123,7 @@ const SummaryEmoji = styled(Text)`
 
 const SummaryText = styled(Text)`
   font-size: 13px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.gray900};
 `;
 
@@ -149,7 +151,7 @@ const InfoBannerText = styled(Text)`
   flex: 1;
   font-size: 13px;
   color: ${COLORS.coral700};
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 const BottomBar = styled(View)`
@@ -184,6 +186,7 @@ const LegendDot = styled(View)<{ $color: string }>`
 `;
 
 const LegendLabel = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 12px;
   color: ${COLORS.gray500};
 `;
@@ -198,7 +201,7 @@ const CTAButton = styled(TouchableOpacity)`
 const CTALabel = styled(Text)`
   color: ${COLORS.white};
   font-size: 16px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 const Card = styled(View)`
@@ -233,11 +236,12 @@ const InfoColumn = styled(View)`
 
 const ContentName = styled(Text)`
   font-size: 15px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.gray900};
 `;
 
 const ContentMeta = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 12px;
   color: ${COLORS.gray500};
   margin-top: 2px;

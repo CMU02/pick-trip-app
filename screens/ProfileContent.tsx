@@ -5,6 +5,7 @@ import { COLORS } from '../constants/colors';
 import { COMPANIONS, STYLE_OPTIONS } from '../constants/companions';
 import { TAB_BAR_CLEARANCE } from '../constants/layout';
 import { REGIONS } from '../constants/regions';
+import { FONT } from '../constants/typography';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import type { CompanionType, StylePreference } from '../types/companion';
 
@@ -52,18 +53,19 @@ const Avatar = styled(View)`
 
 const AvatarLabel = styled(Text)`
   font-size: 22px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.white};
 `;
 
 const IdentityName = styled(Text)`
   font-size: 17px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.gray900};
   margin-bottom: 4px;
 `;
 
 const IdentitySub = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 13px;
   color: ${COLORS.gray500};
 `;
@@ -79,12 +81,13 @@ const Card = styled(View)`
 
 const CardTitle = styled(Text)`
   font-size: 15px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.gray900};
   margin-bottom: 4px;
 `;
 
 const CardDesc = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 12px;
   color: ${COLORS.gray500};
   margin-bottom: 14px;
@@ -92,7 +95,7 @@ const CardDesc = styled(Text)`
 
 const FieldLabel = styled(Text)`
   font-size: 13px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.gray500};
   margin-bottom: 8px;
 `;
@@ -115,7 +118,7 @@ const Chip = styled(TouchableOpacity)<{ $active: boolean }>`
 
 const ChipLabel = styled(Text)<{ $active: boolean }>`
   font-size: 13px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
   color: ${({ $active }) => ($active ? COLORS.coral700 : COLORS.gray700)};
 `;
 
@@ -131,11 +134,12 @@ const NotifyRow = styled(View)<{ $last: boolean }>`
 
 const NotifyTitle = styled(Text)`
   font-size: 14px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
   color: ${COLORS.gray900};
 `;
 
 const NotifyDesc = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 12px;
   color: ${COLORS.gray500};
   margin-top: 2px;
@@ -168,7 +172,7 @@ const LogoutButton = styled(TouchableOpacity)`
 
 const LogoutLabel = styled(Text)`
   font-size: 14px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
   color: ${COLORS.gray500};
 `;
 

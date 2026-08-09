@@ -3,6 +3,7 @@ import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components';
 import { COLORS } from '../constants/colors';
+import { FONT } from '../constants/typography';
 import { type AuthProvider, loginWithProvider } from '../services/authService';
 
 export type { AuthProvider };
@@ -55,13 +56,13 @@ const BrandIconText = styled(Text)`
 
 const BrandName = styled(Text)`
   font-size: 22px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.white};
 `;
 
 const HeroText = styled(Text)`
   font-size: 26px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.white};
   line-height: 34px;
   letter-spacing: -0.3px;
@@ -73,6 +74,7 @@ const ButtonSection = styled(View)`
 `;
 
 const HelperText = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 15px;
   color: ${COLORS.gray500};
   margin-bottom: 20px;
@@ -109,17 +111,18 @@ const ButtonEmoji = styled(Text)`
 
 const KakaoButtonLabel = styled(Text)`
   font-size: 15px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: rgba(0, 0, 0, 0.85);
 `;
 
 const GoogleButtonLabel = styled(Text)`
   font-size: 15px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.gray700};
 `;
 
 const TermsText = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 12px;
   color: ${COLORS.gray400};
   line-height: 20px;
@@ -128,11 +131,13 @@ const TermsText = styled(Text)`
 `;
 
 const TermsHighlight = styled(Text)`
+  font-family: ${FONT.regular};
   color: ${COLORS.gray700};
   text-decoration-line: underline;
 `;
 
 const ErrorText = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 13px;
   color: ${COLORS.error};
   text-align: center;
@@ -146,7 +151,7 @@ const GuestButton = styled(TouchableOpacity)`
 
 const GuestButtonLabel = styled(Text)`
   font-size: 14px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
   color: ${COLORS.gray500};
   text-align: center;
 `;

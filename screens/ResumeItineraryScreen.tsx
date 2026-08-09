@@ -2,6 +2,7 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components';
 import { COLORS } from '../constants/colors';
+import { FONT } from '../constants/typography';
 
 interface ResumeItineraryScreenProps {
   savedAt: string;
@@ -33,13 +34,14 @@ const IconText = styled(Text)`
 
 const Title = styled(Text)`
   font-size: 22px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.gray900};
   letter-spacing: -0.3px;
   text-align: center;
 `;
 
 const Subtitle = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 14px;
   color: ${COLORS.gray500};
   margin-top: 8px;
@@ -57,7 +59,7 @@ const ResumeButton = styled(TouchableOpacity)`
 const ResumeButtonLabel = styled(Text)`
   color: ${COLORS.white};
   font-size: 16px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 const StartNewButton = styled(TouchableOpacity)`
@@ -72,7 +74,7 @@ const StartNewButton = styled(TouchableOpacity)`
 const StartNewButtonLabel = styled(Text)`
   color: ${COLORS.gray700};
   font-size: 16px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 function formatSavedAt(savedAt: string): string {

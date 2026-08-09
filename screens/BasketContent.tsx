@@ -5,6 +5,7 @@ import { ContentCard } from '../components/molecules/ContentCard';
 import { ContentDetailModal } from '../components/molecules/ContentDetailModal';
 import { COLORS } from '../constants/colors';
 import { TAB_BAR_CLEARANCE, TAB_BAR_TOTAL } from '../constants/layout';
+import { FONT } from '../constants/typography';
 import { useContentsByIds } from '../hooks/useContentsByIds';
 import type { Content } from '../types/content';
 import type { TripDate } from '../types/trip';
@@ -29,11 +30,12 @@ const Header = styled(View)`
 
 const Title = styled(Text)`
   font-size: 24px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
   color: ${COLORS.gray900};
 `;
 
 const Subtitle = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 15px;
   color: ${COLORS.gray500};
   margin-top: 6px;
@@ -44,6 +46,7 @@ const CardList = styled(View)`
 `;
 
 const EmptyText = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 15px;
   color: ${COLORS.gray500};
   text-align: center;
@@ -63,7 +66,7 @@ const RetryButton = styled(TouchableOpacity)`
 const RetryLabel = styled(Text)`
   color: ${COLORS.coral500};
   font-size: 14px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 // 흐름 최하단에 있으므로 아래 여백으로 플로팅 탭바를 피한다.
@@ -76,6 +79,7 @@ const BottomBar = styled(View)`
 `;
 
 const BasketCount = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 13px;
   color: ${COLORS.gray500};
   text-align: center;
@@ -92,7 +96,7 @@ const CTAButton = styled(TouchableOpacity)<{ $disabled: boolean }>`
 const CTALabel = styled(Text)`
   color: ${COLORS.white};
   font-size: 16px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
 `;
 
 export function BasketContent({

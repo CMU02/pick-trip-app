@@ -28,7 +28,21 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-web-browser", "expo-secure-store"],
+    "plugins": [
+      "expo-web-browser",
+      "expo-secure-store",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/Paperlogy-4Regular.ttf",
+            "./assets/fonts/Paperlogy-5Medium.ttf",
+            "./assets/fonts/Paperlogy-6SemiBold.ttf",
+            "./assets/fonts/Paperlogy-7Bold.ttf"
+          ]
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "e67f3138-1f7b-4831-880f-b9852baafabb"

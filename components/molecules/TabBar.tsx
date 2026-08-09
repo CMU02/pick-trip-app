@@ -5,6 +5,7 @@ import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
 import styled from 'styled-components';
 import { COLORS } from '../../constants/colors';
 import { TAB_BAR_BOTTOM, TAB_BAR_HEIGHT, TAB_BAR_SIDE } from '../../constants/layout';
+import { FONT } from '../../constants/typography';
 
 export type TabKey = 'home' | 'explore' | 'basket' | 'profile';
 
@@ -99,7 +100,7 @@ const CountBadge = styled(View)`
 
 const CountBadgeLabel = styled(Text)`
   font-size: 10px;
-  font-weight: 700;
+  font-family: ${FONT.bold};
   color: ${COLORS.white};
 `;
 
@@ -110,7 +111,7 @@ const LabelBox = styled(Animated.View)`
 
 const Label = styled(Text)`
   font-size: 12px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   line-height: 16px;
   color: ${COLORS.coral600};
 `;

@@ -2,6 +2,7 @@ import { Image, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { CATEGORIES } from '../../constants/categories';
 import { COLORS } from '../../constants/colors';
+import { FONT } from '../../constants/typography';
 import type { Content } from '../../types/content';
 
 interface ContentCardProps {
@@ -51,7 +52,7 @@ const CheckBadge = styled(View)`
 const CheckMark = styled(Text)`
   font-size: 13px;
   color: ${COLORS.white};
-  font-weight: 700;
+  font-family: ${FONT.bold};
 `;
 
 const Body = styled(View)`
@@ -69,18 +70,19 @@ const CategoryBadge = styled(View)`
 
 const CategoryLabel = styled(Text)`
   font-size: 12px;
-  font-weight: 500;
+  font-family: ${FONT.medium};
   color: ${COLORS.coral700};
 `;
 
 const ContentName = styled(Text)`
   font-size: 16px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.gray900};
   margin-bottom: 4px;
 `;
 
 const Address = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 12px;
   color: ${COLORS.gray400};
   margin-bottom: 12px;
@@ -103,6 +105,7 @@ const InfoEmoji = styled(Text)`
 `;
 
 const InfoText = styled(Text)`
+  font-family: ${FONT.regular};
   font-size: 12px;
   color: ${COLORS.gray500};
 `;
@@ -114,7 +117,7 @@ const DetailLink = styled(TouchableOpacity)`
 
 const DetailLinkLabel = styled(Text)`
   font-size: 12px;
-  font-weight: 600;
+  font-family: ${FONT.semibold};
   color: ${COLORS.coral700};
 `;
 
