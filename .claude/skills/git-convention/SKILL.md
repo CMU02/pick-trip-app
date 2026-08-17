@@ -165,10 +165,10 @@ Merging happens in two stages. They differ in kind, so they differ in method.
 
 **Work branch → `main` (PR)**
 
-- As a general rule, pull requests are merged via rebase.
-- Before rebasing, ensure there are no open issues on the base branch (`main`) and that the branch is up to date.
-- Rebasing keeps history linear and avoids unnecessary merge commits.
-- If conflicts remain after rebasing, resolve them, retest, then merge.
+- As a general rule, pull requests are merged with a merge commit.
+- Before merging, ensure there are no open issues on the base branch (`main`) and that the branch is up to date.
+- The merge commit keeps each PR visible as a single integration point in the history.
+- If conflicts appear, resolve them on the work branch, retest, then merge.
 
 ---
 
