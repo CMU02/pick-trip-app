@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { COLORS } from '../constants/colors';
 import { COMPANIONS, STYLE_OPTIONS } from '../constants/companions';
@@ -8,13 +8,19 @@ import { TAB_BAR_CLEARANCE } from '../constants/layout';
 import { REGIONS } from '../constants/regions';
 import { FONT } from '../constants/typography';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import type { SavedItinerarySummary } from '../services/itineraryHistoryStorage';
 import type { CompanionType, StylePreference } from '../types/companion';
+import { formatItinerarySub } from '../utils/itineraryHistory';
 
 interface ProfileContentProps {
   isGuest: boolean;
   companion: CompanionType | null;
   stylePrefs: StylePreference[];
   selectedRegions: string[];
+  itineraryHistory: SavedItinerarySummary[];
+  openingItineraryId: string | null;
+  onOpenItinerary: (itineraryId: string) => void;
+  onDeleteItinerary: (itineraryId: string, title: string) => void;
   onChangeCompanion: (companion: CompanionType) => void;
   onToggleStylePref: (pref: StylePreference) => void;
   onToggleRegion: (regionId: string) => void;
@@ -69,6 +75,52 @@ const IdentitySub = styled(Text)`
   font-family: ${FONT.regular};
   font-size: 13px;
   color: ${COLORS.gray500};
+`;
+
+const TripRow = styled(TouchableOpacity)<{ $last: boolean }>`
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding-vertical: 12px;
+  border-bottom-width: ${({ $last }) => ($last ? '0px' : '1px')};
+  border-bottom-color: ${COLORS.gray100};
+`;
+
+const TripIconBadge = styled(View)`
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background-color: ${COLORS.coral50};
+  align-items: center;
+  justify-content: center;
+`;
+
+const TripBody = styled(View)`
+  flex: 1;
+`;
+
+const TripTitleRow = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+`;
+
+const TripTitle = styled(Text)`
+  font-size: 15px;
+  font-family: ${FONT.bold};
+  color: ${COLORS.gray900};
+  flex-shrink: 1;
+`;
+
+const TripSub = styled(Text)`
+  font-family: ${FONT.regular};
+  font-size: 12px;
+  color: ${COLORS.gray500};
+`;
+
+const DeleteTripButton = styled(TouchableOpacity)`
+  padding: 2px;
 `;
 
 const Card = styled(View)`
@@ -191,6 +243,10 @@ export function ProfileContent({
   companion,
   stylePrefs,
   selectedRegions,
+  itineraryHistory,
+  openingItineraryId,
+  onOpenItinerary,
+  onDeleteItinerary,
   onChangeCompanion,
   onToggleStylePref,
   onToggleRegion,
@@ -217,6 +273,47 @@ export function ProfileContent({
             <IdentitySub>{displaySub}</IdentitySub>
           </View>
         </IdentityCard>
+
+        {itineraryHistory.length > 0 && (
+          <Card>
+            <CardTitle>저장한 여행</CardTitle>
+            {itineraryHistory.map((item, index) => {
+              const isOpening = openingItineraryId === item.itineraryId;
+              return (
+                <TripRow
+                  key={item.itineraryId}
+                  onPress={() => onOpenItinerary(item.itineraryId)}
+                  disabled={openingItineraryId != null}
+                  $last={index === itineraryHistory.length - 1}
+                >
+                  <TripIconBadge>
+                    <Ionicons name="map-outline" size={20} color={COLORS.coral600} />
+                  </TripIconBadge>
+                  <TripBody>
+                    <TripTitleRow>
+                      <TripTitle numberOfLines={1}>{item.title}</TripTitle>
+                    </TripTitleRow>
+                    <TripSub numberOfLines={1}>{formatItinerarySub(item)}</TripSub>
+                  </TripBody>
+                  {isOpening ? (
+                    <ActivityIndicator color={COLORS.coral500} />
+                  ) : (
+                    <>
+                      <DeleteTripButton
+                        onPress={() => onDeleteItinerary(item.itineraryId, item.title)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="trash-outline" size={16} color={COLORS.gray400} />
+                      </DeleteTripButton>
+                      <Ionicons name="chevron-forward" size={14} color={COLORS.gray400} />
+                    </>
+                  )}
+                </TripRow>
+              );
+            })}
+          </Card>
+        )}
 
         <Card>
           <CardTitle>여행 취향</CardTitle>

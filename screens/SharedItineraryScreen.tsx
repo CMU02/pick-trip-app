@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components';
+import { SkeletonBox } from '../components/atoms/SkeletonBox';
+import { ItineraryStopSkeleton } from '../components/molecules/ItineraryStopSkeleton';
 import { COLORS } from '../constants/colors';
 import { FONT } from '../constants/typography';
 import { fetchSharedItinerary, type SharedItinerary } from '../services/shareService';
 
 interface SharedItineraryScreenProps {
   token: string;
-  onClose: () => void;
+  onTitleReady?: (title: string) => void;
 }
 
 const ScreenContainer = styled(SafeAreaView)`
@@ -28,12 +30,6 @@ const Header = styled(View)`
   padding-top: 24px;
   padding-horizontal: 20px;
   padding-bottom: 12px;
-`;
-
-const Title = styled(Text)`
-  font-size: 24px;
-  font-family: ${FONT.medium};
-  color: ${COLORS.gray900};
 `;
 
 const Subtitle = styled(Text)`
@@ -74,32 +70,17 @@ const ReasonText = styled(Text)`
   line-height: 17px;
 `;
 
-// 에러 화면에서는 align-items: center인 CenterBox 안에 놓여 폭이 글자 크기로 줄어든다.
-// 가로 여백이 없으면 '닫기'가 두 줄로 쪼개지므로 padding-horizontal이 필요하다.
-const CloseButton = styled(TouchableOpacity)`
-  margin: 12px 20px 24px;
-  padding-vertical: 14px;
-  padding-horizontal: 32px;
-  border-radius: 12px;
-  align-items: center;
-  background-color: ${COLORS.coral500};
-`;
-
-const CloseButtonLabel = styled(Text)`
-  color: ${COLORS.white};
-  font-size: 16px;
-  font-family: ${FONT.medium};
-`;
-
-export function SharedItineraryScreen({ token, onClose }: SharedItineraryScreenProps) {
+export function SharedItineraryScreen({ token, onTitleReady }: SharedItineraryScreenProps) {
   const [status, setStatus] = useState<'loading' | 'done' | 'error'>('loading');
   const [itinerary, setItinerary] = useState<SharedItinerary | null>(null);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: onTitleReady는 매 렌더 새로 생성되는 콜백이라 의존성에 넣지 않는다
   useEffect(() => {
     fetchSharedItinerary(token)
       .then((result) => {
         setItinerary(result);
         setStatus('done');
+        onTitleReady?.(result.title);
       })
       .catch(() => setStatus('error'));
   }, [token]);
@@ -107,9 +88,12 @@ export function SharedItineraryScreen({ token, onClose }: SharedItineraryScreenP
   if (status === 'loading') {
     return (
       <ScreenContainer>
-        <CenterBox>
-          <ActivityIndicator color={COLORS.coral500} />
-        </CenterBox>
+        <Header>
+          <SkeletonBox width="70%" height={15} radius={4} />
+        </Header>
+        <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+          <ItineraryStopSkeleton />
+        </ScrollView>
       </ScreenContainer>
     );
   }
@@ -119,9 +103,6 @@ export function SharedItineraryScreen({ token, onClose }: SharedItineraryScreenP
       <ScreenContainer>
         <CenterBox>
           <Subtitle>공유된 일정을 찾을 수 없어요.</Subtitle>
-          <CloseButton onPress={onClose} activeOpacity={0.8}>
-            <CloseButtonLabel>닫기</CloseButtonLabel>
-          </CloseButton>
         </CenterBox>
       </ScreenContainer>
     );
@@ -132,7 +113,6 @@ export function SharedItineraryScreen({ token, onClose }: SharedItineraryScreenP
   return (
     <ScreenContainer>
       <Header>
-        <Title>{itinerary.title}</Title>
         <Subtitle>다른 사람이 공유한 여행 일정이에요</Subtitle>
       </Header>
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
@@ -150,9 +130,6 @@ export function SharedItineraryScreen({ token, onClose }: SharedItineraryScreenP
           </View>
         ))}
       </ScrollView>
-      <CloseButton onPress={onClose} activeOpacity={0.8}>
-        <CloseButtonLabel>닫기</CloseButtonLabel>
-      </CloseButton>
     </ScreenContainer>
   );
 }

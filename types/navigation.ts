@@ -3,7 +3,6 @@
 export type RootStackParamList = {
   Auth: undefined;
   Login: undefined;
-  Resume: undefined;
   Main: undefined;
   Priority: undefined;
   Itinerary: undefined;

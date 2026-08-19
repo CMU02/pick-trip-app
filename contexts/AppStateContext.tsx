@@ -4,13 +4,18 @@ import { COMPANIONS } from '../constants/companions';
 import { useBasket } from '../hooks/useBasket';
 import { logout } from '../services/authService';
 import { hasStoredSession } from '../services/authStorage';
+import {
+  loadItineraryHistory,
+  recordItineraryHistory,
+  removeItineraryHistory,
+  type SavedItinerarySummary,
+} from '../services/itineraryHistoryStorage';
 import type { CompanionType, StylePreference } from '../types/companion';
 import type { Content } from '../types/content';
 import type { ItineraryStop } from '../types/itinerary';
 import type { Priority } from '../types/priority';
-import type { SavedItinerary } from '../types/savedItinerary';
 import type { TripDate } from '../types/trip';
-import { fromDateString, toDateString, toDurationType } from '../utils/tripDate';
+import { toDateString, toDurationType } from '../utils/tripDate';
 
 export type { TripDate };
 
@@ -29,8 +34,9 @@ interface AppStateValue {
   stylePrefs: StylePreference[];
   setStylePrefs: (value: StylePreference[]) => void;
   handleToggleStylePref: (pref: StylePreference) => void;
-  savedItinerary: SavedItinerary | null;
-  setSavedItinerary: (value: SavedItinerary | null) => void;
+  itineraryHistory: SavedItinerarySummary[];
+  recordSavedItinerary: (summary: SavedItinerarySummary) => void;
+  removeSavedItinerary: (itineraryId: string) => void;
   initialStops: ItineraryStop[] | undefined;
   setInitialStops: (value: ItineraryStop[] | undefined) => void;
   initialItineraryId: string | undefined;
@@ -64,7 +70,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [tripDate, setTripDate] = useState<TripDate | null>(null);
   const [companion, setCompanion] = useState<CompanionType | null>(null);
   const [stylePrefs, setStylePrefs] = useState<StylePreference[]>([]);
-  const [savedItinerary, setSavedItinerary] = useState<SavedItinerary | null>(null);
+  const [itineraryHistory, setItineraryHistory] = useState<SavedItinerarySummary[]>([]);
   const [initialStops, setInitialStops] = useState<ItineraryStop[] | undefined>(undefined);
   const [initialItineraryId, setInitialItineraryId] = useState<string | undefined>(undefined);
 
@@ -88,11 +94,27 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // 이 기기에서 저장했던 일정 히스토리를 복원한다. 계정 기준 전체 목록 API가 없어
+  // "저장한 여행" 목록은 이 기기·이 앱에서 저장한 것만 보여준다 (자세한 배경은
+  // itineraryHistoryStorage.ts 참고).
+  useEffect(() => {
+    loadItineraryHistory().then(setItineraryHistory);
+  }, []);
+
+  const recordSavedItinerary = (summary: SavedItinerarySummary) => {
+    recordItineraryHistory(summary).then(setItineraryHistory);
+  };
+
+  const removeSavedItinerary = (itineraryId: string) => {
+    removeItineraryHistory(itineraryId).then(setItineraryHistory);
+  };
+
   const {
     basket,
     isLoading: isBasketLoading,
     addItem,
     removeItem,
+    clearItems,
     updateItemPriority,
     updateConditions,
   } = useBasket();
@@ -110,9 +132,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setCompanion(conditions.companion);
     setStylePrefs(conditions.stylePrefs);
     if (conditions.travelDate) {
+      // 저장된 날짜를 그대로 복원하면 며칠 뒤 다시 켰을 때 이미 지난 날짜가 보인다.
+      // 여행 기간(박 수)만 이어받고, 시작일은 항상 오늘로 맞춘다.
       const nights = conditions.duration ?? 0;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       setTripDate({
-        startDate: fromDateString(conditions.travelDate),
+        startDate: today,
         durationType: toDurationType(nights),
         nights,
       });
@@ -157,8 +183,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   };
 
   const handleToggleRegion = (regionId: string) => {
+    const isSelecting = !selectedRegions.includes(regionId);
+    // 담아둔 콘텐츠는 특정 지역에 속해있으므로, 새 지역을 고르면 이전 지역 것과 섞이지
+    // 않도록 바구니를 비운다. 지역 해제(선택 취소)는 그냥 둔다.
+    if (isSelecting && basketItems.length > 0) {
+      clearItems();
+    }
     setSelectedRegions((prev) =>
-      prev.includes(regionId) ? prev.filter((id) => id !== regionId) : [...prev, regionId],
+      isSelecting ? [...prev, regionId] : prev.filter((id) => id !== regionId),
     );
   };
 
@@ -198,8 +230,9 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     stylePrefs,
     setStylePrefs,
     handleToggleStylePref,
-    savedItinerary,
-    setSavedItinerary,
+    itineraryHistory,
+    recordSavedItinerary,
+    removeSavedItinerary,
     initialStops,
     setInitialStops,
     initialItineraryId,
