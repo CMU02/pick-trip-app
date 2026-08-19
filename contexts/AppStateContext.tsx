@@ -10,6 +10,12 @@ import {
   removeItineraryHistory,
   type SavedItinerarySummary,
 } from '../services/itineraryHistoryStorage';
+import {
+  cancelAllTripReminders,
+  ensureNotificationPermission,
+  scheduleTripReminder,
+} from '../services/notifications';
+import { loadTripReminderEnabled, saveTripReminderEnabled } from '../services/tripReminderStorage';
 import type { CompanionType, StylePreference } from '../types/companion';
 import type { Content } from '../types/content';
 import type { ItineraryStop } from '../types/itinerary';
@@ -37,6 +43,8 @@ interface AppStateValue {
   itineraryHistory: SavedItinerarySummary[];
   recordSavedItinerary: (summary: SavedItinerarySummary) => void;
   removeSavedItinerary: (itineraryId: string) => void;
+  tripReminderEnabled: boolean;
+  handleToggleTripReminder: (enabled: boolean) => void;
   initialStops: ItineraryStop[] | undefined;
   setInitialStops: (value: ItineraryStop[] | undefined) => void;
   initialItineraryId: string | undefined;
@@ -107,6 +115,41 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const removeSavedItinerary = (itineraryId: string) => {
     removeItineraryHistory(itineraryId).then(setItineraryHistory);
+  };
+
+  // 여행 리마인더는 서버 없이 기기에 로컬로 예약하는 알림이라(services/notifications.ts 참고),
+  // 켜짐 여부만 기기에 저장해두고 앱을 다시 켤 때 복원한다.
+  const [tripReminderEnabled, setTripReminderEnabled] = useState(false);
+
+  useEffect(() => {
+    loadTripReminderEnabled().then(setTripReminderEnabled);
+  }, []);
+
+  // 켜져 있으면 저장한 여행이 바뀔 때마다(새로 저장/삭제) 예약을 최신 상태로 다시 맞춘다.
+  // 꺼져 있으면 예약해뒀던 걸 전부 취소한다.
+  useEffect(() => {
+    if (!tripReminderEnabled) {
+      cancelAllTripReminders();
+      return;
+    }
+    for (const item of itineraryHistory) {
+      scheduleTripReminder(item);
+    }
+  }, [tripReminderEnabled, itineraryHistory]);
+
+  const handleToggleTripReminder = async (enabled: boolean) => {
+    if (enabled) {
+      const granted = await ensureNotificationPermission();
+      if (!granted) {
+        Alert.alert(
+          '알림 권한이 필요해요',
+          '기기 설정에서 PickTrip의 알림 권한을 허용한 뒤 다시 시도해주세요.',
+        );
+        return;
+      }
+    }
+    setTripReminderEnabled(enabled);
+    saveTripReminderEnabled(enabled);
   };
 
   const {
@@ -233,6 +276,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     itineraryHistory,
     recordSavedItinerary,
     removeSavedItinerary,
+    tripReminderEnabled,
+    handleToggleTripReminder,
     initialStops,
     setInitialStops,
     initialItineraryId,
