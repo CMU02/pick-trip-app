@@ -188,14 +188,23 @@ export function TripDatePickerModal({
 }: TripDatePickerModalProps) {
   const today = new Date();
   const currentYear = today.getFullYear();
+  const currentMonthNum = today.getMonth() + 1; // 1-indexed
+  const currentDayNum = today.getDate();
   const initialDate = initialValue?.startDate ?? today;
 
   const years = [currentYear, currentYear + 1, currentYear + 2].map(String);
-  const months = Array.from({ length: 12 }, (_, i) => `${i + 1}월`);
 
-  const [yearIdx, setYearIdx] = useState(Math.max(0, initialDate.getFullYear() - currentYear));
-  const [monthIdx, setMonthIdx] = useState(initialDate.getMonth());
-  const [dayIdx, setDayIdx] = useState(initialDate.getDate() - 1);
+  // 초기값이 올해라면 지난 달은 목록에서 제외한 상태로 인덱스를 맞춘다
+  const initialYear = initialDate.getFullYear();
+  const initialIsCurrentYear = initialYear === currentYear;
+  const initialMonthStart = initialIsCurrentYear ? currentMonthNum : 1;
+  const initialMonthNum = initialDate.getMonth() + 1;
+  const initialIsCurrentMonth = initialIsCurrentYear && initialMonthNum === currentMonthNum;
+  const initialDayStart = initialIsCurrentMonth ? currentDayNum : 1;
+
+  const [yearIdx, setYearIdx] = useState(Math.max(0, initialYear - currentYear));
+  const [monthIdx, setMonthIdx] = useState(Math.max(0, initialMonthNum - initialMonthStart));
+  const [dayIdx, setDayIdx] = useState(Math.max(0, initialDate.getDate() - initialDayStart));
   const [durationType, setDurationType] = useState<DurationType | null>(
     initialValue?.durationType ?? null,
   );
@@ -204,11 +213,22 @@ export function TripDatePickerModal({
   );
 
   const selectedYear = currentYear + yearIdx;
-  const selectedMonth = monthIdx + 1;
+  const isCurrentYear = yearIdx === 0;
+
+  // 올해면 지난 달을 제외하고 이번 달부터 12월까지만 노출
+  const monthStart = isCurrentYear ? currentMonthNum : 1;
+  const months = Array.from({ length: 12 - monthStart + 1 }, (_, i) => `${monthStart + i}월`);
+  const clampedMonthIdx = Math.min(monthIdx, months.length - 1);
+  const selectedMonth = monthStart + clampedMonthIdx;
+
+  // 이번 달이면 지난 날짜를 제외하고 오늘부터 말일까지만 노출
+  const isCurrentMonth = isCurrentYear && selectedMonth === currentMonthNum;
+  const dayStart = isCurrentMonth ? currentDayNum : 1;
   const maxDays = getDaysInMonth(selectedYear, selectedMonth);
-  const days = Array.from({ length: maxDays }, (_, i) => `${i + 1}일`);
-  const clampedDayIdx = Math.min(dayIdx, maxDays - 1);
-  const startDate = new Date(selectedYear, selectedMonth - 1, clampedDayIdx + 1);
+  const days = Array.from({ length: maxDays - dayStart + 1 }, (_, i) => `${dayStart + i}일`);
+  const clampedDayIdx = Math.min(dayIdx, days.length - 1);
+  const selectedDay = dayStart + clampedDayIdx;
+  const startDate = new Date(selectedYear, selectedMonth - 1, selectedDay);
 
   const nights = durationType ? getNights(durationType, customNights) : 0;
   const endDate = durationType ? getEndDate(startDate, nights) : null;
@@ -243,12 +263,17 @@ export function TripDatePickerModal({
             </View>
             <View style={{ flex: 1 }}>
               <PickerColumnLabel>월</PickerColumnLabel>
-              <ScrollPicker items={months} selectedIndex={monthIdx} onValueChange={setMonthIdx} />
+              <ScrollPicker
+                key={yearIdx}
+                items={months}
+                selectedIndex={clampedMonthIdx}
+                onValueChange={setMonthIdx}
+              />
             </View>
             <View style={{ flex: 1 }}>
               <PickerColumnLabel>일</PickerColumnLabel>
               <ScrollPicker
-                key={`${yearIdx}-${monthIdx}`}
+                key={`${yearIdx}-${clampedMonthIdx}`}
                 items={days}
                 selectedIndex={clampedDayIdx}
                 onValueChange={setDayIdx}

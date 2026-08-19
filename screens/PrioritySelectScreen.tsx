@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components';
+import { PriorityCardSkeleton } from '../components/molecules/PriorityCardSkeleton';
 import { PRIORITY_ACTIVE_COLORS, PriorityChips } from '../components/molecules/PriorityChips';
+import { TripDatePickerModal } from '../components/molecules/TripDatePickerModal';
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
 import { REGIONS } from '../constants/regions';
@@ -17,6 +19,7 @@ interface PrioritySelectScreenProps {
   initialPriorities: Record<string, Priority>;
   selectedRegions: string[];
   tripDate: TripDate | null;
+  onChangeDate: (value: TripDate) => void;
   onContinue: (priorities: Record<string, Priority>) => void;
 }
 
@@ -86,12 +89,6 @@ const StepLabel = styled(Text)<{ $variant: 'done' | 'active' | 'pending' }>`
   color: ${({ $variant }) => ($variant === 'pending' ? COLORS.gray400 : COLORS.gray900)};
 `;
 
-const Title = styled(Text)`
-  font-size: 24px;
-  font-family: ${FONT.medium};
-  color: ${COLORS.gray900};
-`;
-
 const Subtitle = styled(Text)`
   font-family: ${FONT.regular};
   font-size: 15px;
@@ -118,10 +115,6 @@ const SummaryItem = styled(View)`
   gap: 5px;
 `;
 
-const SummaryEmoji = styled(Text)`
-  font-size: 13px;
-`;
-
 const SummaryText = styled(Text)`
   font-size: 13px;
   font-family: ${FONT.semibold};
@@ -142,10 +135,6 @@ const InfoBanner = styled(View)`
   border-radius: 12px;
   margin: 12px 20px 0;
   padding: 12px 14px;
-`;
-
-const InfoBannerEmoji = styled(Text)`
-  font-size: 14px;
 `;
 
 const InfoBannerText = styled(Text)`
@@ -249,9 +238,11 @@ export function PrioritySelectScreen({
   initialPriorities,
   selectedRegions,
   tripDate,
+  onChangeDate,
   onContinue,
 }: PrioritySelectScreenProps) {
   const { contents: selectedContents, isLoading } = useContentsByIds(selectedIds);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const [priorities, setPriorities] = useState<Record<string, Priority>>(() =>
     Object.fromEntries(selectedIds.map((id) => [id, initialPriorities[id] ?? 'good'])),
@@ -282,46 +273,66 @@ export function PrioritySelectScreen({
             return (
               <StepBadge key={step.key}>
                 <StepCircle $variant={variant}>
-                  <StepCircleLabel $variant={variant}>
-                    {variant === 'done' ? '✓' : index + 1}
-                  </StepCircleLabel>
+                  {variant === 'done' ? (
+                    <Ionicons name="checkmark" size={12} color={COLORS.white} />
+                  ) : (
+                    <StepCircleLabel $variant={variant}>{index + 1}</StepCircleLabel>
+                  )}
                 </StepCircle>
                 <StepLabel $variant={variant}>{step.label}</StepLabel>
               </StepBadge>
             );
           })}
         </StepperRow>
-        <Title>우선순위를 정해주세요</Title>
         <Subtitle>담은 콘텐츠별로 얼마나 가고 싶은지 알려주세요</Subtitle>
       </Header>
 
       {regionNames !== '' && (
         <SummaryCard>
           <SummaryItem>
-            <SummaryEmoji>📍</SummaryEmoji>
+            <Ionicons name="location-outline" size={13} color={COLORS.gray900} />
             <SummaryText>{regionNames}</SummaryText>
           </SummaryItem>
-          {dateRange && (
-            <>
-              <SummaryDivider />
-              <SummaryItem>
-                <SummaryEmoji>📅</SummaryEmoji>
-                <SummaryText>{dateRange}</SummaryText>
-              </SummaryItem>
-            </>
-          )}
+          <SummaryDivider />
+          {/* 날짜가 없어도 항상 탭 가능하게 해서, 탐색 화면에서 날짜 없이 바로 넘어온
+              경우에도 이 화면에서 날짜를 고를 방법이 있게 한다. */}
+          <TouchableOpacity
+            onPress={() => setShowDatePicker(true)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 8, bottom: 8 }}
+          >
+            <SummaryItem>
+              <Ionicons
+                name="calendar-outline"
+                size={13}
+                color={dateRange ? COLORS.gray900 : COLORS.coral500}
+              />
+              <SummaryText style={!dateRange && { color: COLORS.coral700 }}>
+                {dateRange ?? '날짜를 선택해주세요'}
+              </SummaryText>
+              <Ionicons name="chevron-down-outline" size={12} color={COLORS.gray400} />
+            </SummaryItem>
+          </TouchableOpacity>
           <SummaryDivider />
           <SummaryText>{selectedIds.length}곳 담음</SummaryText>
         </SummaryCard>
       )}
 
       <InfoBanner>
-        <InfoBannerEmoji>💡</InfoBannerEmoji>
+        <Ionicons name="bulb-outline" size={16} color={COLORS.coral700} />
         <InfoBannerText>우선순위에 따라 AI가 일정 순서를 조율해줘요</InfoBannerText>
       </InfoBanner>
 
       {isLoading ? (
-        <ActivityIndicator color={COLORS.coral500} style={{ marginTop: 60 }} />
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingTop: 16, paddingBottom: 140, gap: 12 }}
+        >
+          {Array.from({ length: Math.min(selectedIds.length, 6) || 1 }, (_, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: 로딩 중 고정 개수의 자리표시자라 인덱스 키로 충분
+            <PriorityCardSkeleton key={i} />
+          ))}
+        </ScrollView>
       ) : (
         <ScrollView
           showsVerticalScrollIndicator={false}
@@ -367,10 +378,30 @@ export function PrioritySelectScreen({
             </LegendItem>
           ))}
         </LegendRow>
-        <CTAButton onPress={() => onContinue(priorities)} activeOpacity={0.8}>
+        <CTAButton
+          onPress={() => {
+            if (!tripDate) {
+              Alert.alert('날짜를 선택해주세요', '언제 떠나는지 알려주시면 일정을 만들 수 있어요.');
+              setShowDatePicker(true);
+              return;
+            }
+            onContinue(priorities);
+          }}
+          activeOpacity={0.8}
+        >
           <CTALabel>{selectedIds.length}곳으로 일정 만들기</CTALabel>
         </CTAButton>
       </BottomBar>
+
+      <TripDatePickerModal
+        visible={showDatePicker}
+        initialValue={tripDate}
+        onConfirm={(value) => {
+          onChangeDate(value);
+          setShowDatePicker(false);
+        }}
+        onClose={() => setShowDatePicker(false)}
+      />
     </ScreenContainer>
   );
 }
