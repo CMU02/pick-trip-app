@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -267,6 +268,9 @@ const StopCard = styled(View)`
 `;
 
 const CategoryBadge = styled(View)<{ $color: string }>`
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
   align-self: flex-start;
   background-color: ${({ $color }) => `${$color}1F`};
   border-radius: 100px;
@@ -620,7 +624,7 @@ export function ItineraryResultScreen({
       <ScreenContainer>
         <LoadingContainer>
           <ProgressChecklist
-            icon="🪄"
+            icon="sparkles"
             heading="일정을 만들고 있어요"
             subText={`${selectedIds.length}곳 맞춤 구성 중`}
             steps={GENERATING_STEPS}
@@ -733,9 +737,8 @@ export function ItineraryResultScreen({
                     <StopCard>
                       {category && (
                         <CategoryBadge $color={accentColor}>
-                          <CategoryLabel $color={accentColor}>
-                            {category.emoji} {category.label}
-                          </CategoryLabel>
+                          <Ionicons name={category.icon} size={11} color={accentColor} />
+                          <CategoryLabel $color={accentColor}>{category.label}</CategoryLabel>
                         </CategoryBadge>
                       )}
                       <StopName>{content?.name}</StopName>

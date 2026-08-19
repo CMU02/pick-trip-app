@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
@@ -108,6 +109,9 @@ const ChipRow = styled(View)`
 `;
 
 const Chip = styled(TouchableOpacity)<{ $active: boolean }>`
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
   padding-vertical: 8px;
   padding-horizontal: 14px;
   border-radius: 100px;
@@ -227,9 +231,12 @@ export function ProfileContent({
                 onPress={() => onChangeCompanion(c.id)}
                 activeOpacity={0.8}
               >
-                <ChipLabel $active={companion === c.id}>
-                  {c.emoji} {c.label}
-                </ChipLabel>
+                <Ionicons
+                  name={c.icon}
+                  size={14}
+                  color={companion === c.id ? COLORS.coral700 : COLORS.gray700}
+                />
+                <ChipLabel $active={companion === c.id}>{c.label}</ChipLabel>
               </Chip>
             ))}
           </ChipRow>

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -225,10 +226,6 @@ const ThumbnailBox = styled(View)<{ $color: string }>`
   justify-content: center;
 `;
 
-const ThumbnailEmoji = styled(Text)`
-  font-size: 22px;
-`;
-
 const InfoColumn = styled(View)`
   flex: 1;
   gap: 8px;
@@ -335,7 +332,11 @@ export function PrioritySelectScreen({
             return (
               <Card key={content.id}>
                 <ThumbnailBox $color={category?.color ?? COLORS.gray400}>
-                  <ThumbnailEmoji>{category?.emoji ?? '📍'}</ThumbnailEmoji>
+                  <Ionicons
+                    name={category?.icon ?? 'location-outline'}
+                    size={22}
+                    color={COLORS.gray500}
+                  />
                 </ThumbnailBox>
                 <InfoColumn>
                   <View>

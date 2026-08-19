@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
@@ -323,10 +324,6 @@ const RecommendImage = styled(Image)`
   width: 100%;
 `;
 
-const RecommendEmoji = styled(Text)`
-  font-size: 26px;
-`;
-
 const RecommendBody = styled(View)`
   padding: 10px;
 `;
@@ -471,7 +468,11 @@ export function HomeContent({
                       <RecommendImage source={{ uri: item.imageUrl }} resizeMode="cover" />
                     ) : (
                       <RecommendThumb $color={category?.color ?? COLORS.gray400}>
-                        <RecommendEmoji>{category?.emoji ?? '📍'}</RecommendEmoji>
+                        <Ionicons
+                          name={category?.icon ?? 'location-outline'}
+                          size={26}
+                          color={COLORS.gray500}
+                        />
                       </RecommendThumb>
                     )}
                     <RecommendBody>

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { Image, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { CATEGORIES } from '../../constants/categories';
@@ -31,10 +32,6 @@ const Thumbnail = styled(View)<{ $color: string }>`
 const ThumbnailImage = styled(Image)`
   height: 100px;
   width: 100%;
-`;
-
-const ThumbnailEmoji = styled(Text)`
-  font-size: 36px;
 `;
 
 const CheckBadge = styled(View)`
@@ -135,7 +132,7 @@ export function ContentCard({
         <ThumbnailImage source={{ uri: content.imageUrl }} resizeMode="cover" />
       ) : (
         <Thumbnail $color={category?.color ?? COLORS.gray400}>
-          <ThumbnailEmoji>{category?.emoji ?? '📍'}</ThumbnailEmoji>
+          <Ionicons name={category?.icon ?? 'location-outline'} size={48} color={COLORS.gray500} />
         </Thumbnail>
       )}
       {selected && (

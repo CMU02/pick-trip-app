@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import {
   ActivityIndicator,
@@ -68,15 +69,14 @@ const DetailThumbnail = styled(View)<{ $color: string }>`
   justify-content: center;
 `;
 
-const ThumbnailEmoji = styled(Text)`
-  font-size: 48px;
-`;
-
 const Body = styled(View)`
   padding: 20px;
 `;
 
 const CategoryBadge = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
   align-self: flex-start;
   background-color: ${COLORS.coral50};
   border-radius: 100px;
@@ -176,15 +176,18 @@ export function ContentDetailModal({ contentId, onClose }: ContentDetailModalPro
                   <DetailImage source={{ uri: content.imageUrl }} resizeMode="cover" />
                 ) : (
                   <DetailThumbnail $color={category?.color ?? COLORS.gray400}>
-                    <ThumbnailEmoji>{category?.emoji ?? '📍'}</ThumbnailEmoji>
+                    <Ionicons
+                      name={category?.icon ?? 'location-outline'}
+                      size={48}
+                      color={COLORS.gray500}
+                    />
                   </DetailThumbnail>
                 )}
                 <Body>
                   {category && (
                     <CategoryBadge>
-                      <CategoryLabel>
-                        {category.emoji} {category.label}
-                      </CategoryLabel>
+                      <Ionicons name={category.icon} size={13} color={COLORS.coral700} />
+                      <CategoryLabel>{category.label}</CategoryLabel>
                     </CategoryBadge>
                   )}
                   <ContentName>{content.name}</ContentName>
