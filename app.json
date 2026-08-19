@@ -33,6 +33,12 @@
       "expo-web-browser",
       "expo-secure-store",
       [
+        "expo-notifications",
+        {
+          "color": "#E8614D"
+        }
+      ],
+      [
         "expo-font",
         {
           "fonts": [
