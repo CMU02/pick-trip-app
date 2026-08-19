@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
@@ -10,7 +11,23 @@ import { FONT } from '../constants/typography';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import type { SavedItinerarySummary } from '../services/itineraryHistoryStorage';
 import type { CompanionType, StylePreference } from '../types/companion';
+import type { CurrentUser } from '../types/user';
 import { formatItinerarySub } from '../utils/itineraryHistory';
+
+const PROVIDER_LABELS: Record<string, string> = {
+  kakao: '카카오',
+  google: 'Google',
+};
+
+// "카카오 · 2026년 8월 1일 가입"처럼 로그인 수단과 가입일을 한 줄로 합친다.
+function formatProviderJoin(user: CurrentUser): string {
+  const providerLabel = PROVIDER_LABELS[user.provider.toLowerCase()] ?? user.provider;
+  const joined = new Date(user.createdAt);
+  const joinLabel = Number.isNaN(joined.getTime())
+    ? null
+    : `${joined.getFullYear()}년 ${joined.getMonth() + 1}월 ${joined.getDate()}일 가입`;
+  return [providerLabel, joinLabel].filter((part): part is string => Boolean(part)).join(' · ');
+}
 
 interface ProfileContentProps {
   isGuest: boolean;
@@ -24,6 +41,7 @@ interface ProfileContentProps {
   onChangeCompanion: (companion: CompanionType) => void;
   onToggleStylePref: (pref: StylePreference) => void;
   onToggleRegion: (regionId: string) => void;
+  onLogin: () => void;
   onLogout: () => void;
 }
 
@@ -37,11 +55,8 @@ const Content = styled(View)`
   padding: 16px 20px ${TAB_BAR_CLEARANCE}px;
 `;
 
-const IdentityCard = styled(View)`
-  background-color: ${COLORS.white};
-  border-radius: 14px;
-  border-width: 1px;
-  border-color: ${COLORS.gray200};
+const IdentityCard = styled(LinearGradient)`
+  border-radius: 18px;
   padding: 18px;
   margin-bottom: 16px;
   flex-direction: row;
@@ -49,11 +64,28 @@ const IdentityCard = styled(View)`
   gap: 14px;
 `;
 
+const IdentityInfo = styled(View)`
+  flex: 1;
+`;
+
+const LoginButton = styled(TouchableOpacity)`
+  background-color: ${COLORS.white};
+  border-radius: 100px;
+  padding-vertical: 8px;
+  padding-horizontal: 16px;
+`;
+
+const LoginButtonLabel = styled(Text)`
+  font-size: 13px;
+  font-family: ${FONT.semibold};
+  color: ${COLORS.coral600};
+`;
+
 const Avatar = styled(View)`
   width: 56px;
   height: 56px;
   border-radius: 100px;
-  background-color: ${COLORS.teal500};
+  background-color: rgba(255, 255, 255, 0.25);
   align-items: center;
   justify-content: center;
 `;
@@ -67,14 +99,21 @@ const AvatarLabel = styled(Text)`
 const IdentityName = styled(Text)`
   font-size: 17px;
   font-family: ${FONT.bold};
-  color: ${COLORS.gray900};
+  color: ${COLORS.white};
   margin-bottom: 4px;
 `;
 
 const IdentitySub = styled(Text)`
   font-family: ${FONT.regular};
   font-size: 13px;
-  color: ${COLORS.gray500};
+  color: rgba(255, 255, 255, 0.85);
+`;
+
+const IdentityMeta = styled(Text)`
+  font-family: ${FONT.regular};
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 2px;
 `;
 
 const TripRow = styled(TouchableOpacity)<{ $last: boolean }>`
@@ -250,6 +289,7 @@ export function ProfileContent({
   onChangeCompanion,
   onToggleStylePref,
   onToggleRegion,
+  onLogin,
   onLogout,
 }: ProfileContentProps) {
   const [notifyState, setNotifyState] = useState<Record<string, boolean>>({
@@ -258,20 +298,32 @@ export function ProfileContent({
     trip: false,
   });
   const { user } = useCurrentUser(!isGuest);
-  const displayName = isGuest ? 'PickTrip 여행자' : (user?.nickname ?? '불러오는 중...');
-  const displaySub = isGuest ? '게스트로 둘러보는 중' : (user?.email ?? '');
+  const displayName = isGuest ? '게스트님' : (user?.nickname ?? '불러오는 중...');
 
   return (
     <Scroll showsVerticalScrollIndicator={false}>
       <Content>
-        <IdentityCard>
+        <IdentityCard
+          colors={[COLORS.coral500, COLORS.coral700]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
           <Avatar>
             <AvatarLabel>{displayName.charAt(0)}</AvatarLabel>
           </Avatar>
-          <View>
+          <IdentityInfo>
             <IdentityName>{displayName}</IdentityName>
-            <IdentitySub>{displaySub}</IdentitySub>
-          </View>
+            {isGuest ? (
+              <IdentitySub>게스트로 둘러보는 중</IdentitySub>
+            ) : (
+              user && <IdentityMeta>{formatProviderJoin(user)}</IdentityMeta>
+            )}
+          </IdentityInfo>
+          {isGuest && (
+            <LoginButton onPress={onLogin} activeOpacity={0.8}>
+              <LoginButtonLabel>로그인</LoginButtonLabel>
+            </LoginButton>
+          )}
         </IdentityCard>
 
         {itineraryHistory.length > 0 && (

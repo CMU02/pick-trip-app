@@ -191,6 +191,7 @@ function ProfileTabScreen() {
       onChangeCompanion={setCompanion}
       onToggleStylePref={handleToggleStylePref}
       onToggleRegion={handleToggleRegion}
+      onLogin={() => navigation.navigate('Login')}
       onLogout={() => {
         handleLogout();
         navigation.reset({ index: 0, routes: [{ name: 'Main' }] });

@@ -7,6 +7,7 @@ interface UserMeResponse {
   nickname: string;
   profileImageUrl: string | null;
   provider: string;
+  createdAt: string;
 }
 
 export async function fetchCurrentUser(): Promise<CurrentUser> {
