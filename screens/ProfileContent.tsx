@@ -1,6 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { COLORS } from '../constants/colors';
@@ -43,6 +42,8 @@ interface ProfileContentProps {
   onToggleRegion: (regionId: string) => void;
   onLogin: () => void;
   onLogout: () => void;
+  tripReminderEnabled: boolean;
+  onToggleTripReminder: (enabled: boolean) => void;
 }
 
 const Scroll = styled(ScrollView)`
@@ -271,12 +272,6 @@ const LogoutLabel = styled(Text)`
   color: ${COLORS.gray500};
 `;
 
-const NOTIFY_ROWS = [
-  { key: 'recommend', title: '맞춤 추천 알림', desc: '취향에 맞는 새 콘텐츠 알림' },
-  { key: 'festival', title: '축제·행사 알림', desc: '선호 지역 축제 일정' },
-  { key: 'trip', title: '여행 리마인더', desc: '출발 전 일정 알림' },
-] as const;
-
 export function ProfileContent({
   isGuest,
   companion,
@@ -291,12 +286,9 @@ export function ProfileContent({
   onToggleRegion,
   onLogin,
   onLogout,
+  tripReminderEnabled,
+  onToggleTripReminder,
 }: ProfileContentProps) {
-  const [notifyState, setNotifyState] = useState<Record<string, boolean>>({
-    recommend: true,
-    festival: true,
-    trip: false,
-  });
   const { user } = useCurrentUser(!isGuest);
   const displayName = isGuest ? '게스트님' : (user?.nickname ?? '불러오는 중...');
 
@@ -421,21 +413,19 @@ export function ProfileContent({
 
         <Card>
           <CardTitle>알림 설정</CardTitle>
-          {NOTIFY_ROWS.map((row, index) => (
-            <NotifyRow key={row.key} $last={index === NOTIFY_ROWS.length - 1}>
-              <View>
-                <NotifyTitle>{row.title}</NotifyTitle>
-                <NotifyDesc>{row.desc}</NotifyDesc>
-              </View>
-              <Toggle
-                $on={notifyState[row.key]}
-                onPress={() => setNotifyState((prev) => ({ ...prev, [row.key]: !prev[row.key] }))}
-                activeOpacity={0.8}
-              >
-                <ToggleKnob $on={notifyState[row.key]} />
-              </Toggle>
-            </NotifyRow>
-          ))}
+          <NotifyRow $last>
+            <View>
+              <NotifyTitle>여행 리마인더</NotifyTitle>
+              <NotifyDesc>출발 전 일정 알림</NotifyDesc>
+            </View>
+            <Toggle
+              $on={tripReminderEnabled}
+              onPress={() => onToggleTripReminder(!tripReminderEnabled)}
+              activeOpacity={0.8}
+            >
+              <ToggleKnob $on={tripReminderEnabled} />
+            </Toggle>
+          </NotifyRow>
         </Card>
 
         <LogoutButton onPress={onLogout} activeOpacity={0.8}>

@@ -184,6 +184,8 @@ function ProfileTabScreen() {
     handleToggleStylePref,
     handleToggleRegion,
     handleLogout,
+    tripReminderEnabled,
+    handleToggleTripReminder,
   } = useAppState();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { itineraryHistory, openingItineraryId, openItinerary, deleteItinerary } =
@@ -207,6 +209,8 @@ function ProfileTabScreen() {
         handleLogout();
         navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
       }}
+      tripReminderEnabled={tripReminderEnabled}
+      onToggleTripReminder={handleToggleTripReminder}
     />
   );
 }
