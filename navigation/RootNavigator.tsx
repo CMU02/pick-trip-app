@@ -72,6 +72,7 @@ function PriorityGate() {
     updateItemPriority,
     selectedRegions,
     tripDate,
+    setTripDate,
   } = useAppState();
 
   return (
@@ -80,6 +81,7 @@ function PriorityGate() {
       initialPriorities={priorities}
       selectedRegions={selectedRegions}
       tripDate={tripDate}
+      onChangeDate={setTripDate}
       onContinue={async (newPriorities) => {
         await Promise.all(
           Object.entries(newPriorities).map(([contentId, priority]) => {
