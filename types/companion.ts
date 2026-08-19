@@ -1,3 +1,5 @@
+import type { IoniconName } from './icon';
+
 export type CompanionType = 'with_kids' | 'with_parents' | 'whole_family';
 
 export type StylePreference =
@@ -10,7 +12,7 @@ export type StylePreference =
 export interface Companion {
   id: CompanionType;
   label: string;
-  emoji: string;
+  icon: IoniconName;
   description: string;
 }
 

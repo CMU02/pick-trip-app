@@ -1,9 +1,11 @@
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, Text, View } from 'react-native';
 import styled from 'styled-components';
 import { COLORS } from '../../constants/colors';
 import { FONT } from '../../constants/typography';
+import type { IoniconName } from '../../types/icon';
 
 export interface ProgressStep {
   label: string;
@@ -11,7 +13,7 @@ export interface ProgressStep {
 }
 
 interface ProgressChecklistProps {
-  icon: string;
+  icon: IoniconName;
   heading: string;
   subText: string;
   steps: ProgressStep[];
@@ -70,10 +72,6 @@ const SpinnerEmojiBadge = styled(View)`
   shadow-radius: 6px;
   shadow-offset: 0px 2px;
   elevation: 2;
-`;
-
-const SpinnerEmoji = styled(Text)`
-  font-size: 34px;
 `;
 
 const HeadingText = styled(Text)`
@@ -148,12 +146,6 @@ const StepDoneCircle = styled(View)`
   justify-content: center;
 `;
 
-const StepDoneCheck = styled(Text)`
-  font-size: 13px;
-  color: ${COLORS.teal600};
-  font-family: ${FONT.bold};
-`;
-
 const StepPendingDot = styled(View)`
   width: 9px;
   height: 9px;
@@ -220,7 +212,7 @@ export function ProgressChecklist({
         <SpinnerGlowFill colors={[COLORS.coral50, COLORS.coral100]} />
         <SpinnerRing style={{ transform: [{ rotate }] }} />
         <SpinnerEmojiBadge>
-          <SpinnerEmoji>{icon}</SpinnerEmoji>
+          <Ionicons name={icon} size={34} color={COLORS.coral500} />
         </SpinnerEmojiBadge>
       </SpinnerGlow>
       <HeadingText>{heading}</HeadingText>
@@ -242,7 +234,7 @@ export function ProgressChecklist({
               <StepIconBox>
                 {isDone ? (
                   <StepDoneCircle>
-                    <StepDoneCheck>✓</StepDoneCheck>
+                    <Ionicons name="checkmark" size={13} color={COLORS.teal600} />
                   </StepDoneCircle>
                 ) : (
                   <StepPendingDot />
