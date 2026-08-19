@@ -2,6 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
+import { FavoriteButton } from '../components/atoms/FavoriteButton';
 import {
   TripDatePickerModal,
   type TripDateValue,
@@ -16,6 +17,8 @@ import { useContents } from '../hooks/useContents';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import type { SavedItinerarySummary } from '../services/itineraryHistoryStorage';
 import type { CompanionType, StylePreference } from '../types/companion';
+// 이 파일에 이미 스타일 컴포넌트 `Content`가 있어서 타입 이름을 바꿔 가져온다.
+import type { Content as ContentItem } from '../types/content';
 import { formatItinerarySub } from '../utils/itineraryHistory';
 
 interface HomeContentProps {
@@ -37,6 +40,9 @@ interface HomeContentProps {
   onToggleStylePref: (pref: StylePreference) => void;
   onToggleRegion: (regionId: string) => void;
   onSelectDate: (value: TripDateValue) => void;
+  favoriteIds: string[];
+  onToggleFavorite: (content: ContentItem) => void;
+  onOpenFavorites: () => void;
 }
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -95,9 +101,33 @@ const Greeting = styled(Text)`
 `;
 
 const GreetingSub = styled(Text)`
+  flex: 1;
   font-family: ${FONT.regular};
   font-size: 14px;
   color: rgba(255, 255, 255, 0.85);
+`;
+
+const GreetingSubRow = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+`;
+
+const FavoritesEntryButton = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(255, 255, 255, 0.18);
+  border-radius: 100px;
+  padding-vertical: 5px;
+  padding-horizontal: 10px;
+`;
+
+const FavoritesEntryLabel = styled(Text)`
+  font-family: ${FONT.semibold};
+  font-size: 12px;
+  color: ${COLORS.white};
 `;
 
 // 하단 여백은 플로팅 탭바가 가리는 높이를 확보한다.
@@ -374,6 +404,12 @@ const RecommendBody = styled(View)`
   padding: 10px;
 `;
 
+const RecommendFavoriteBadge = styled(View)`
+  position: absolute;
+  top: 6px;
+  right: 6px;
+`;
+
 const RecommendName = styled(Text)`
   font-size: 13px;
   font-family: ${FONT.semibold};
@@ -399,6 +435,9 @@ export function HomeContent({
   onToggleStylePref,
   onToggleRegion,
   onSelectDate,
+  favoriteIds,
+  onToggleFavorite,
+  onOpenFavorites,
 }: HomeContentProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const count = selectedIds.length;
@@ -423,11 +462,17 @@ export function HomeContent({
           {isGuest ? '안녕하세요, 게스트님' : `안녕하세요, ${displayName} 여행자님`}{' '}
           <Ionicons name="hand-right-outline" size={18} color={COLORS.white} />
         </Greeting>
-        <GreetingSub>
-          {count > 0
-            ? `여행 바구니에 ${count}곳을 담았어요.`
-            : '마음에 드는 곳을 담고 AI 일정을 만들어보세요.'}
-        </GreetingSub>
+        <GreetingSubRow>
+          <GreetingSub>
+            {count > 0
+              ? `여행 바구니에 ${count}곳을 담았어요.`
+              : '마음에 드는 곳을 담고 AI 일정을 만들어보세요.'}
+          </GreetingSub>
+          <FavoritesEntryButton onPress={onOpenFavorites} activeOpacity={0.8}>
+            <Ionicons name="heart" size={13} color={COLORS.white} />
+            <FavoritesEntryLabel>{favoriteIds.length}</FavoritesEntryLabel>
+          </FavoritesEntryButton>
+        </GreetingSubRow>
       </HeaderSection>
 
       <Content>
@@ -592,6 +637,14 @@ export function HomeContent({
                         />
                       </RecommendThumb>
                     )}
+                    <RecommendFavoriteBadge>
+                      <FavoriteButton
+                        active={favoriteIds.includes(item.id)}
+                        onPress={() => onToggleFavorite(item)}
+                        size={12}
+                        diameter={22}
+                      />
+                    </RecommendFavoriteBadge>
                     <RecommendBody>
                       <RecommendName numberOfLines={1}>{item.name}</RecommendName>
                     </RecommendBody>

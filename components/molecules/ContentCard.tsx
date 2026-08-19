@@ -5,12 +5,15 @@ import { CATEGORIES } from '../../constants/categories';
 import { COLORS } from '../../constants/colors';
 import { FONT } from '../../constants/typography';
 import type { Content } from '../../types/content';
+import { FavoriteButton } from '../atoms/FavoriteButton';
 
 interface ContentCardProps {
   content: Content;
   selected?: boolean;
   onPress: () => void;
   onPressDetail?: () => void;
+  favorite?: boolean;
+  onToggleFavorite?: (content: Content) => void;
 }
 
 const Card = styled(TouchableOpacity)<{ $selected: boolean }>`
@@ -23,14 +26,14 @@ const Card = styled(TouchableOpacity)<{ $selected: boolean }>`
 `;
 
 const Thumbnail = styled(View)<{ $color: string }>`
-  height: 100px;
+  height: 180px;
   background-color: ${({ $color }) => `${$color}33`};
   align-items: center;
   justify-content: center;
 `;
 
 const ThumbnailImage = styled(Image)`
-  height: 100px;
+  height: 180px;
   width: 100%;
 `;
 
@@ -46,10 +49,11 @@ const CheckBadge = styled(View)`
   justify-content: center;
 `;
 
-const CheckMark = styled(Text)`
-  font-size: 13px;
-  color: ${COLORS.white};
-  font-family: ${FONT.bold};
+// 담기 선택 표시(CheckBadge)와 겹치지 않게 반대쪽 모서리에 둔다.
+const FavoriteBadge = styled(View)`
+  position: absolute;
+  top: 8px;
+  left: 8px;
 `;
 
 const Body = styled(View)`
@@ -97,10 +101,6 @@ const InfoChip = styled(View)`
   gap: 3px;
 `;
 
-const InfoEmoji = styled(Text)`
-  font-size: 13px;
-`;
-
 const InfoText = styled(Text)`
   font-family: ${FONT.regular};
   font-size: 12px;
@@ -108,6 +108,9 @@ const InfoText = styled(Text)`
 `;
 
 const DetailLink = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
   align-self: flex-start;
   margin-top: 12px;
 `;
@@ -123,6 +126,8 @@ export function ContentCard({
   selected = false,
   onPress,
   onPressDetail,
+  favorite = false,
+  onToggleFavorite,
 }: ContentCardProps) {
   const category = CATEGORIES.find((c) => c.id === content.category);
 
@@ -137,8 +142,13 @@ export function ContentCard({
       )}
       {selected && (
         <CheckBadge>
-          <CheckMark>✓</CheckMark>
+          <Ionicons name="checkmark" size={14} color={COLORS.white} />
         </CheckBadge>
+      )}
+      {onToggleFavorite && (
+        <FavoriteBadge>
+          <FavoriteButton active={favorite} onPress={() => onToggleFavorite(content)} />
+        </FavoriteBadge>
       )}
       <Body>
         <CategoryBadge>
@@ -149,14 +159,15 @@ export function ContentCard({
         <InfoRow>
           {content.indoor && (
             <InfoChip>
-              <InfoEmoji>🏠</InfoEmoji>
+              <Ionicons name="home-outline" size={13} color={COLORS.gray500} />
               <InfoText>실내</InfoText>
             </InfoChip>
           )}
         </InfoRow>
         {onPressDetail && (
           <DetailLink onPress={onPressDetail} activeOpacity={0.7}>
-            <DetailLinkLabel>자세히 보기 →</DetailLinkLabel>
+            <DetailLinkLabel>자세히 보기</DetailLinkLabel>
+            <Ionicons name="chevron-forward" size={12} color={COLORS.coral700} />
           </DetailLink>
         )}
       </Body>

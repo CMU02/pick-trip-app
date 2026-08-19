@@ -8,6 +8,7 @@ import { COLORS } from '../constants/colors';
 import { FONT } from '../constants/typography';
 import { useAppState } from '../contexts/AppStateContext';
 import { AuthScreen } from '../screens/AuthScreen';
+import { FavoritesScreen } from '../screens/FavoritesScreen';
 import { ItineraryResultScreen } from '../screens/ItineraryResultScreen';
 import { PrioritySelectScreen } from '../screens/PrioritySelectScreen';
 import { SharedItineraryScreen } from '../screens/SharedItineraryScreen';
@@ -179,6 +180,11 @@ function LoginGate() {
   );
 }
 
+function FavoritesGate() {
+  const { favoriteIds, handleToggleFavorite } = useAppState();
+  return <FavoritesScreen favoriteIds={favoriteIds} onToggleFavorite={handleToggleFavorite} />;
+}
+
 function SharedGate({ route }: { route: { params: RootStackParamList['Shared'] } }) {
   const navigation = useNavigation<Nav>();
   return (
@@ -218,6 +224,7 @@ export function RootNavigator() {
         options={{ title: '일정이 완성됐어요' }}
       />
       <Stack.Screen name="Shared" component={SharedGate} options={{ title: '공유된 일정' }} />
+      <Stack.Screen name="Favorites" component={FavoritesGate} options={{ title: '찜한 콘텐츠' }} />
     </Stack.Navigator>
   );
 }
