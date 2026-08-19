@@ -211,6 +211,8 @@ function ProfileTabScreen() {
       }}
       tripReminderEnabled={tripReminderEnabled}
       onToggleTripReminder={handleToggleTripReminder}
+      onOpenTerms={() => navigation.navigate('Terms')}
+      onOpenPrivacy={() => navigation.navigate('Privacy')}
     />
   );
 }

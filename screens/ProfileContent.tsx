@@ -44,6 +44,8 @@ interface ProfileContentProps {
   onLogout: () => void;
   tripReminderEnabled: boolean;
   onToggleTripReminder: (enabled: boolean) => void;
+  onOpenTerms: () => void;
+  onOpenPrivacy: () => void;
 }
 
 const Scroll = styled(ScrollView)`
@@ -272,6 +274,28 @@ const LogoutLabel = styled(Text)`
   color: ${COLORS.gray500};
 `;
 
+const LegalRow = styled(View)`
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+`;
+
+const LegalLink = styled(TouchableOpacity)``;
+
+const LegalLinkLabel = styled(Text)`
+  font-size: 12px;
+  font-family: ${FONT.regular};
+  color: ${COLORS.gray400};
+  text-decoration-line: underline;
+`;
+
+const LegalDivider = styled(Text)`
+  font-size: 12px;
+  color: ${COLORS.gray300};
+`;
+
 export function ProfileContent({
   isGuest,
   companion,
@@ -288,6 +312,8 @@ export function ProfileContent({
   onLogout,
   tripReminderEnabled,
   onToggleTripReminder,
+  onOpenTerms,
+  onOpenPrivacy,
 }: ProfileContentProps) {
   const { user } = useCurrentUser(!isGuest);
   const displayName = isGuest ? '게스트님' : (user?.nickname ?? '불러오는 중...');
@@ -431,6 +457,16 @@ export function ProfileContent({
         <LogoutButton onPress={onLogout} activeOpacity={0.8}>
           <LogoutLabel>로그아웃</LogoutLabel>
         </LogoutButton>
+
+        <LegalRow>
+          <LegalLink onPress={onOpenTerms} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <LegalLinkLabel>이용약관</LegalLinkLabel>
+          </LegalLink>
+          <LegalDivider>|</LegalDivider>
+          <LegalLink onPress={onOpenPrivacy} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <LegalLinkLabel>개인정보처리방침</LegalLinkLabel>
+          </LegalLink>
+        </LegalRow>
       </Content>
     </Scroll>
   );

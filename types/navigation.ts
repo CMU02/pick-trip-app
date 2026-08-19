@@ -8,6 +8,8 @@ export type RootStackParamList = {
   Itinerary: undefined;
   Shared: { token: string };
   Favorites: undefined;
+  Terms: undefined;
+  Privacy: undefined;
 };
 
 export type MainTabParamList = {

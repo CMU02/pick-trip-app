@@ -5,11 +5,18 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { useEffect, useState } from 'react';
 import { TouchableOpacity } from 'react-native';
 import { COLORS } from '../constants/colors';
+import {
+  PRIVACY_LAST_UPDATED,
+  PRIVACY_POLICY,
+  TERMS_LAST_UPDATED,
+  TERMS_OF_SERVICE,
+} from '../constants/legalDocuments';
 import { FONT } from '../constants/typography';
 import { useAppState } from '../contexts/AppStateContext';
 import { AuthScreen } from '../screens/AuthScreen';
 import { FavoritesScreen } from '../screens/FavoritesScreen';
 import { ItineraryResultScreen } from '../screens/ItineraryResultScreen';
+import { LegalDocumentScreen } from '../screens/LegalDocumentScreen';
 import { PrioritySelectScreen } from '../screens/PrioritySelectScreen';
 import { SharedItineraryScreen } from '../screens/SharedItineraryScreen';
 import { SplashScreen } from '../screens/SplashScreen';
@@ -176,6 +183,8 @@ function LoginGate() {
         setIsGuest(false);
         navigation.goBack();
       }}
+      onOpenTerms={() => navigation.navigate('Terms')}
+      onOpenPrivacy={() => navigation.navigate('Privacy')}
     />
   );
 }
@@ -183,6 +192,14 @@ function LoginGate() {
 function FavoritesGate() {
   const { favoriteIds, handleToggleFavorite } = useAppState();
   return <FavoritesScreen favoriteIds={favoriteIds} onToggleFavorite={handleToggleFavorite} />;
+}
+
+function TermsGate() {
+  return <LegalDocumentScreen sections={TERMS_OF_SERVICE} lastUpdated={TERMS_LAST_UPDATED} />;
+}
+
+function PrivacyGate() {
+  return <LegalDocumentScreen sections={PRIVACY_POLICY} lastUpdated={PRIVACY_LAST_UPDATED} />;
 }
 
 function SharedGate({ route }: { route: { params: RootStackParamList['Shared'] } }) {
@@ -225,6 +242,12 @@ export function RootNavigator() {
       />
       <Stack.Screen name="Shared" component={SharedGate} options={{ title: '공유된 일정' }} />
       <Stack.Screen name="Favorites" component={FavoritesGate} options={{ title: '찜한 콘텐츠' }} />
+      <Stack.Screen name="Terms" component={TermsGate} options={{ title: '이용약관' }} />
+      <Stack.Screen
+        name="Privacy"
+        component={PrivacyGate}
+        options={{ title: '개인정보처리방침' }}
+      />
     </Stack.Navigator>
   );
 }
