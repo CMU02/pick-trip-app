@@ -7,6 +7,7 @@ import {
   DEFAULT_STEP_INTERVAL_MS,
   ProgressChecklist,
 } from '../components/molecules/ProgressChecklist';
+import { SaveItineraryModal } from '../components/molecules/SaveItineraryModal';
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
 import { REGIONS } from '../constants/regions';
@@ -14,13 +15,14 @@ import { FONT } from '../constants/typography';
 import { useContents } from '../hooks/useContents';
 import { useContentsByIds } from '../hooks/useContentsByIds';
 import { toErrorMessage } from '../services/apiError';
+import { syncBasketToServer } from '../services/basketService';
 import { generateItinerary } from '../services/generateItinerary';
+import type { SavedItinerarySummary } from '../services/itineraryHistoryStorage';
 import {
   generateItineraryPlan,
   saveItineraryPlan,
   updateItineraryPlan,
 } from '../services/itineraryService';
-import { saveItinerary } from '../services/itineraryStorage';
 import { addStop, moveStop, removeStop } from '../services/scheduleActions';
 import { buildShareText, shareItinerary } from '../services/shareItinerary';
 import { createShareLink } from '../services/shareService';
@@ -41,6 +43,8 @@ interface ItineraryResultScreenProps {
   initialItineraryId?: string;
   isGuest: boolean;
   onRequireLogin: () => void;
+  onSaved?: (summary: SavedItinerarySummary) => void;
+  onGoHome: () => void;
 }
 
 const GENERATING_STEPS = [
@@ -139,21 +143,9 @@ const StepCircle = styled(View)<{ $active: boolean }>`
   background-color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.success)};
 `;
 
-const StepCircleLabel = styled(Text)`
-  font-size: 11px;
-  font-family: ${FONT.bold};
-  color: ${COLORS.white};
-`;
-
 const StepLabel = styled(Text)<{ $active: boolean }>`
   font-size: 13px;
   font-family: ${({ $active }) => ($active ? FONT.bold : FONT.medium)};
-  color: ${COLORS.gray900};
-`;
-
-const Title = styled(Text)`
-  font-size: 24px;
-  font-family: ${FONT.medium};
   color: ${COLORS.gray900};
 `;
 
@@ -183,10 +175,6 @@ const SummaryItem = styled(View)`
   gap: 5px;
 `;
 
-const SummaryEmoji = styled(Text)`
-  font-size: 13px;
-`;
-
 const SummaryText = styled(Text)`
   font-size: 13px;
   font-family: ${FONT.semibold};
@@ -197,6 +185,23 @@ const SummaryDivider = styled(View)`
   width: 1px;
   height: 12px;
   background-color: ${COLORS.gray200};
+`;
+
+const GuestBanner = styled(View)`
+  flex-direction: row;
+  gap: 8px;
+  background-color: ${COLORS.coral50};
+  border-radius: 12px;
+  margin: 12px 20px 4px;
+  padding: 12px 14px;
+`;
+
+const GuestBannerText = styled(Text)`
+  flex: 1;
+  font-family: ${FONT.regular};
+  font-size: 12px;
+  line-height: 18px;
+  color: ${COLORS.coral700};
 `;
 
 const DayHeaderRow = styled(View)`
@@ -305,10 +310,6 @@ const ReasonBox = styled(View)`
   border-radius: 8px;
   padding: 8px 10px;
   margin-top: 10px;
-`;
-
-const ReasonEmoji = styled(Text)`
-  font-size: 13px;
 `;
 
 const ReasonText = styled(Text)`
@@ -421,14 +422,14 @@ const StatLabel = styled(Text)`
   color: ${COLORS.gray500};
 `;
 
-const SaveButton = styled(TouchableOpacity)`
+const SaveButton = styled(TouchableOpacity)<{ $disabled: boolean }>`
   margin-horizontal: 20px;
   margin-top: 4px;
   margin-bottom: 12px;
   padding-vertical: 14px;
   border-radius: 12px;
   align-items: center;
-  background-color: ${COLORS.coral500};
+  background-color: ${({ $disabled }) => ($disabled ? COLORS.gray200 : COLORS.coral500)};
 `;
 
 const SaveButtonLabel = styled(Text)`
@@ -438,11 +439,14 @@ const SaveButtonLabel = styled(Text)`
 `;
 
 const ShareButton = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   margin-horizontal: 20px;
   margin-bottom: 24px;
   padding-vertical: 14px;
   border-radius: 12px;
-  align-items: center;
   background-color: ${COLORS.white};
   border-width: 1px;
   border-color: ${COLORS.gray200};
@@ -466,6 +470,8 @@ export function ItineraryResultScreen({
   initialItineraryId,
   isGuest,
   onRequireLogin,
+  onSaved,
+  onGoHome,
 }: ItineraryResultScreenProps) {
   const [status, setStatus] = useState<'loading' | 'done' | 'error'>(
     initialStops ? 'done' : 'loading',
@@ -481,6 +487,7 @@ export function ItineraryResultScreen({
   } | null>(null);
   const [expandedDay, setExpandedDay] = useState<number | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [showSaveModal, setShowSaveModal] = useState(false);
 
   const runGenerate = async () => {
     setStatus('loading');
@@ -506,6 +513,22 @@ export function ItineraryResultScreen({
           contentId,
           priority: priorities[contentId] ?? 'good',
         }));
+        const contentById = Object.fromEntries(selectedContents.map((c) => [c.id, c]));
+        // 백엔드 /itineraries/generate는 요청 body를 받지 않고 서버에 저장된 바구니만
+        // 읽으므로, 생성을 요청하기 전에 로컬 바구니를 서버로 먼저 동기화해야 한다.
+        await syncBasketToServer({
+          region: (selectedRegions[0] ?? '').toUpperCase(),
+          travelDate,
+          duration,
+          companion,
+          stylePrefs,
+          items: items.map((item) => ({
+            contentId: item.contentId,
+            priority: item.priority,
+            title: contentById[item.contentId]?.name ?? null,
+            thumbnailUrl: contentById[item.contentId]?.imageUrl ?? null,
+          })),
+        });
         const generated = await generateItineraryPlan({
           region: selectedRegions[0] ?? '',
           travelDate,
@@ -525,7 +548,9 @@ export function ItineraryResultScreen({
         });
       }
       setStatus('done');
-    } catch {
+    } catch (error) {
+      // 원인을 남기지 않으면 타임아웃인지 서버 에러인지 구분할 수 없다.
+      console.warn('[itinerary] 일정 생성 실패', error);
       setErrorMessage('일정 생성에 실패했습니다. 컨텐츠를 추가하거나 다시 시도해주세요.');
       setStatus('error');
     }
@@ -543,19 +568,35 @@ export function ItineraryResultScreen({
     [selectedContents],
   );
 
-  const handleSave = async () => {
+  // 저장 버튼을 누르면 바로 저장하지 않고, 이름을 정할 수 있게 모달부터 띄운다.
+  const handleSaveButtonPress = () => {
     if (isGuest) {
       onRequireLogin();
       return;
     }
+    // days[].items는 서버에서 빈 배열을 거부한다(@NotEmpty). 모든 장소를 지운 채로
+    // 저장하면 그대로 검증 실패로 이어지므로, 요청을 보내기 전에 미리 막는다.
+    if (stops.length === 0) {
+      Alert.alert('저장할 장소가 없어요', '일정에서 장소를 모두 지우면 저장할 수 없어요.');
+      return;
+    }
+    setShowSaveModal(true);
+  };
+
+  // 실제 저장 요청. 성공하면 저장된 결과를, 실패하면 null을 돌려준다 — 호출부(그냥 저장 /
+  // 저장하고 홈으로 가기)가 그 뒤에 뭘 할지는 각자 알아서 하게 분리했다.
+  const submitSave = async (title: string) => {
     setSaveState('saving');
     try {
       const itineraryId = plan?.itineraryId ?? initialItineraryId;
+      // plan은 AI가 새로 생성할 때만 채워진다. 저장된 일정을 다시 열어 편집하는 흐름은
+      // runGenerate를 건너뛰어 plan이 계속 null이므로, 화면이 이미 갖고 있는
+      // travelDate/duration prop을 fallback으로 써야 값이 비어 저장되지 않는다.
       const input = {
-        title: plan?.title ?? '나만의 여행 일정',
+        title,
         region: plan?.region ?? selectedRegions[0] ?? '',
-        travelDate: plan?.travelDate ?? null,
-        duration: plan?.duration ?? null,
+        travelDate: plan?.travelDate ?? travelDate,
+        duration: plan?.duration ?? duration,
         stops,
         titleByContentId,
       };
@@ -569,17 +610,38 @@ export function ItineraryResultScreen({
         travelDate: saved.travelDate,
         duration: saved.duration,
       });
-      await saveItinerary({
-        selectedRegions,
-        selectedIds,
-        priorities: {},
-        stops,
-        savedAt: new Date().toISOString(),
-        itineraryId: saved.itineraryId ?? undefined,
-      });
+      if (saved.itineraryId) {
+        onSaved?.({
+          itineraryId: saved.itineraryId,
+          title: saved.title,
+          region: saved.region,
+          travelDate: saved.travelDate,
+          duration: saved.duration,
+          savedAt: new Date().toISOString(),
+        });
+      }
       setSaveState('saved');
-    } catch {
+      return saved;
+    } catch (error) {
+      // 원인을 남기지 않으면 서버 응답인지 네트워크 문제인지 구분할 수 없다.
+      console.warn('[itinerary] 일정 저장 실패', error);
       setSaveState('error');
+      Alert.alert('저장 실패', toErrorMessage(error, '잠시 후 다시 시도해주세요.'));
+      return null;
+    }
+  };
+
+  const handleConfirmSave = async (title: string) => {
+    const saved = await submitSave(title);
+    // 모달은 성공했을 때만 닫는다 — 실패하면 열어둬서 이름 다시 안 치고 바로 재시도할 수 있게.
+    if (saved) setShowSaveModal(false);
+  };
+
+  const handleConfirmSaveAndGoHome = async (title: string) => {
+    const saved = await submitSave(title);
+    if (saved) {
+      setShowSaveModal(false);
+      onGoHome();
     }
   };
 
@@ -670,14 +732,13 @@ export function ItineraryResultScreen({
               return (
                 <StepBadge key={step.key}>
                   <StepCircle $active={active}>
-                    <StepCircleLabel>✓</StepCircleLabel>
+                    <Ionicons name="checkmark" size={12} color={COLORS.white} />
                   </StepCircle>
                   <StepLabel $active={active}>{step.label}</StepLabel>
                 </StepBadge>
               );
             })}
           </StepperRow>
-          <Title>🎉 일정이 완성됐어요</Title>
           <Subtitle>
             {planDuration != null
               ? `${planDuration}박 ${planDuration + 1}일 기준으로 ${isGuest ? '만들었어요' : 'AI가 만들었어요'}`
@@ -691,7 +752,7 @@ export function ItineraryResultScreen({
           <SummaryCard>
             {regionName && (
               <SummaryItem>
-                <SummaryEmoji>📍</SummaryEmoji>
+                <Ionicons name="location-outline" size={13} color={COLORS.gray900} />
                 <SummaryText>{regionName}</SummaryText>
               </SummaryItem>
             )}
@@ -699,7 +760,7 @@ export function ItineraryResultScreen({
               <>
                 {regionName && <SummaryDivider />}
                 <SummaryItem>
-                  <SummaryEmoji>📅</SummaryEmoji>
+                  <Ionicons name="calendar-outline" size={13} color={COLORS.gray900} />
                   <SummaryText>{dateRange}</SummaryText>
                 </SummaryItem>
               </>
@@ -707,6 +768,16 @@ export function ItineraryResultScreen({
             <SummaryDivider />
             <SummaryText>총 {stops.length}곳</SummaryText>
           </SummaryCard>
+        )}
+
+        {isGuest && (
+          <GuestBanner>
+            <Ionicons name="sparkles" size={14} color={COLORS.coral700} />
+            <GuestBannerText>
+              지금 보시는 일정은 담아주신 콘텐츠를 기반으로 만든 예시입니다. 로그인하면 실제 AI 일정
+              생성/저장 기능을 이용할 수 있어요.
+            </GuestBannerText>
+          </GuestBanner>
         )}
 
         {dayList.map((day) => {
@@ -746,7 +817,7 @@ export function ItineraryResultScreen({
                         <StopAddress numberOfLines={1}>{content.address}</StopAddress>
                       )}
                       <ReasonBox>
-                        <ReasonEmoji>🪄</ReasonEmoji>
+                        <Ionicons name="sparkles" size={13} color={COLORS.teal700} />
                         <ReasonText>{stop.reason}</ReasonText>
                       </ReasonBox>
                       <ActionRow>
@@ -806,24 +877,40 @@ export function ItineraryResultScreen({
           </StatItem>
         </StatsCard>
       </ScrollView>
-      <SaveButton onPress={handleSave} activeOpacity={0.8} disabled={saveState === 'saving'}>
+      <SaveButton
+        onPress={handleSaveButtonPress}
+        activeOpacity={0.8}
+        disabled={saveState === 'saving' || stops.length === 0}
+        $disabled={stops.length === 0}
+      >
         <SaveButtonLabel>
-          {saveState === 'saving'
-            ? '저장 중...'
-            : saveState === 'saved'
-              ? '저장 완료'
-              : saveState === 'error'
-                ? '저장 실패했습니다. 다시 시도해주세요.'
-                : isGuest
-                  ? '로그인하고 일정 저장'
-                  : '일정 저장'}
+          {stops.length === 0
+            ? '저장할 장소가 없어요'
+            : saveState === 'saving'
+              ? '저장 중...'
+              : saveState === 'saved'
+                ? '저장 완료'
+                : saveState === 'error'
+                  ? '저장 실패했습니다. 다시 시도해주세요.'
+                  : isGuest
+                    ? '로그인하고 일정 저장'
+                    : '일정 저장'}
         </SaveButtonLabel>
       </SaveButton>
       <ShareButton onPress={handleShare} activeOpacity={0.8} disabled={isSharing}>
+        {!isSharing && <Ionicons name="share-outline" size={16} color={COLORS.gray700} />}
         <ShareButtonLabel>
-          {isSharing ? '공유 링크 만드는 중...' : isGuest ? '↗ 로그인하고 공유하기' : '↗ 공유하기'}
+          {isSharing ? '공유 링크 만드는 중...' : isGuest ? '로그인하고 공유하기' : '공유하기'}
         </ShareButtonLabel>
       </ShareButton>
+      <SaveItineraryModal
+        visible={showSaveModal}
+        initialTitle={plan?.title ?? '나만의 여행 일정'}
+        isSaving={saveState === 'saving'}
+        onConfirm={handleConfirmSave}
+        onConfirmAndGoHome={handleConfirmSaveAndGoHome}
+        onClose={() => setShowSaveModal(false)}
+      />
     </ScreenContainer>
   );
 }
