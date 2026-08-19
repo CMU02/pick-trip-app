@@ -2,8 +2,11 @@ import { createContext, type ReactNode, useContext, useEffect, useRef, useState 
 import { Alert } from 'react-native';
 import { COMPANIONS } from '../constants/companions';
 import { useBasket } from '../hooks/useBasket';
+import { toErrorMessage } from '../services/apiError';
+import { promptLogin } from '../services/authPrompt';
 import { logout } from '../services/authService';
 import { hasStoredSession } from '../services/authStorage';
+import { addFavorite, getFavoriteIds, removeFavorite } from '../services/favoriteApi';
 import {
   loadItineraryHistory,
   recordItineraryHistory,
@@ -37,6 +40,8 @@ interface AppStateValue {
   itineraryHistory: SavedItinerarySummary[];
   recordSavedItinerary: (summary: SavedItinerarySummary) => void;
   removeSavedItinerary: (itineraryId: string) => void;
+  favoriteIds: string[];
+  handleToggleFavorite: (content: Content) => void;
   initialStops: ItineraryStop[] | undefined;
   setInitialStops: (value: ItineraryStop[] | undefined) => void;
   initialItineraryId: string | undefined;
@@ -71,6 +76,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [companion, setCompanion] = useState<CompanionType | null>(null);
   const [stylePrefs, setStylePrefs] = useState<StylePreference[]>([]);
   const [itineraryHistory, setItineraryHistory] = useState<SavedItinerarySummary[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [initialStops, setInitialStops] = useState<ItineraryStop[] | undefined>(undefined);
   const [initialItineraryId, setInitialItineraryId] = useState<string | undefined>(undefined);
 
@@ -107,6 +113,52 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
 
   const removeSavedItinerary = (itineraryId: string) => {
     removeItineraryHistory(itineraryId).then(setItineraryHistory);
+  };
+
+  // 찜하기는 로그인 계정 기준 서버 API다(로그인 상태가 결정되기 전엔 기다린다).
+  // 게스트는 찜한 게 있을 수 없으므로 빈 목록으로 둔다 — 로그인하면 이 effect가
+  // isGuest 변화를 감지해 서버에서 다시 불러온다.
+  useEffect(() => {
+    if (isAuthLoading) return;
+    if (isGuest) {
+      setFavoriteIds([]);
+      return;
+    }
+    let cancelled = false;
+    getFavoriteIds()
+      .then((ids) => {
+        if (!cancelled) setFavoriteIds(ids);
+      })
+      .catch(() => {
+        // 목록을 못 불러와도 조용히 빈 상태로 둔다 — 화면을 다시 열면 재시도된다.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthLoading, isGuest]);
+
+  const handleToggleFavorite = async (content: Content) => {
+    if (isGuest) {
+      promptLogin();
+      return;
+    }
+    const wasFavorited = favoriteIds.includes(content.id);
+    // 낙관적 업데이트: 서버 응답을 기다리지 않고 화면부터 반영하고, 실패하면 되돌린다.
+    setFavoriteIds((prev) =>
+      wasFavorited ? prev.filter((id) => id !== content.id) : [...prev, content.id],
+    );
+    try {
+      if (wasFavorited) {
+        await removeFavorite(content.id);
+      } else {
+        await addFavorite(content);
+      }
+    } catch (error) {
+      setFavoriteIds((prev) =>
+        wasFavorited ? [...prev, content.id] : prev.filter((id) => id !== content.id),
+      );
+      Alert.alert('찜하기 실패', toErrorMessage(error, '잠시 후 다시 시도해주세요.'));
+    }
   };
 
   const {
@@ -233,6 +285,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     itineraryHistory,
     recordSavedItinerary,
     removeSavedItinerary,
+    favoriteIds,
+    handleToggleFavorite,
     initialStops,
     setInitialStops,
     initialItineraryId,

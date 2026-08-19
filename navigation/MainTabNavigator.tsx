@@ -106,6 +106,8 @@ function HomeTabScreen() {
     handleToggleStylePref,
     handleToggleRegion,
     setTripDate,
+    favoriteIds,
+    handleToggleFavorite,
   } = useAppState();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList & MainTabParamList>>();
   const { itineraryHistory, openingItineraryId, openItinerary, deleteItinerary } =
@@ -131,12 +133,16 @@ function HomeTabScreen() {
       onToggleStylePref={handleToggleStylePref}
       onToggleRegion={handleToggleRegion}
       onSelectDate={setTripDate}
+      favoriteIds={favoriteIds}
+      onToggleFavorite={handleToggleFavorite}
+      onOpenFavorites={() => navigation.navigate('Favorites')}
     />
   );
 }
 
 function ExploreTabScreen() {
-  const { selectedRegions, selectedIds, handleToggleContent } = useAppState();
+  const { selectedRegions, selectedIds, handleToggleContent, favoriteIds, handleToggleFavorite } =
+    useAppState();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   return (
@@ -145,12 +151,15 @@ function ExploreTabScreen() {
       selectedIds={selectedIds}
       onToggle={handleToggleContent}
       onContinue={() => navigation.navigate('Priority')}
+      favoriteIds={favoriteIds}
+      onToggleFavorite={handleToggleFavorite}
     />
   );
 }
 
 function BasketTabScreen() {
-  const { selectedIds, tripDate, handleToggleContent } = useAppState();
+  const { selectedIds, tripDate, handleToggleContent, favoriteIds, handleToggleFavorite } =
+    useAppState();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
 
   return (
@@ -159,6 +168,8 @@ function BasketTabScreen() {
       tripDate={tripDate}
       onToggle={handleToggleContent}
       onCreateItinerary={() => navigation.navigate('Priority')}
+      favoriteIds={favoriteIds}
+      onToggleFavorite={handleToggleFavorite}
     />
   );
 }
