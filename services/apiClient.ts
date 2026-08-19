@@ -93,6 +93,16 @@ apiClient.interceptors.response.use(
     }
 
     if (error.response?.data) {
+      // TEMP DEBUG (원인 조사용, 확인 끝나면 제거): 어느 요청에서 실패했는지 알 수 없으면
+      // 재현/진단이 어려워서 method+url을 같이 남긴다.
+      console.warn(
+        '[apiClient] 요청 실패',
+        original?.method?.toUpperCase(),
+        original?.url,
+        'body:',
+        original?.data,
+        error.response.data,
+      );
       return Promise.reject(error.response.data);
     }
     return Promise.reject(NETWORK_ERROR);
