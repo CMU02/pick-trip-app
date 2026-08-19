@@ -7,6 +7,8 @@ export type RootStackParamList = {
   Priority: undefined;
   Itinerary: undefined;
   Shared: { token: string };
+  Terms: undefined;
+  Privacy: undefined;
 };
 
 export type MainTabParamList = {
