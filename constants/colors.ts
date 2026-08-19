@@ -1,10 +1,11 @@
 export const COLORS = {
-  coral50: '#FFF1EF',
-  coral100: '#FFD9D4',
-  coral300: '#F09080',
-  coral500: '#E8614D',
-  coral600: '#D14D3A',
-  coral700: '#B53D2D',
+  // 메인 코랄을 #DA4339로 맞추고, 나머지 단계는 기존 비율을 유지해 톤을 다시 잡았다.
+  coral50: '#FDECEA',
+  coral100: '#FBD5D0',
+  coral300: '#E98A7C',
+  coral500: '#DA4339',
+  coral600: '#C23930',
+  coral700: '#A32E27',
   teal50: '#E6FFFA',
   teal100: '#B2F5EA',
   teal300: '#4FD1C5',
