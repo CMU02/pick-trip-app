@@ -11,6 +11,8 @@ export type { AuthProvider };
 interface AuthScreenProps {
   onAuthed: () => void;
   onGuest?: () => void;
+  onOpenTerms: () => void;
+  onOpenPrivacy: () => void;
 }
 
 const ScreenContainer = styled(SafeAreaView)`
@@ -156,7 +158,7 @@ const GuestButtonLabel = styled(Text)`
   text-align: center;
 `;
 
-export function AuthScreen({ onAuthed, onGuest }: AuthScreenProps) {
+export function AuthScreen({ onAuthed, onGuest, onOpenTerms, onOpenPrivacy }: AuthScreenProps) {
   const [loadingProvider, setLoadingProvider] = useState<AuthProvider | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -223,8 +225,9 @@ export function AuthScreen({ onAuthed, onGuest }: AuthScreenProps) {
         </GoogleButton>
 
         <TermsText>
-          로그인 시 <TermsHighlight>이용약관</TermsHighlight> 및{' '}
-          <TermsHighlight>개인정보 처리방침</TermsHighlight>에{'\n'}동의하게 됩니다.
+          로그인 시 <TermsHighlight onPress={onOpenTerms}>이용약관</TermsHighlight> 및{' '}
+          <TermsHighlight onPress={onOpenPrivacy}>개인정보 처리방침</TermsHighlight>에{'\n'}동의하게
+          됩니다.
         </TermsText>
 
         {onGuest && (

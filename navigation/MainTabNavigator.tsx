@@ -195,6 +195,8 @@ function ProfileTabScreen() {
         handleLogout();
         navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
       }}
+      onOpenTerms={() => navigation.navigate('Terms')}
+      onOpenPrivacy={() => navigation.navigate('Privacy')}
     />
   );
 }

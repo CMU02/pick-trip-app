@@ -25,6 +25,8 @@ interface ProfileContentProps {
   onToggleStylePref: (pref: StylePreference) => void;
   onToggleRegion: (regionId: string) => void;
   onLogout: () => void;
+  onOpenTerms: () => void;
+  onOpenPrivacy: () => void;
 }
 
 const Scroll = styled(ScrollView)`
@@ -232,6 +234,28 @@ const LogoutLabel = styled(Text)`
   color: ${COLORS.gray500};
 `;
 
+const LegalRow = styled(View)`
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+`;
+
+const LegalLink = styled(TouchableOpacity)``;
+
+const LegalLinkLabel = styled(Text)`
+  font-size: 12px;
+  font-family: ${FONT.regular};
+  color: ${COLORS.gray400};
+  text-decoration-line: underline;
+`;
+
+const LegalDivider = styled(Text)`
+  font-size: 12px;
+  color: ${COLORS.gray300};
+`;
+
 const NOTIFY_ROWS = [
   { key: 'recommend', title: '맞춤 추천 알림', desc: '취향에 맞는 새 콘텐츠 알림' },
   { key: 'festival', title: '축제·행사 알림', desc: '선호 지역 축제 일정' },
@@ -251,6 +275,8 @@ export function ProfileContent({
   onToggleStylePref,
   onToggleRegion,
   onLogout,
+  onOpenTerms,
+  onOpenPrivacy,
 }: ProfileContentProps) {
   const [notifyState, setNotifyState] = useState<Record<string, boolean>>({
     recommend: true,
@@ -389,6 +415,16 @@ export function ProfileContent({
         <LogoutButton onPress={onLogout} activeOpacity={0.8}>
           <LogoutLabel>로그아웃</LogoutLabel>
         </LogoutButton>
+
+        <LegalRow>
+          <LegalLink onPress={onOpenTerms} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <LegalLinkLabel>이용약관</LegalLinkLabel>
+          </LegalLink>
+          <LegalDivider>|</LegalDivider>
+          <LegalLink onPress={onOpenPrivacy} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <LegalLinkLabel>개인정보처리방침</LegalLinkLabel>
+          </LegalLink>
+        </LegalRow>
       </Content>
     </Scroll>
   );
