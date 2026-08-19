@@ -23,3 +23,14 @@ export function toDurationType(nights: number): DurationType {
   if (nights === 2) return '2night';
   return 'custom';
 }
+
+// 앱 내부에서는 기간을 항상 "박 수"(0=당일치기)로 다룬다. 백엔드는 "일수"(1=당일치기,
+// 2=1박2일, 3=2박3일 …)를 쓰기로 팀원과 확인했으므로, API를 주고받는 지점에서만 이 두
+// 함수로 변환한다 — 화면/로컬 저장 쪽 코드는 이 차이를 몰라도 되게 유지하기 위함이다.
+export function nightsToApiDuration(nights: number | null): number | null {
+  return nights === null ? null : nights + 1;
+}
+
+export function apiDurationToNights(duration: number | null): number | null {
+  return duration === null ? null : duration - 1;
+}
