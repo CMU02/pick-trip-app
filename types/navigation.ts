@@ -3,11 +3,13 @@
 export type RootStackParamList = {
   Auth: undefined;
   Login: undefined;
-  Resume: undefined;
   Main: undefined;
   Priority: undefined;
   Itinerary: undefined;
   Shared: { token: string };
+  Favorites: undefined;
+  Terms: undefined;
+  Privacy: undefined;
 };
 
 export type MainTabParamList = {

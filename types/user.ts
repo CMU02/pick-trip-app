@@ -4,4 +4,5 @@ export interface CurrentUser {
   nickname: string;
   profileImageUrl: string | null;
   provider: string;
+  createdAt: string;
 }

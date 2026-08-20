@@ -1,15 +1,18 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   type NativeScrollEvent,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import styled from 'styled-components';
 import { CategoryFilter } from '../components/molecules/CategoryFilter';
 import { ContentCard } from '../components/molecules/ContentCard';
+import { ContentCardSkeleton } from '../components/molecules/ContentCardSkeleton';
 import { ContentDetailModal } from '../components/molecules/ContentDetailModal';
 import { COLORS } from '../constants/colors';
 import { TAB_BAR_CLEARANCE, TAB_BAR_TOTAL } from '../constants/layout';
@@ -22,6 +25,8 @@ interface ContentExploreScreenProps {
   selectedIds: string[];
   onToggle: (content: Content) => void;
   onContinue: (selectedIds: string[]) => void;
+  favoriteIds: string[];
+  onToggleFavorite: (content: Content) => void;
 }
 
 const ScreenContainer = styled(View)`
@@ -30,7 +35,7 @@ const ScreenContainer = styled(View)`
 `;
 
 const Header = styled(View)`
-  padding-top: 24px;
+  padding-top: 14px;
   padding-horizontal: 20px;
   padding-bottom: 12px;
 `;
@@ -46,6 +51,36 @@ const Subtitle = styled(Text)`
   font-size: 15px;
   color: ${COLORS.gray500};
   margin-top: 6px;
+`;
+
+const SearchRow = styled(View)`
+  padding-horizontal: 20px;
+`;
+
+const SearchBox = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  background-color: ${COLORS.white};
+  border-width: 1px;
+  border-color: ${COLORS.gray200};
+  border-radius: 12px;
+  padding-horizontal: 14px;
+  height: 46px;
+`;
+
+const SearchInput = styled(TextInput).attrs({
+  placeholderTextColor: COLORS.gray400,
+})`
+  flex: 1;
+  font-family: ${FONT.regular};
+  font-size: 14px;
+  color: ${COLORS.gray900};
+  padding: 0px;
+`;
+
+const ClearButton = styled(TouchableOpacity)`
+  padding: 4px;
 `;
 
 const FilterRow = styled(View)`
@@ -125,21 +160,35 @@ function isCloseToBottom({ layoutMeasurement, contentOffset, contentSize }: Nati
   return layoutMeasurement.height + contentOffset.y >= contentSize.height - 200;
 }
 
+// 초기 로딩 시 보여줄 스켈레톤 카드 개수 (화면 한 번에 보이는 카드 수 정도)
+const SKELETON_COUNT = 4;
+
 export function ContentExploreScreen({
   selectedRegions,
   selectedIds,
   onToggle,
   onContinue,
+  favoriteIds,
+  onToggleFavorite,
 }: ContentExploreScreenProps) {
   const [selectedCategory, setSelectedCategory] = useState<ContentCategory | 'all'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [detailContentId, setDetailContentId] = useState<string | null>(null);
 
   const { contents, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useContents(selectedRegions);
 
   const filtered = useMemo(() => {
-    return contents.filter((c) => selectedCategory === 'all' || c.category === selectedCategory);
-  }, [contents, selectedCategory]);
+    const keyword = searchQuery.trim().toLowerCase();
+    return contents.filter((c) => {
+      const matchesCategory = selectedCategory === 'all' || c.category === selectedCategory;
+      const matchesKeyword =
+        keyword === '' ||
+        c.name.toLowerCase().includes(keyword) ||
+        c.address.toLowerCase().includes(keyword);
+      return matchesCategory && matchesKeyword;
+    });
+  }, [contents, selectedCategory, searchQuery]);
 
   return (
     <ScreenContainer>
@@ -147,6 +196,22 @@ export function ContentExploreScreen({
         <Title>어떤 곳이 끌리나요?</Title>
         <Subtitle>마음에 드는 콘텐츠를 찾아보세요</Subtitle>
       </Header>
+      <SearchRow>
+        <SearchBox>
+          <Ionicons name="search-outline" size={16} color={COLORS.gray400} />
+          <SearchInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder="장소 이름이나 주소로 검색"
+            returnKeyType="search"
+          />
+          {searchQuery.length > 0 && (
+            <ClearButton onPress={() => setSearchQuery('')} activeOpacity={0.7}>
+              <Ionicons name="close" size={14} color={COLORS.gray400} />
+            </ClearButton>
+          )}
+        </SearchBox>
+      </SearchRow>
       <FilterRow>
         <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
       </FilterRow>
@@ -164,9 +229,10 @@ export function ContentExploreScreen({
       >
         <CardList>
           {isLoading ? (
-            <CenterBox>
-              <ActivityIndicator color={COLORS.coral500} />
-            </CenterBox>
+            Array.from({ length: SKELETON_COUNT }, (_, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: 로딩 중 고정 개수의 자리표시자라 인덱스 키로 충분
+              <ContentCardSkeleton key={i} />
+            ))
           ) : isError ? (
             <CenterBox>
               <EmptyText>컨텐츠를 불러오지 못했습니다. 다시 시도해주세요.</EmptyText>
@@ -186,6 +252,8 @@ export function ContentExploreScreen({
                 selected={selectedIds.includes(content.id)}
                 onPress={() => onToggle(content)}
                 onPressDetail={() => setDetailContentId(content.id)}
+                favorite={favoriteIds.includes(content.id)}
+                onToggleFavorite={onToggleFavorite}
               />
             ))
           )}
@@ -196,7 +264,12 @@ export function ContentExploreScreen({
           </FooterLoading>
         )}
       </ScrollView>
-      <ContentDetailModal contentId={detailContentId} onClose={() => setDetailContentId(null)} />
+      <ContentDetailModal
+        contentId={detailContentId}
+        onClose={() => setDetailContentId(null)}
+        favorite={detailContentId ? favoriteIds.includes(detailContentId) : false}
+        onToggleFavorite={onToggleFavorite}
+      />
       {selectedIds.length > 0 && (
         <BottomBar>
           <BasketCount>{selectedIds.length}개 담음</BasketCount>

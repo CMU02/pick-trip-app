@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { ScrollView, Text, TouchableOpacity } from 'react-native';
 import styled from 'styled-components';
 import { CATEGORIES } from '../../constants/categories';
@@ -22,10 +23,6 @@ const Chip = styled(TouchableOpacity)<{ $active: boolean }>`
   border-color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.gray200)};
 `;
 
-const ChipEmoji = styled(Text)`
-  font-size: 13px;
-`;
-
 const ChipLabel = styled(Text)<{ $active: boolean }>`
   font-size: 13px;
   font-family: ${({ $active }) => ($active ? FONT.semibold : FONT.regular)};
@@ -46,7 +43,11 @@ export function CategoryFilter({ selected, onSelect }: CategoryFilterProps) {
           onPress={() => onSelect(cat.id as ContentCategory | 'all')}
           activeOpacity={0.8}
         >
-          <ChipEmoji>{cat.emoji}</ChipEmoji>
+          <Ionicons
+            name={cat.icon}
+            size={14}
+            color={selected === cat.id ? COLORS.white : COLORS.gray700}
+          />
           <ChipLabel $active={selected === cat.id}>{cat.label}</ChipLabel>
         </Chip>
       ))}

@@ -6,10 +6,9 @@ import styled from 'styled-components';
 import { COLORS } from '../../constants/colors';
 import { TAB_BAR_BOTTOM, TAB_BAR_HEIGHT, TAB_BAR_SIDE } from '../../constants/layout';
 import { FONT } from '../../constants/typography';
+import type { IoniconName } from '../../types/icon';
 
 export type TabKey = 'home' | 'explore' | 'basket' | 'profile';
-
-type IoniconName = keyof typeof Ionicons.glyphMap;
 
 interface Tab {
   key: TabKey;

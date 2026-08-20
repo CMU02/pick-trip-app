@@ -1,5 +1,6 @@
 import * as Linking from 'expo-linking';
 import type { ItineraryStop } from '../types/itinerary';
+import { apiDurationToNights } from '../utils/tripDate';
 import { apiClient } from './apiClient';
 
 interface ShareCreateResponse {
@@ -27,7 +28,7 @@ interface SharedItineraryResponse {
   title: string;
   region: string;
   travelDate: string | null;
-  duration: number | null;
+  duration: number | null; // 백엔드 값(일수, 1=당일치기)
   days: SharedDay[];
 }
 
@@ -35,7 +36,7 @@ export interface SharedItinerary {
   title: string;
   region: string;
   travelDate: string | null;
-  duration: number | null;
+  duration: number | null; // 박 수(0=당일치기) — 앱 내부 공용 표현
   stops: (ItineraryStop & { title: string | null })[];
 }
 
@@ -57,7 +58,7 @@ export async function fetchSharedItinerary(token: string): Promise<SharedItinera
     title: data.title,
     region: data.region.toLowerCase(),
     travelDate: data.travelDate,
-    duration: data.duration,
+    duration: apiDurationToNights(data.duration),
     stops,
   };
 }

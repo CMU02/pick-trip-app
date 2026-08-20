@@ -2,15 +2,29 @@ import { createContext, type ReactNode, useContext, useEffect, useRef, useState 
 import { Alert } from 'react-native';
 import { COMPANIONS } from '../constants/companions';
 import { useBasket } from '../hooks/useBasket';
+import { toErrorMessage } from '../services/apiError';
+import { promptLogin } from '../services/authPrompt';
 import { logout } from '../services/authService';
 import { hasStoredSession } from '../services/authStorage';
+import { addFavorite, getFavoriteIds, removeFavorite } from '../services/favoriteApi';
+import {
+  loadItineraryHistory,
+  recordItineraryHistory,
+  removeItineraryHistory,
+  type SavedItinerarySummary,
+} from '../services/itineraryHistoryStorage';
+import {
+  cancelAllTripReminders,
+  ensureNotificationPermission,
+  scheduleTripReminder,
+} from '../services/notifications';
+import { loadTripReminderEnabled, saveTripReminderEnabled } from '../services/tripReminderStorage';
 import type { CompanionType, StylePreference } from '../types/companion';
 import type { Content } from '../types/content';
 import type { ItineraryStop } from '../types/itinerary';
 import type { Priority } from '../types/priority';
-import type { SavedItinerary } from '../types/savedItinerary';
 import type { TripDate } from '../types/trip';
-import { fromDateString, toDateString, toDurationType } from '../utils/tripDate';
+import { toDateString, toDurationType } from '../utils/tripDate';
 
 export type { TripDate };
 
@@ -29,8 +43,13 @@ interface AppStateValue {
   stylePrefs: StylePreference[];
   setStylePrefs: (value: StylePreference[]) => void;
   handleToggleStylePref: (pref: StylePreference) => void;
-  savedItinerary: SavedItinerary | null;
-  setSavedItinerary: (value: SavedItinerary | null) => void;
+  itineraryHistory: SavedItinerarySummary[];
+  recordSavedItinerary: (summary: SavedItinerarySummary) => void;
+  removeSavedItinerary: (itineraryId: string) => void;
+  favoriteIds: string[];
+  handleToggleFavorite: (content: Content) => void;
+  tripReminderEnabled: boolean;
+  handleToggleTripReminder: (enabled: boolean) => void;
   initialStops: ItineraryStop[] | undefined;
   setInitialStops: (value: ItineraryStop[] | undefined) => void;
   initialItineraryId: string | undefined;
@@ -64,7 +83,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [tripDate, setTripDate] = useState<TripDate | null>(null);
   const [companion, setCompanion] = useState<CompanionType | null>(null);
   const [stylePrefs, setStylePrefs] = useState<StylePreference[]>([]);
-  const [savedItinerary, setSavedItinerary] = useState<SavedItinerary | null>(null);
+  const [itineraryHistory, setItineraryHistory] = useState<SavedItinerarySummary[]>([]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [initialStops, setInitialStops] = useState<ItineraryStop[] | undefined>(undefined);
   const [initialItineraryId, setInitialItineraryId] = useState<string | undefined>(undefined);
 
@@ -88,11 +108,108 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // 이 기기에서 저장했던 일정 히스토리를 복원한다. 계정 기준 전체 목록 API가 없어
+  // "저장한 여행" 목록은 이 기기·이 앱에서 저장한 것만 보여준다 (자세한 배경은
+  // itineraryHistoryStorage.ts 참고).
+  useEffect(() => {
+    loadItineraryHistory().then(setItineraryHistory);
+  }, []);
+
+  const recordSavedItinerary = (summary: SavedItinerarySummary) => {
+    recordItineraryHistory(summary).then(setItineraryHistory);
+  };
+
+  const removeSavedItinerary = (itineraryId: string) => {
+    removeItineraryHistory(itineraryId).then(setItineraryHistory);
+  };
+
+  // 여행 리마인더는 서버 없이 기기에 로컬로 예약하는 알림이라(services/notifications.ts 참고),
+  // 켜짐 여부만 기기에 저장해두고 앱을 다시 켤 때 복원한다.
+  const [tripReminderEnabled, setTripReminderEnabled] = useState(false);
+
+  useEffect(() => {
+    loadTripReminderEnabled().then(setTripReminderEnabled);
+  }, []);
+
+  // 켜져 있으면 저장한 여행이 바뀔 때마다(새로 저장/삭제) 예약을 최신 상태로 다시 맞춘다.
+  // 꺼져 있으면 예약해뒀던 걸 전부 취소한다.
+  useEffect(() => {
+    if (!tripReminderEnabled) {
+      cancelAllTripReminders();
+      return;
+    }
+    for (const item of itineraryHistory) {
+      scheduleTripReminder(item);
+    }
+  }, [tripReminderEnabled, itineraryHistory]);
+
+  const handleToggleTripReminder = async (enabled: boolean) => {
+    if (enabled) {
+      const granted = await ensureNotificationPermission();
+      if (!granted) {
+        Alert.alert(
+          '알림 권한이 필요해요',
+          '기기 설정에서 PickTrip의 알림 권한을 허용한 뒤 다시 시도해주세요.',
+        );
+        return;
+      }
+    }
+    setTripReminderEnabled(enabled);
+    saveTripReminderEnabled(enabled);
+  };
+
+  // 찜하기는 로그인 계정 기준 서버 API다(로그인 상태가 결정되기 전엔 기다린다).
+  // 게스트는 찜한 게 있을 수 없으므로 빈 목록으로 둔다 — 로그인하면 이 effect가
+  // isGuest 변화를 감지해 서버에서 다시 불러온다.
+  useEffect(() => {
+    if (isAuthLoading) return;
+    if (isGuest) {
+      setFavoriteIds([]);
+      return;
+    }
+    let cancelled = false;
+    getFavoriteIds()
+      .then((ids) => {
+        if (!cancelled) setFavoriteIds(ids);
+      })
+      .catch(() => {
+        // 목록을 못 불러와도 조용히 빈 상태로 둔다 — 화면을 다시 열면 재시도된다.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthLoading, isGuest]);
+
+  const handleToggleFavorite = async (content: Content) => {
+    if (isGuest) {
+      promptLogin();
+      return;
+    }
+    const wasFavorited = favoriteIds.includes(content.id);
+    // 낙관적 업데이트: 서버 응답을 기다리지 않고 화면부터 반영하고, 실패하면 되돌린다.
+    setFavoriteIds((prev) =>
+      wasFavorited ? prev.filter((id) => id !== content.id) : [...prev, content.id],
+    );
+    try {
+      if (wasFavorited) {
+        await removeFavorite(content.id);
+      } else {
+        await addFavorite(content);
+      }
+    } catch (error) {
+      setFavoriteIds((prev) =>
+        wasFavorited ? [...prev, content.id] : prev.filter((id) => id !== content.id),
+      );
+      Alert.alert('찜하기 실패', toErrorMessage(error, '잠시 후 다시 시도해주세요.'));
+    }
+  };
+
   const {
     basket,
     isLoading: isBasketLoading,
     addItem,
     removeItem,
+    clearItems,
     updateItemPriority,
     updateConditions,
   } = useBasket();
@@ -110,9 +227,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setCompanion(conditions.companion);
     setStylePrefs(conditions.stylePrefs);
     if (conditions.travelDate) {
+      // 저장된 날짜를 그대로 복원하면 며칠 뒤 다시 켰을 때 이미 지난 날짜가 보인다.
+      // 여행 기간(박 수)만 이어받고, 시작일은 항상 오늘로 맞춘다.
       const nights = conditions.duration ?? 0;
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       setTripDate({
-        startDate: fromDateString(conditions.travelDate),
+        startDate: today,
         durationType: toDurationType(nights),
         nights,
       });
@@ -157,8 +278,14 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   };
 
   const handleToggleRegion = (regionId: string) => {
+    const isSelecting = !selectedRegions.includes(regionId);
+    // 담아둔 콘텐츠는 특정 지역에 속해있으므로, 새 지역을 고르면 이전 지역 것과 섞이지
+    // 않도록 바구니를 비운다. 지역 해제(선택 취소)는 그냥 둔다.
+    if (isSelecting && basketItems.length > 0) {
+      clearItems();
+    }
     setSelectedRegions((prev) =>
-      prev.includes(regionId) ? prev.filter((id) => id !== regionId) : [...prev, regionId],
+      isSelecting ? [...prev, regionId] : prev.filter((id) => id !== regionId),
     );
   };
 
@@ -198,8 +325,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     stylePrefs,
     setStylePrefs,
     handleToggleStylePref,
-    savedItinerary,
-    setSavedItinerary,
+    itineraryHistory,
+    recordSavedItinerary,
+    removeSavedItinerary,
+    favoriteIds,
+    handleToggleFavorite,
+    tripReminderEnabled,
+    handleToggleTripReminder,
     initialStops,
     setInitialStops,
     initialItineraryId,

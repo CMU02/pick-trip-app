@@ -1,19 +1,25 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
+import { FavoriteButton } from '../components/atoms/FavoriteButton';
 import {
   TripDatePickerModal,
   type TripDateValue,
 } from '../components/molecules/TripDatePickerModal';
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
-import { COMPANIONS } from '../constants/companions';
+import { COMPANIONS, STYLE_OPTIONS } from '../constants/companions';
 import { TAB_BAR_CLEARANCE } from '../constants/layout';
 import { REGIONS } from '../constants/regions';
 import { FONT } from '../constants/typography';
 import { useContents } from '../hooks/useContents';
 import { useCurrentUser } from '../hooks/useCurrentUser';
-import type { CompanionType } from '../types/companion';
+import type { SavedItinerarySummary } from '../services/itineraryHistoryStorage';
+import type { CompanionType, StylePreference } from '../types/companion';
+// 이 파일에 이미 스타일 컴포넌트 `Content`가 있어서 타입 이름을 바꿔 가져온다.
+import type { Content as ContentItem } from '../types/content';
+import { formatItinerarySub } from '../utils/itineraryHistory';
 
 interface HomeContentProps {
   companionLabel: string;
@@ -21,13 +27,22 @@ interface HomeContentProps {
   selectedRegions: string[];
   selectedIds: string[];
   companion: CompanionType | null;
+  stylePrefs: StylePreference[];
   tripDate: TripDateValue | null;
+  itineraryHistory: SavedItinerarySummary[];
+  openingItineraryId: string | null;
+  onOpenItinerary: (itineraryId: string) => void;
+  onDeleteItinerary: (itineraryId: string, title: string) => void;
   onBrowse: () => void;
   onOpenBasket: () => void;
   onLogin: () => void;
   onChangeCompanion: (companion: CompanionType) => void;
+  onToggleStylePref: (pref: StylePreference) => void;
   onToggleRegion: (regionId: string) => void;
   onSelectDate: (value: TripDateValue) => void;
+  favoriteIds: string[];
+  onToggleFavorite: (content: ContentItem) => void;
+  onOpenFavorites: () => void;
 }
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -43,7 +58,7 @@ const Scroll = styled(ScrollView)`
 
 const HeaderSection = styled(View)`
   background-color: ${COLORS.coral500};
-  padding: 16px 20px 48px;
+  padding: 32px 20px 56px;
   border-bottom-left-radius: 28px;
   border-bottom-right-radius: 28px;
 `;
@@ -86,9 +101,33 @@ const Greeting = styled(Text)`
 `;
 
 const GreetingSub = styled(Text)`
+  flex: 1;
   font-family: ${FONT.regular};
   font-size: 14px;
   color: rgba(255, 255, 255, 0.85);
+`;
+
+const GreetingSubRow = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+`;
+
+const FavoritesEntryButton = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(255, 255, 255, 0.18);
+  border-radius: 100px;
+  padding-vertical: 5px;
+  padding-horizontal: 10px;
+`;
+
+const FavoritesEntryLabel = styled(Text)`
+  font-family: ${FONT.semibold};
+  font-size: 12px;
+  color: ${COLORS.white};
 `;
 
 // 하단 여백은 플로팅 탭바가 가리는 높이를 확보한다.
@@ -131,10 +170,6 @@ const StatusIconBadge = styled(View)`
   justify-content: center;
 `;
 
-const StatusIconEmoji = styled(Text)`
-  font-size: 15px;
-`;
-
 const StatusLabel = styled(Text)`
   font-size: 15px;
   font-family: ${FONT.semibold};
@@ -155,6 +190,9 @@ const RegionBadgeRow = styled(View)`
 `;
 
 const RegionBadge = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
   background-color: ${COLORS.gray100};
   border-radius: 100px;
   padding-vertical: 4px;
@@ -184,19 +222,10 @@ const DateRowLeft = styled(View)`
   gap: 8px;
 `;
 
-const DateRowEmoji = styled(Text)`
-  font-size: 15px;
-`;
-
 const DateRowText = styled(Text)<{ $placeholder: boolean }>`
   font-family: ${FONT.regular};
   font-size: 14px;
   color: ${({ $placeholder }) => ($placeholder ? COLORS.gray500 : COLORS.gray900)};
-`;
-
-const DateRowChevron = styled(Text)`
-  font-size: 12px;
-  color: ${COLORS.gray400};
 `;
 
 const PrimaryButton = styled(TouchableOpacity)`
@@ -251,11 +280,17 @@ const PrefCardDesc = styled(Text)`
   margin-bottom: 14px;
 `;
 
+const FieldLabelRow = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+`;
+
 const FieldLabel = styled(Text)`
   font-size: 13px;
   font-family: ${FONT.semibold};
   color: ${COLORS.gray500};
-  margin-bottom: 8px;
 `;
 
 const ChipRow = styled(View)<{ $last?: boolean }>`
@@ -278,6 +313,48 @@ const ChipLabel = styled(Text)<{ $active: boolean }>`
   font-size: 13px;
   font-family: ${FONT.medium};
   color: ${({ $active }) => ($active ? COLORS.coral700 : COLORS.gray700)};
+`;
+
+const TripRow = styled(ScrollView)``;
+
+const TripCard = styled(TouchableOpacity)`
+  width: 220px;
+  background-color: ${COLORS.white};
+  border-radius: 16px;
+  border-width: 1px;
+  border-color: ${COLORS.gray200};
+  padding: 16px;
+  margin-right: 12px;
+`;
+
+const TripCardTopRow = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+`;
+
+const TripCardTopRowRight = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+`;
+
+const DeleteTripButton = styled(TouchableOpacity)`
+  padding: 2px;
+`;
+
+const TripCardTitle = styled(Text)`
+  font-size: 15px;
+  font-family: ${FONT.bold};
+  color: ${COLORS.gray900};
+  margin-bottom: 4px;
+`;
+
+const TripCardSub = styled(Text)`
+  font-family: ${FONT.regular};
+  font-size: 12px;
+  color: ${COLORS.gray500};
 `;
 
 const SectionHead = styled(View)`
@@ -323,12 +400,14 @@ const RecommendImage = styled(Image)`
   width: 100%;
 `;
 
-const RecommendEmoji = styled(Text)`
-  font-size: 26px;
-`;
-
 const RecommendBody = styled(View)`
   padding: 10px;
+`;
+
+const RecommendFavoriteBadge = styled(View)`
+  position: absolute;
+  top: 6px;
+  right: 6px;
 `;
 
 const RecommendName = styled(Text)`
@@ -343,13 +422,22 @@ export function HomeContent({
   selectedRegions,
   selectedIds,
   companion,
+  stylePrefs,
   tripDate,
+  itineraryHistory,
+  openingItineraryId,
+  onOpenItinerary,
+  onDeleteItinerary,
   onBrowse,
   onOpenBasket,
   onLogin,
   onChangeCompanion,
+  onToggleStylePref,
   onToggleRegion,
   onSelectDate,
+  favoriteIds,
+  onToggleFavorite,
+  onOpenFavorites,
 }: HomeContentProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const count = selectedIds.length;
@@ -357,7 +445,7 @@ export function HomeContent({
   const { contents } = useContents(selectedRegions);
   const recommendations = contents.filter((c) => !selectedIds.includes(c.id)).slice(0, 6);
   const { user } = useCurrentUser(!isGuest);
-  const displayName = isGuest ? companionLabel : (user?.nickname ?? companionLabel);
+  const displayName = user?.nickname ?? companionLabel;
 
   return (
     <Scroll showsVerticalScrollIndicator={false}>
@@ -370,12 +458,21 @@ export function HomeContent({
             </LoginBarButton>
           </LoginBar>
         )}
-        <Greeting>안녕하세요, {displayName} 여행자님 👋</Greeting>
-        <GreetingSub>
-          {count > 0
-            ? `여행 바구니에 ${count}곳을 담았어요.`
-            : '마음에 드는 곳을 담고 AI 일정을 만들어보세요.'}
-        </GreetingSub>
+        <Greeting>
+          {isGuest ? '안녕하세요, 게스트님' : `안녕하세요, ${displayName} 여행자님`}{' '}
+          <Ionicons name="hand-right-outline" size={18} color={COLORS.white} />
+        </Greeting>
+        <GreetingSubRow>
+          <GreetingSub>
+            {count > 0
+              ? `여행 바구니에 ${count}곳을 담았어요.`
+              : '마음에 드는 곳을 담고 AI 일정을 만들어보세요.'}
+          </GreetingSub>
+          <FavoritesEntryButton onPress={onOpenFavorites} activeOpacity={0.8}>
+            <Ionicons name="heart" size={13} color={COLORS.white} />
+            <FavoritesEntryLabel>{favoriteIds.length}</FavoritesEntryLabel>
+          </FavoritesEntryButton>
+        </GreetingSubRow>
       </HeaderSection>
 
       <Content>
@@ -383,7 +480,7 @@ export function HomeContent({
           <StatusRow>
             <StatusLabelRow>
               <StatusIconBadge>
-                <StatusIconEmoji>🧳</StatusIconEmoji>
+                <Ionicons name="briefcase-outline" size={15} color={COLORS.coral600} />
               </StatusIconBadge>
               <StatusLabel>현재 여행 바구니</StatusLabel>
             </StatusLabelRow>
@@ -393,19 +490,20 @@ export function HomeContent({
             <RegionBadgeRow>
               {regionNames.map((name) => (
                 <RegionBadge key={name}>
-                  <RegionBadgeLabel>📍 {name}</RegionBadgeLabel>
+                  <Ionicons name="location-outline" size={12} color={COLORS.gray700} />
+                  <RegionBadgeLabel>{name}</RegionBadgeLabel>
                 </RegionBadge>
               ))}
             </RegionBadgeRow>
           )}
           <DateRow onPress={() => setShowDatePicker(true)} activeOpacity={0.8}>
             <DateRowLeft>
-              <DateRowEmoji>📅</DateRowEmoji>
+              <Ionicons name="calendar-outline" size={15} color={COLORS.gray700} />
               <DateRowText $placeholder={!tripDate}>
                 {tripDate ? formatDate(tripDate.startDate) : '날짜를 선택해주세요'}
               </DateRowText>
             </DateRowLeft>
-            <DateRowChevron>▼</DateRowChevron>
+            <Ionicons name="chevron-down-outline" size={13} color={COLORS.gray400} />
           </DateRow>
           {count > 0 ? (
             <>
@@ -427,7 +525,10 @@ export function HomeContent({
           <PrefCardTitle>여행 취향</PrefCardTitle>
           <PrefCardDesc>온보딩에서 고른 취향이에요.</PrefCardDesc>
 
-          <FieldLabel>👥 누구와 함께 가나요?</FieldLabel>
+          <FieldLabelRow>
+            <Ionicons name="people-outline" size={13} color={COLORS.gray500} />
+            <FieldLabel>누구와 함께 가나요?</FieldLabel>
+          </FieldLabelRow>
           <ChipRow>
             {COMPANIONS.map((c) => (
               <Chip
@@ -441,7 +542,27 @@ export function HomeContent({
             ))}
           </ChipRow>
 
-          <FieldLabel>📍 선호 지역</FieldLabel>
+          <FieldLabelRow>
+            <Ionicons name="color-palette-outline" size={13} color={COLORS.gray500} />
+            <FieldLabel>여행 스타일</FieldLabel>
+          </FieldLabelRow>
+          <ChipRow>
+            {STYLE_OPTIONS.map((option) => (
+              <Chip
+                key={option.id}
+                $active={stylePrefs.includes(option.id)}
+                onPress={() => onToggleStylePref(option.id)}
+                activeOpacity={0.8}
+              >
+                <ChipLabel $active={stylePrefs.includes(option.id)}>{option.label}</ChipLabel>
+              </Chip>
+            ))}
+          </ChipRow>
+
+          <FieldLabelRow>
+            <Ionicons name="location-outline" size={13} color={COLORS.gray500} />
+            <FieldLabel>선호 지역</FieldLabel>
+          </FieldLabelRow>
           <ChipRow $last>
             {REGIONS.map((region) => (
               <Chip
@@ -455,6 +576,44 @@ export function HomeContent({
             ))}
           </ChipRow>
         </PrefCard>
+
+        {itineraryHistory.length > 0 && (
+          <View style={{ marginBottom: 24 }}>
+            <SectionHead>
+              <SectionEyebrow>MY TRIP</SectionEyebrow>
+              <SectionTitle>저장한 여행</SectionTitle>
+            </SectionHead>
+            <TripRow horizontal showsHorizontalScrollIndicator={false}>
+              {itineraryHistory.map((item) => {
+                const isOpening = openingItineraryId === item.itineraryId;
+                return (
+                  <TripCard
+                    key={item.itineraryId}
+                    onPress={() => onOpenItinerary(item.itineraryId)}
+                    disabled={openingItineraryId != null}
+                    activeOpacity={0.8}
+                  >
+                    <TripCardTopRow>
+                      <Ionicons name="map-outline" size={20} color={COLORS.coral500} />
+                      <TripCardTopRowRight>
+                        {isOpening && <ActivityIndicator color={COLORS.coral500} />}
+                        <DeleteTripButton
+                          onPress={() => onDeleteItinerary(item.itineraryId, item.title)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="trash-outline" size={16} color={COLORS.gray400} />
+                        </DeleteTripButton>
+                      </TripCardTopRowRight>
+                    </TripCardTopRow>
+                    <TripCardTitle numberOfLines={1}>{item.title}</TripCardTitle>
+                    <TripCardSub numberOfLines={1}>{formatItinerarySub(item)}</TripCardSub>
+                  </TripCard>
+                );
+              })}
+            </TripRow>
+          </View>
+        )}
 
         {recommendations.length > 0 && (
           <View>
@@ -471,9 +630,21 @@ export function HomeContent({
                       <RecommendImage source={{ uri: item.imageUrl }} resizeMode="cover" />
                     ) : (
                       <RecommendThumb $color={category?.color ?? COLORS.gray400}>
-                        <RecommendEmoji>{category?.emoji ?? '📍'}</RecommendEmoji>
+                        <Ionicons
+                          name={category?.icon ?? 'location-outline'}
+                          size={26}
+                          color={COLORS.gray500}
+                        />
                       </RecommendThumb>
                     )}
+                    <RecommendFavoriteBadge>
+                      <FavoriteButton
+                        active={favoriteIds.includes(item.id)}
+                        onPress={() => onToggleFavorite(item)}
+                        size={12}
+                        diameter={22}
+                      />
+                    </RecommendFavoriteBadge>
                     <RecommendBody>
                       <RecommendName numberOfLines={1}>{item.name}</RecommendName>
                     </RecommendBody>

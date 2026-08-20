@@ -57,6 +57,11 @@ export function useBasket() {
     [persist],
   );
 
+  // 지역을 바꾸면 이전 지역에서 담은 콘텐츠는 새 지역과 무관해지므로 비운다.
+  const clearItems = useCallback(async () => {
+    await persist((current) => ({ ...current, items: [] }));
+  }, [persist]);
+
   const updateItemPriority = useCallback(
     async (itemId: string, priority: Priority) => {
       await persist((current) => ({
@@ -94,6 +99,7 @@ export function useBasket() {
     isLoading,
     addItem,
     removeItem,
+    clearItems,
     updateItemPriority,
     updateConditions,
   };

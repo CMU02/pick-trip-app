@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { COLORS } from '../constants/colors';
 import { COMPANIONS, STYLE_OPTIONS } from '../constants/companions';
@@ -7,17 +8,44 @@ import { TAB_BAR_CLEARANCE } from '../constants/layout';
 import { REGIONS } from '../constants/regions';
 import { FONT } from '../constants/typography';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import type { SavedItinerarySummary } from '../services/itineraryHistoryStorage';
 import type { CompanionType, StylePreference } from '../types/companion';
+import type { CurrentUser } from '../types/user';
+import { formatItinerarySub } from '../utils/itineraryHistory';
+
+const PROVIDER_LABELS: Record<string, string> = {
+  kakao: '카카오',
+  google: 'Google',
+};
+
+// "카카오 · 2026년 8월 1일 가입"처럼 로그인 수단과 가입일을 한 줄로 합친다.
+function formatProviderJoin(user: CurrentUser): string {
+  const providerLabel = PROVIDER_LABELS[user.provider.toLowerCase()] ?? user.provider;
+  const joined = new Date(user.createdAt);
+  const joinLabel = Number.isNaN(joined.getTime())
+    ? null
+    : `${joined.getFullYear()}년 ${joined.getMonth() + 1}월 ${joined.getDate()}일 가입`;
+  return [providerLabel, joinLabel].filter((part): part is string => Boolean(part)).join(' · ');
+}
 
 interface ProfileContentProps {
   isGuest: boolean;
   companion: CompanionType | null;
   stylePrefs: StylePreference[];
   selectedRegions: string[];
+  itineraryHistory: SavedItinerarySummary[];
+  openingItineraryId: string | null;
+  onOpenItinerary: (itineraryId: string) => void;
+  onDeleteItinerary: (itineraryId: string, title: string) => void;
   onChangeCompanion: (companion: CompanionType) => void;
   onToggleStylePref: (pref: StylePreference) => void;
   onToggleRegion: (regionId: string) => void;
+  onLogin: () => void;
   onLogout: () => void;
+  tripReminderEnabled: boolean;
+  onToggleTripReminder: (enabled: boolean) => void;
+  onOpenTerms: () => void;
+  onOpenPrivacy: () => void;
 }
 
 const Scroll = styled(ScrollView)`
@@ -30,11 +58,8 @@ const Content = styled(View)`
   padding: 16px 20px ${TAB_BAR_CLEARANCE}px;
 `;
 
-const IdentityCard = styled(View)`
-  background-color: ${COLORS.white};
-  border-radius: 14px;
-  border-width: 1px;
-  border-color: ${COLORS.gray200};
+const IdentityCard = styled(LinearGradient)`
+  border-radius: 18px;
   padding: 18px;
   margin-bottom: 16px;
   flex-direction: row;
@@ -42,11 +67,28 @@ const IdentityCard = styled(View)`
   gap: 14px;
 `;
 
+const IdentityInfo = styled(View)`
+  flex: 1;
+`;
+
+const LoginButton = styled(TouchableOpacity)`
+  background-color: ${COLORS.white};
+  border-radius: 100px;
+  padding-vertical: 8px;
+  padding-horizontal: 16px;
+`;
+
+const LoginButtonLabel = styled(Text)`
+  font-size: 13px;
+  font-family: ${FONT.semibold};
+  color: ${COLORS.coral600};
+`;
+
 const Avatar = styled(View)`
   width: 56px;
   height: 56px;
   border-radius: 100px;
-  background-color: ${COLORS.teal500};
+  background-color: rgba(255, 255, 255, 0.25);
   align-items: center;
   justify-content: center;
 `;
@@ -60,14 +102,67 @@ const AvatarLabel = styled(Text)`
 const IdentityName = styled(Text)`
   font-size: 17px;
   font-family: ${FONT.bold};
-  color: ${COLORS.gray900};
+  color: ${COLORS.white};
   margin-bottom: 4px;
 `;
 
 const IdentitySub = styled(Text)`
   font-family: ${FONT.regular};
   font-size: 13px;
+  color: rgba(255, 255, 255, 0.85);
+`;
+
+const IdentityMeta = styled(Text)`
+  font-family: ${FONT.regular};
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.85);
+  margin-top: 2px;
+`;
+
+const TripRow = styled(TouchableOpacity)<{ $last: boolean }>`
+  flex-direction: row;
+  align-items: center;
+  gap: 14px;
+  padding-vertical: 12px;
+  border-bottom-width: ${({ $last }) => ($last ? '0px' : '1px')};
+  border-bottom-color: ${COLORS.gray100};
+`;
+
+const TripIconBadge = styled(View)`
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background-color: ${COLORS.coral50};
+  align-items: center;
+  justify-content: center;
+`;
+
+const TripBody = styled(View)`
+  flex: 1;
+`;
+
+const TripTitleRow = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+`;
+
+const TripTitle = styled(Text)`
+  font-size: 15px;
+  font-family: ${FONT.bold};
+  color: ${COLORS.gray900};
+  flex-shrink: 1;
+`;
+
+const TripSub = styled(Text)`
+  font-family: ${FONT.regular};
+  font-size: 12px;
   color: ${COLORS.gray500};
+`;
+
+const DeleteTripButton = styled(TouchableOpacity)`
+  padding: 2px;
 `;
 
 const Card = styled(View)`
@@ -108,6 +203,9 @@ const ChipRow = styled(View)`
 `;
 
 const Chip = styled(TouchableOpacity)<{ $active: boolean }>`
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
   padding-vertical: 8px;
   padding-horizontal: 14px;
   border-radius: 100px;
@@ -176,43 +274,116 @@ const LogoutLabel = styled(Text)`
   color: ${COLORS.gray500};
 `;
 
-const NOTIFY_ROWS = [
-  { key: 'recommend', title: '맞춤 추천 알림', desc: '취향에 맞는 새 콘텐츠 알림' },
-  { key: 'festival', title: '축제·행사 알림', desc: '선호 지역 축제 일정' },
-  { key: 'trip', title: '여행 리마인더', desc: '출발 전 일정 알림' },
-] as const;
+const LegalRow = styled(View)`
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+`;
+
+const LegalLink = styled(TouchableOpacity)``;
+
+const LegalLinkLabel = styled(Text)`
+  font-size: 12px;
+  font-family: ${FONT.regular};
+  color: ${COLORS.gray400};
+  text-decoration-line: underline;
+`;
+
+const LegalDivider = styled(Text)`
+  font-size: 12px;
+  color: ${COLORS.gray300};
+`;
 
 export function ProfileContent({
   isGuest,
   companion,
   stylePrefs,
   selectedRegions,
+  itineraryHistory,
+  openingItineraryId,
+  onOpenItinerary,
+  onDeleteItinerary,
   onChangeCompanion,
   onToggleStylePref,
   onToggleRegion,
+  onLogin,
   onLogout,
+  tripReminderEnabled,
+  onToggleTripReminder,
+  onOpenTerms,
+  onOpenPrivacy,
 }: ProfileContentProps) {
-  const [notifyState, setNotifyState] = useState<Record<string, boolean>>({
-    recommend: true,
-    festival: true,
-    trip: false,
-  });
   const { user } = useCurrentUser(!isGuest);
-  const displayName = isGuest ? 'PickTrip 여행자' : (user?.nickname ?? '불러오는 중...');
-  const displaySub = isGuest ? '게스트로 둘러보는 중' : (user?.email ?? '');
+  const displayName = isGuest ? '게스트님' : (user?.nickname ?? '불러오는 중...');
 
   return (
     <Scroll showsVerticalScrollIndicator={false}>
       <Content>
-        <IdentityCard>
+        <IdentityCard
+          colors={[COLORS.coral500, COLORS.coral700]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
           <Avatar>
             <AvatarLabel>{displayName.charAt(0)}</AvatarLabel>
           </Avatar>
-          <View>
+          <IdentityInfo>
             <IdentityName>{displayName}</IdentityName>
-            <IdentitySub>{displaySub}</IdentitySub>
-          </View>
+            {isGuest ? (
+              <IdentitySub>게스트로 둘러보는 중</IdentitySub>
+            ) : (
+              user && <IdentityMeta>{formatProviderJoin(user)}</IdentityMeta>
+            )}
+          </IdentityInfo>
+          {isGuest && (
+            <LoginButton onPress={onLogin} activeOpacity={0.8}>
+              <LoginButtonLabel>로그인</LoginButtonLabel>
+            </LoginButton>
+          )}
         </IdentityCard>
+
+        {itineraryHistory.length > 0 && (
+          <Card>
+            <CardTitle>저장한 여행</CardTitle>
+            {itineraryHistory.map((item, index) => {
+              const isOpening = openingItineraryId === item.itineraryId;
+              return (
+                <TripRow
+                  key={item.itineraryId}
+                  onPress={() => onOpenItinerary(item.itineraryId)}
+                  disabled={openingItineraryId != null}
+                  $last={index === itineraryHistory.length - 1}
+                >
+                  <TripIconBadge>
+                    <Ionicons name="map-outline" size={20} color={COLORS.coral600} />
+                  </TripIconBadge>
+                  <TripBody>
+                    <TripTitleRow>
+                      <TripTitle numberOfLines={1}>{item.title}</TripTitle>
+                    </TripTitleRow>
+                    <TripSub numberOfLines={1}>{formatItinerarySub(item)}</TripSub>
+                  </TripBody>
+                  {isOpening ? (
+                    <ActivityIndicator color={COLORS.coral500} />
+                  ) : (
+                    <>
+                      <DeleteTripButton
+                        onPress={() => onDeleteItinerary(item.itineraryId, item.title)}
+                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        activeOpacity={0.7}
+                      >
+                        <Ionicons name="trash-outline" size={16} color={COLORS.gray400} />
+                      </DeleteTripButton>
+                      <Ionicons name="chevron-forward" size={14} color={COLORS.gray400} />
+                    </>
+                  )}
+                </TripRow>
+              );
+            })}
+          </Card>
+        )}
 
         <Card>
           <CardTitle>여행 취향</CardTitle>
@@ -227,9 +398,12 @@ export function ProfileContent({
                 onPress={() => onChangeCompanion(c.id)}
                 activeOpacity={0.8}
               >
-                <ChipLabel $active={companion === c.id}>
-                  {c.emoji} {c.label}
-                </ChipLabel>
+                <Ionicons
+                  name={c.icon}
+                  size={14}
+                  color={companion === c.id ? COLORS.coral700 : COLORS.gray700}
+                />
+                <ChipLabel $active={companion === c.id}>{c.label}</ChipLabel>
               </Chip>
             ))}
           </ChipRow>
@@ -265,26 +439,34 @@ export function ProfileContent({
 
         <Card>
           <CardTitle>알림 설정</CardTitle>
-          {NOTIFY_ROWS.map((row, index) => (
-            <NotifyRow key={row.key} $last={index === NOTIFY_ROWS.length - 1}>
-              <View>
-                <NotifyTitle>{row.title}</NotifyTitle>
-                <NotifyDesc>{row.desc}</NotifyDesc>
-              </View>
-              <Toggle
-                $on={notifyState[row.key]}
-                onPress={() => setNotifyState((prev) => ({ ...prev, [row.key]: !prev[row.key] }))}
-                activeOpacity={0.8}
-              >
-                <ToggleKnob $on={notifyState[row.key]} />
-              </Toggle>
-            </NotifyRow>
-          ))}
+          <NotifyRow $last>
+            <View>
+              <NotifyTitle>여행 리마인더</NotifyTitle>
+              <NotifyDesc>출발 전 일정 알림</NotifyDesc>
+            </View>
+            <Toggle
+              $on={tripReminderEnabled}
+              onPress={() => onToggleTripReminder(!tripReminderEnabled)}
+              activeOpacity={0.8}
+            >
+              <ToggleKnob $on={tripReminderEnabled} />
+            </Toggle>
+          </NotifyRow>
         </Card>
 
         <LogoutButton onPress={onLogout} activeOpacity={0.8}>
           <LogoutLabel>로그아웃</LogoutLabel>
         </LogoutButton>
+
+        <LegalRow>
+          <LegalLink onPress={onOpenTerms} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <LegalLinkLabel>이용약관</LegalLinkLabel>
+          </LegalLink>
+          <LegalDivider>|</LegalDivider>
+          <LegalLink onPress={onOpenPrivacy} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <LegalLinkLabel>개인정보처리방침</LegalLinkLabel>
+          </LegalLink>
+        </LegalRow>
       </Content>
     </Scroll>
   );
