@@ -18,6 +18,7 @@ import { FavoritesScreen } from '../screens/FavoritesScreen';
 import { ItineraryResultScreen } from '../screens/ItineraryResultScreen';
 import { LegalDocumentScreen } from '../screens/LegalDocumentScreen';
 import { PrioritySelectScreen } from '../screens/PrioritySelectScreen';
+import { SavedItineraryScreen } from '../screens/SavedItineraryScreen';
 import { SharedItineraryScreen } from '../screens/SharedItineraryScreen';
 import { SplashScreen } from '../screens/SplashScreen';
 import type { RootStackParamList } from '../types/navigation';
@@ -112,6 +113,7 @@ function PriorityGate() {
     setTripDate,
     setInitialStops,
     setInitialItineraryId,
+    setInitialItineraryTitle,
   } = useAppState();
 
   return (
@@ -128,11 +130,12 @@ function PriorityGate() {
             return itemId ? updateItemPriority(itemId, priority) : Promise.resolve();
           }),
         );
-        // 저장한 여행을 한 번이라도 열어봤으면 initialItineraryId/initialStops가 그때 값으로
-        // 남아있다. 여기서 안 지우면 방금 새로 만든 일정을 저장할 때 그 값으로 폴백해서
+        // 저장한 여행을 한 번이라도 열어봤으면 initialItineraryId/initialStops/initialItineraryTitle이
+        // 그때 값으로 남아있다. 여기서 안 지우면 방금 새로 만든 일정을 저장할 때 그 값으로 폴백해서
         // (ItineraryResultScreen.handleSave 참고) 새 일정 대신 예전 일정을 덮어써버린다.
         setInitialStops(undefined);
         setInitialItineraryId(undefined);
+        setInitialItineraryTitle(undefined);
         navigation.navigate('Itinerary');
       }}
     />
@@ -150,6 +153,7 @@ function ItineraryGate() {
     stylePrefs,
     initialStops,
     initialItineraryId,
+    initialItineraryTitle,
     isGuest,
     recordSavedItinerary,
   } = useAppState();
@@ -165,11 +169,27 @@ function ItineraryGate() {
       stylePrefs={stylePrefs}
       initialStops={initialStops}
       initialItineraryId={initialItineraryId}
+      initialItineraryTitle={initialItineraryTitle}
       isGuest={isGuest}
       onRequireLogin={() => navigation.navigate('Login')}
       onSaved={recordSavedItinerary}
       onGoHome={() => navigation.reset({ index: 0, routes: [{ name: 'Main' }] })}
     />
+  );
+}
+
+// "저장한 여행" 카드를 눌렀을 때 들어오는 화면. "일정 수정"은 이제 이 화면을 나가지 않고
+// SavedItineraryScreen 안에서 바로 편집(장소 추가·삭제·순서 변경)하고 저장한다 — 예전처럼
+// 일정 생성 완료 화면(ItineraryGate)으로 이동시키지 않는다. 저장에 성공하면 홈/마이페이지
+// 목록도 같이 최신화되도록 recordSavedItinerary만 연결해준다.
+function SavedItineraryGate({
+  route,
+}: {
+  route: { params: RootStackParamList['SavedItinerary'] };
+}) {
+  const { recordSavedItinerary } = useAppState();
+  return (
+    <SavedItineraryScreen itineraryId={route.params.itineraryId} onSaved={recordSavedItinerary} />
   );
 }
 
@@ -239,6 +259,11 @@ export function RootNavigator() {
         name="Itinerary"
         component={ItineraryGate}
         options={{ title: '일정이 완성됐어요' }}
+      />
+      <Stack.Screen
+        name="SavedItinerary"
+        component={SavedItineraryGate}
+        options={{ title: '저장한 일정' }}
       />
       <Stack.Screen name="Shared" component={SharedGate} options={{ title: '공유된 일정' }} />
       <Stack.Screen name="Favorites" component={FavoritesGate} options={{ title: '찜한 콘텐츠' }} />
