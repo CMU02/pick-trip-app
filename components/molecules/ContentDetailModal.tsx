@@ -461,15 +461,21 @@ export function ContentDetailModal({
                       showsHorizontalScrollIndicator={false}
                       onMomentumScrollEnd={handleCarouselScrollEnd}
                     >
-                      {content.images.map((uri) => (
-                        <CarouselImage key={uri} source={{ uri }} resizeMode="cover" />
+                      {content.images.map((uri, index) => (
+                        // TourAPI 원본 데이터에 같은 사진 URL이 두 번 들어있는 경우가 있어서
+                        // uri를 key로 쓰면 중복될 수 있다 — 이 배열은 콘텐츠가 바뀔 때마다
+                        // (contentId 리셋 effect에서) 통째로 새로 오는 정적 목록이라 인덱스를
+                        // key로 써도 안전하다.
+                        // biome-ignore lint/suspicious/noArrayIndexKey: 위 설명 참고
+                        <CarouselImage key={index} source={{ uri }} resizeMode="cover" />
                       ))}
                     </ScrollView>
                     {content.images.length > 1 && (
                       <>
                         <DotRow>
-                          {content.images.map((uri, index) => (
-                            <Dot key={uri} $active={index === activeImageIndex} />
+                          {content.images.map((_, index) => (
+                            // biome-ignore lint/suspicious/noArrayIndexKey: 위 CarouselImage와 같은 이유
+                            <Dot key={index} $active={index === activeImageIndex} />
                           ))}
                         </DotRow>
                         <ImageCounterBadge>
