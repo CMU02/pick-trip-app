@@ -34,6 +34,8 @@ interface ContentDetailScreenProps {
   // 로드된 콘텐츠 이름이 확정되면 네이티브 헤더 타이틀에 반영할 수 있게 알려준다
   // (RootNavigator의 SharedGate와 같은 패턴).
   onTitleReady?: (title: string) => void;
+  inBasket?: boolean;
+  onToggleBasket?: (content: Content) => void;
 }
 
 const ScreenContainer = styled(SafeAreaView)`
@@ -341,6 +343,48 @@ function withLineBreaks(text: string): string {
 // 소개 문구가 이 줄 수를 넘으면 접어두고 "더 보기"로 펼칠 수 있게 한다.
 const SUMMARY_COLLAPSED_LINES = 3;
 
+// 화면 맨 아래 고정된 바 — 찜 버튼(정사각형)과 "여행 바구니에 담기" 버튼(나머지 폭)을 나란히 둔다.
+const BottomBar = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-top-width: 1px;
+  border-top-color: ${COLORS.gray200};
+  background-color: ${COLORS.white};
+`;
+
+// 이미지 위에 겹치는 FavoriteButton(반투명 원형, 어두운 배경 가정)과 달리, 여긴 흰 배경
+// 바 위라 테두리 있는 정사각형 버튼으로 따로 만든다.
+const FavoriteBarButton = styled(TouchableOpacity)`
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border-width: 1px;
+  border-color: ${COLORS.gray200};
+  align-items: center;
+  justify-content: center;
+`;
+
+const BasketButton = styled(TouchableOpacity)<{ $active: boolean }>`
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-vertical: 14px;
+  border-radius: 12px;
+  background-color: ${({ $active }) => ($active ? COLORS.white : COLORS.coral500)};
+  border-width: 1px;
+  border-color: ${COLORS.coral500};
+`;
+
+const BasketButtonLabel = styled(Text)<{ $active: boolean }>`
+  font-family: ${FONT.medium};
+  font-size: 16px;
+  color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.white)};
+`;
+
 // 콘텐츠 카드에서 "자세히 보기"를 누르면 여는 화면. 원래는 모달(팝업 시트)이었는데,
 // 뒤로가기·헤더 없이 화면 위에 겹쳐 뜨는 방식이 다른 화면들과 이질감이 있어서 일반
 // 스택 화면으로 바꿨다 — 네이티브 헤더의 뒤로가기 버튼(RootNavigator의 headerScreenOptions)이
@@ -350,6 +394,8 @@ export function ContentDetailScreen({
   favorite = false,
   onToggleFavorite,
   onTitleReady,
+  inBasket = false,
+  onToggleBasket,
 }: ContentDetailScreenProps) {
   const {
     data: content,
@@ -594,6 +640,33 @@ export function ContentDetailScreen({
           </>
         )}
       </ScrollView>
+      {content && onToggleBasket && (
+        <BottomBar>
+          {onToggleFavorite && (
+            <FavoriteBarButton onPress={() => onToggleFavorite(content)} activeOpacity={0.7}>
+              <Ionicons
+                name={favorite ? 'heart' : 'heart-outline'}
+                size={20}
+                color={favorite ? COLORS.coral500 : COLORS.gray700}
+              />
+            </FavoriteBarButton>
+          )}
+          <BasketButton
+            $active={inBasket}
+            onPress={() => onToggleBasket(content)}
+            activeOpacity={0.8}
+          >
+            <Ionicons
+              name={inBasket ? 'checkmark' : 'add'}
+              size={18}
+              color={inBasket ? COLORS.coral500 : COLORS.white}
+            />
+            <BasketButtonLabel $active={inBasket}>
+              {inBasket ? '여행 바구니에 담았어요' : '여행 바구니에 담기'}
+            </BasketButtonLabel>
+          </BasketButton>
+        </BottomBar>
+      )}
     </ScreenContainer>
   );
 }

@@ -227,7 +227,7 @@ function FavoritesGate() {
 // 화면으로 바꿨다 — 뒤로가기는 네이티브 헤더가 대신 처리해준다.
 function ContentDetailGate({ route }: { route: { params: RootStackParamList['ContentDetail'] } }) {
   const navigation = useNavigation<Nav>();
-  const { favoriteIds, handleToggleFavorite } = useAppState();
+  const { favoriteIds, handleToggleFavorite, selectedIds, handleToggleContent } = useAppState();
   const { contentId } = route.params;
 
   return (
@@ -235,6 +235,8 @@ function ContentDetailGate({ route }: { route: { params: RootStackParamList['Con
       contentId={contentId}
       favorite={favoriteIds.includes(contentId)}
       onToggleFavorite={handleToggleFavorite}
+      inBasket={selectedIds.includes(contentId)}
+      onToggleBasket={handleToggleContent}
       onTitleReady={(title) => navigation.setOptions({ title })}
     />
   );
