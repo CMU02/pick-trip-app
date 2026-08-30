@@ -600,6 +600,7 @@ export function ContentDetailModal({
                         <WebView
                           originWhitelist={['*']}
                           scrollEnabled={false}
+                          // baseUrl은 일부러 안 준다 — buildKakaoMapHtml 상단 주석 참고.
                           source={{
                             html: buildKakaoMapHtml({
                               appKey: KAKAO_MAP_JS_KEY,
@@ -607,18 +608,6 @@ export function ContentDetailModal({
                               longitude: content.longitude,
                               label: content.name,
                             }),
-                            // baseUrl을 안 주면 이 인라인 HTML은 진짜 도메인에서 온 걸로 취급되지
-                            // 않아, sdk.js를 요청할 때 Referer가 안 실린다. 카카오맵 API는 Referer가
-                            // 아예 없는 요청은 도메인 등록 여부와 상관없이 통과시켜준다(직접 확인함) —
-                            // api.pick-trip.app을 Referer로 보내던 이전 방식은 그 도메인이 카카오
-                            // 콘솔에 등록 안 돼 있어서 401 domain mismatched로 막혔었다.
-                          }}
-                          // 지도가 안 뜰 때 원인을 알아야 해서, 웹뷰 안 에러/콘솔 로그를
-                          // 밖으로 흘려보내 RN 콘솔(adb logcat)에서 볼 수 있게 한다.
-                          // 문제 원인이 확실해지면 이 로그와 buildKakaoMapHtml의 계측 코드는
-                          // 지워도 된다.
-                          onMessage={(e) => {
-                            console.warn('[kakao-map]', e.nativeEvent.data);
                           }}
                         />
                       ) : (
