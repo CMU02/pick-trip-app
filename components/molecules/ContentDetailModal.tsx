@@ -16,7 +16,6 @@ import {
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import styled from 'styled-components';
-import { API_BASE_URL } from '../../constants/api';
 import { CATEGORIES } from '../../constants/categories';
 import { COLORS } from '../../constants/colors';
 import { KAKAO_MAP_JS_KEY } from '../../constants/kakao';
@@ -608,11 +607,11 @@ export function ContentDetailModal({
                               longitude: content.longitude,
                               label: content.name,
                             }),
-                            // 이 HTML은 실제로 API_BASE_URL에 호스팅된 페이지가 아니라 앱 안에서
-                            // 즉석으로 만든 것이다. baseUrl을 지정하면 웹뷰가 이 주소에서 로드된
-                            // 것처럼 취급해서, 카카오맵 SDK 스크립트를 요청할 때 이 도메인을
-                            // Referer로 보낸다 — 카카오 콘솔에 등록한 도메인과 맞춰야 지도가 뜬다.
-                            baseUrl: API_BASE_URL,
+                            // baseUrl을 안 주면 이 인라인 HTML은 진짜 도메인에서 온 걸로 취급되지
+                            // 않아, sdk.js를 요청할 때 Referer가 안 실린다. 카카오맵 API는 Referer가
+                            // 아예 없는 요청은 도메인 등록 여부와 상관없이 통과시켜준다(직접 확인함) —
+                            // api.pick-trip.app을 Referer로 보내던 이전 방식은 그 도메인이 카카오
+                            // 콘솔에 등록 안 돼 있어서 401 domain mismatched로 막혔었다.
                           }}
                           // 지도가 안 뜰 때 원인을 알아야 해서, 웹뷰 안 에러/콘솔 로그를
                           // 밖으로 흘려보내 RN 콘솔(adb logcat)에서 볼 수 있게 한다.
