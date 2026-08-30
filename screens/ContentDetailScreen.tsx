@@ -155,25 +155,6 @@ const LocationSection = styled(View)`
   margin-bottom: 16px;
 `;
 
-const LocationHeaderRow = styled(View)`
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-`;
-
-const DirectionsLink = styled(TouchableOpacity)`
-  flex-direction: row;
-  align-items: center;
-  gap: 2px;
-`;
-
-const DirectionsLinkLabel = styled(Text)`
-  font-family: ${FONT.medium};
-  font-size: 13px;
-  color: ${COLORS.coral500};
-`;
-
 const MapWrapper = styled(View)`
   width: 100%;
   height: 160px;
@@ -557,13 +538,7 @@ export function ContentDetailScreen({
                 </SummarySection>
               )}
               <LocationSection>
-                <LocationHeaderRow>
-                  <SectionTitle>위치</SectionTitle>
-                  <DirectionsLink onPress={openInKakaoMap} activeOpacity={0.7}>
-                    <DirectionsLinkLabel>길찾기</DirectionsLinkLabel>
-                    <Ionicons name="chevron-forward" size={12} color={COLORS.coral500} />
-                  </DirectionsLink>
-                </LocationHeaderRow>
+                <SectionTitle>위치</SectionTitle>
                 <MapWrapper>
                   {KAKAO_MAP_JS_KEY ? (
                     <WebView
@@ -594,7 +569,7 @@ export function ContentDetailScreen({
                     <KakaoMapButtonLabel>카카오맵으로 보기</KakaoMapButtonLabel>
                   </KakaoMapButton>
                   <CopyButton onPress={handleCopyAddress} activeOpacity={0.7}>
-                    <CopyButtonLabel>{addressCopied ? '복사됨' : '복사'}</CopyButtonLabel>
+                    <CopyButtonLabel>{addressCopied ? '복사됨' : '주소 복사'}</CopyButtonLabel>
                   </CopyButton>
                 </LocationButtonRow>
               </LocationSection>
