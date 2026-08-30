@@ -285,7 +285,7 @@ const InfoText = styled(Text)`
 // 표처럼 나열한다. 값이 없는 항목(reservationRequired가 null인 경우가 특히 흔하다)은
 // 통째로 안 보여준다.
 const InfoTable = styled(View)`
-  background-color: ${COLORS.gray50};
+  background-color: ${COLORS.coral50};
   border-radius: 12px;
   padding: 14px 16px;
   margin-bottom: 16px;
