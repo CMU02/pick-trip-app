@@ -1,9 +1,11 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import * as Clipboard from 'expo-clipboard';
 import { useEffect, useRef, useState } from 'react';
 import {
   Dimensions,
   Image,
+  Linking,
   Modal,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -12,13 +14,16 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { WebView } from 'react-native-webview';
 import styled from 'styled-components';
 import { CATEGORIES } from '../../constants/categories';
 import { COLORS } from '../../constants/colors';
+import { KAKAO_MAP_JS_KEY } from '../../constants/kakao';
 import { REGIONS } from '../../constants/regions';
 import { FONT } from '../../constants/typography';
 import { fetchContentDetail } from '../../services/contentService';
 import type { Content } from '../../types/content';
+import { buildKakaoMapHtml } from '../../utils/kakaoMapHtml';
 import { FavoriteButton } from '../atoms/FavoriteButton';
 import { ContentDetailSkeleton } from './ContentDetailSkeleton';
 
@@ -199,6 +204,103 @@ const ExpandToggleLabel = styled(Text)`
   color: ${COLORS.gray500};
 `;
 
+const LocationSection = styled(View)`
+  margin-bottom: 16px;
+`;
+
+const LocationHeaderRow = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+`;
+
+const DirectionsLink = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+`;
+
+const DirectionsLinkLabel = styled(Text)`
+  font-family: ${FONT.medium};
+  font-size: 13px;
+  color: ${COLORS.coral500};
+`;
+
+const MapWrapper = styled(View)`
+  width: 100%;
+  height: 160px;
+  border-radius: 12px;
+  overflow: hidden;
+  border-width: 1px;
+  border-color: ${COLORS.gray200};
+  margin-bottom: 10px;
+`;
+
+// 카카오맵 JS 키를 아직 안 넣었을 때(EXPO_PUBLIC_KAKAO_MAP_JS_KEY 미설정) WebView가
+// 빈 화면으로 깨져 보이는 대신, 무엇이 필요한지 알려주는 자리표시자를 보여준다.
+const MapPlaceholder = styled(View)`
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  background-color: ${COLORS.gray50};
+  padding: 12px;
+`;
+
+const MapPlaceholderText = styled(Text)`
+  font-family: ${FONT.regular};
+  font-size: 12px;
+  color: ${COLORS.gray500};
+  text-align: center;
+`;
+
+const AddressRow = styled(View)`
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+`;
+
+const AddressText = styled(Text)`
+  flex: 1;
+  font-family: ${FONT.medium};
+  font-size: 13px;
+  color: ${COLORS.gray900};
+  line-height: 19px;
+`;
+
+const CopyButton = styled(TouchableOpacity)`
+  padding-vertical: 4px;
+  padding-horizontal: 10px;
+  border-radius: 8px;
+  border-width: 1px;
+  border-color: ${COLORS.gray200};
+`;
+
+const CopyButtonLabel = styled(Text)`
+  font-family: ${FONT.medium};
+  font-size: 12px;
+  color: ${COLORS.gray700};
+`;
+
+const KakaoMapButton = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding-vertical: 12px;
+  border-radius: 10px;
+  border-width: 1px;
+  border-color: ${COLORS.gray200};
+  background-color: ${COLORS.white};
+`;
+
+const KakaoMapButtonLabel = styled(Text)`
+  font-family: ${FONT.medium};
+  font-size: 13px;
+  color: ${COLORS.gray700};
+`;
+
 const InfoRow = styled(View)`
   flex-direction: row;
   align-items: flex-start;
@@ -291,6 +393,7 @@ export function ContentDetailModal({
   const [summaryOverflows, setSummaryOverflows] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const carouselRef = useRef<ScrollView>(null);
+  const [addressCopied, setAddressCopied] = useState(false);
   // 이 모달은 카드마다 새로 만들어지는 게 아니라 화면에 하나만 떠 있고 contentId prop만
   // 바뀌는 구조라, 안 지워주면 "더 보기"를 펼친 채로 다른 콘텐츠를 열어도 그 상태가
   // 그대로 남아있는다(실제로 그렇게 다른 콘텐츠까지 펼쳐져 보이는 버그였음). 사진 캐러셀도
@@ -302,7 +405,23 @@ export function ContentDetailModal({
     setSummaryOverflows(false);
     setActiveImageIndex(0);
     carouselRef.current?.scrollTo({ x: 0, animated: false });
+    setAddressCopied(false);
   }, [contentId]);
+
+  const handleCopyAddress = async () => {
+    if (!content) return;
+    await Clipboard.setStringAsync(content.address);
+    setAddressCopied(true);
+    setTimeout(() => setAddressCopied(false), 1500);
+  };
+
+  // 카카오맵 앱이 깔려있으면 앱으로, 없으면 웹으로 열리는 범용 링크라 별도 딥링크 스킴
+  // 권한 설정 없이 Linking.openURL 하나로 된다.
+  const openInKakaoMap = () => {
+    if (!content) return;
+    const url = `https://map.kakao.com/link/map/${encodeURIComponent(content.name)},${content.latitude},${content.longitude}`;
+    Linking.openURL(url);
+  };
 
   const handleCarouselScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
@@ -462,6 +581,48 @@ export function ContentDetailModal({
                       )}
                     </SummarySection>
                   )}
+                  <LocationSection>
+                    <LocationHeaderRow>
+                      <SectionTitle>위치</SectionTitle>
+                      <DirectionsLink onPress={openInKakaoMap} activeOpacity={0.7}>
+                        <DirectionsLinkLabel>길찾기</DirectionsLinkLabel>
+                        <Ionicons name="chevron-forward" size={12} color={COLORS.coral500} />
+                      </DirectionsLink>
+                    </LocationHeaderRow>
+                    <MapWrapper>
+                      {KAKAO_MAP_JS_KEY ? (
+                        <WebView
+                          originWhitelist={['*']}
+                          scrollEnabled={false}
+                          source={{
+                            html: buildKakaoMapHtml({
+                              appKey: KAKAO_MAP_JS_KEY,
+                              latitude: content.latitude,
+                              longitude: content.longitude,
+                              label: content.name,
+                            }),
+                          }}
+                        />
+                      ) : (
+                        <MapPlaceholder>
+                          <MapPlaceholderText>
+                            카카오맵 키가 아직 설정되지 않았어요.{'\n'}
+                            EXPO_PUBLIC_KAKAO_MAP_JS_KEY를 .env에 추가해주세요.
+                          </MapPlaceholderText>
+                        </MapPlaceholder>
+                      )}
+                    </MapWrapper>
+                    <AddressRow>
+                      <AddressText>{content.address}</AddressText>
+                      <CopyButton onPress={handleCopyAddress} activeOpacity={0.7}>
+                        <CopyButtonLabel>{addressCopied ? '복사됨' : '복사'}</CopyButtonLabel>
+                      </CopyButton>
+                    </AddressRow>
+                    <KakaoMapButton onPress={openInKakaoMap} activeOpacity={0.7}>
+                      <Ionicons name="map-outline" size={14} color={COLORS.gray700} />
+                      <KakaoMapButtonLabel>카카오맵으로 보기</KakaoMapButtonLabel>
+                    </KakaoMapButton>
+                  </LocationSection>
                 </Body>
               </>
             )}
