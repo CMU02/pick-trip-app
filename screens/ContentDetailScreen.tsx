@@ -201,51 +201,41 @@ const MapPlaceholderText = styled(Text)`
   text-align: center;
 `;
 
-const AddressRow = styled(View)`
+// "카카오맵으로 보기"와 "복사"를 나란히 두는 줄.
+const LocationButtonRow = styled(View)`
   flex-direction: row;
-  align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 10px;
-`;
-
-const AddressText = styled(Text)`
-  flex: 1;
-  font-family: ${FONT.medium};
-  font-size: 13px;
-  color: ${COLORS.gray900};
-  line-height: 19px;
-`;
-
-const CopyButton = styled(TouchableOpacity)`
-  padding-vertical: 4px;
-  padding-horizontal: 10px;
-  border-radius: 8px;
-  border-width: 1px;
-  border-color: ${COLORS.gray200};
-`;
-
-const CopyButtonLabel = styled(Text)`
-  font-family: ${FONT.medium};
-  font-size: 12px;
-  color: ${COLORS.gray700};
+  gap: 8px;
 `;
 
 const KakaoMapButton = styled(TouchableOpacity)`
+  flex: 1;
   flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: 6px;
   padding-vertical: 12px;
   border-radius: 10px;
-  border-width: 1px;
-  border-color: ${COLORS.gray200};
-  background-color: ${COLORS.white};
+  background-color: ${COLORS.coral500};
 `;
 
 const KakaoMapButtonLabel = styled(Text)`
   font-family: ${FONT.medium};
   font-size: 13px;
-  color: ${COLORS.gray700};
+  color: ${COLORS.white};
+`;
+
+const CopyButton = styled(TouchableOpacity)`
+  padding-horizontal: 16px;
+  border-radius: 10px;
+  background-color: ${COLORS.coral500};
+  align-items: center;
+  justify-content: center;
+`;
+
+const CopyButtonLabel = styled(Text)`
+  font-family: ${FONT.medium};
+  font-size: 13px;
+  color: ${COLORS.white};
 `;
 
 // 제목 바로 아래, 참고 디자인처럼 지역과 실내 여부를 아이콘+글자로 나란히 보여주는 줄.
@@ -598,16 +588,15 @@ export function ContentDetailScreen({
                     </MapPlaceholder>
                   )}
                 </MapWrapper>
-                <AddressRow>
-                  <AddressText>{content.address}</AddressText>
+                <LocationButtonRow>
+                  <KakaoMapButton onPress={openInKakaoMap} activeOpacity={0.7}>
+                    <Ionicons name="map-outline" size={14} color={COLORS.white} />
+                    <KakaoMapButtonLabel>카카오맵으로 보기</KakaoMapButtonLabel>
+                  </KakaoMapButton>
                   <CopyButton onPress={handleCopyAddress} activeOpacity={0.7}>
                     <CopyButtonLabel>{addressCopied ? '복사됨' : '복사'}</CopyButtonLabel>
                   </CopyButton>
-                </AddressRow>
-                <KakaoMapButton onPress={openInKakaoMap} activeOpacity={0.7}>
-                  <Ionicons name="map-outline" size={14} color={COLORS.gray700} />
-                  <KakaoMapButtonLabel>카카오맵으로 보기</KakaoMapButtonLabel>
-                </KakaoMapButton>
+                </LocationButtonRow>
               </LocationSection>
             </Body>
           </>
