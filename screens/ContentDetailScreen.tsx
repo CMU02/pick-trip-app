@@ -16,6 +16,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import styled from 'styled-components';
+import { SquareFavoriteButton } from '../components/atoms/SquareFavoriteButton';
 import { ContentDetailSkeleton } from '../components/molecules/ContentDetailSkeleton';
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
@@ -310,16 +311,6 @@ const BottomBar = styled(View)`
   background-color: ${COLORS.white};
 `;
 
-const FavoriteBarButton = styled(TouchableOpacity)`
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  border-width: 1px;
-  border-color: ${COLORS.gray200};
-  align-items: center;
-  justify-content: center;
-`;
-
 const BasketButton = styled(TouchableOpacity)<{ $active: boolean }>`
   flex: 1;
   flex-direction: row;
@@ -580,13 +571,7 @@ export function ContentDetailScreen({
       {content && onToggleBasket && (
         <BottomBar>
           {onToggleFavorite && (
-            <FavoriteBarButton onPress={() => onToggleFavorite(content)} activeOpacity={0.7}>
-              <Ionicons
-                name={favorite ? 'heart' : 'heart-outline'}
-                size={20}
-                color={favorite ? COLORS.coral500 : COLORS.gray700}
-              />
-            </FavoriteBarButton>
+            <SquareFavoriteButton active={favorite} onPress={() => onToggleFavorite(content)} />
           )}
           <BasketButton
             $active={inBasket}

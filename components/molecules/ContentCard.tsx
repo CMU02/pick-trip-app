@@ -6,7 +6,7 @@ import { COLORS } from '../../constants/colors';
 import { REGIONS } from '../../constants/regions';
 import { FONT } from '../../constants/typography';
 import type { Content } from '../../types/content';
-import { FavoriteButton } from '../atoms/FavoriteButton';
+import { SquareFavoriteButton } from '../atoms/SquareFavoriteButton';
 
 interface ContentCardProps {
   content: Content;
@@ -15,6 +15,8 @@ interface ContentCardProps {
   onPressDetail?: () => void;
   favorite?: boolean;
   onToggleFavorite?: (content: Content) => void;
+  // 바구니 담기/빼기. 없으면(예: 찜한 콘텐츠 화면) 바구니 아이콘 자체를 안 보여준다.
+  onToggleBasket?: (content: Content) => void;
   // 카드 오른쪽 위에 지역 뱃지(하동/영주/예천)를 보여줄지. 화면마다 필요 여부가 달라서 옵트인으로 둔다.
   showRegion?: boolean;
 }
@@ -40,7 +42,7 @@ const ThumbnailImage = styled(Image)`
   width: 100%;
 `;
 
-// 지역 뱃지(RegionBadge)와 선택 표시(CheckBadge)가 둘 다 뜨면 겹치지 않도록,
+// 지역 뱃지(RegionBadge)와 바구니 담기 버튼(BasketBadge)이 둘 다 뜨면 겹치지 않도록,
 // 이 행 하나에 나란히 두고 오른쪽 위 모서리에 고정한다.
 const TopRightRow = styled(View)`
   position: absolute;
@@ -64,16 +66,20 @@ const RegionLabel = styled(Text)`
   color: ${COLORS.white};
 `;
 
-const CheckBadge = styled(View)`
-  background-color: ${COLORS.coral500};
+// 예전엔 카드 전체를 눌러야 바구니에 담겼고, 이 자리엔 담겼는지 보여주기만 하는 체크
+// 표시(비활성)가 있었다. 이제는 카드를 누르면 상세 화면으로 이동하고, 바구니 담기/빼기는
+// 이 아이콘을 직접 눌러야 하는 별도 동작이라 TouchableOpacity로 바꿨다. 담겼으면 코랄
+// 배경 + 채운 바구니 아이콘, 아니면 반투명 배경 + 테두리만 있는 바구니 아이콘.
+const BasketBadge = styled(TouchableOpacity)<{ $active: boolean }>`
+  background-color: ${({ $active }) => ($active ? COLORS.coral500 : 'rgba(0, 0, 0, 0.35)')};
   border-radius: 100px;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   align-items: center;
   justify-content: center;
 `;
 
-// 담기 선택 표시(CheckBadge)와 겹치지 않게 반대쪽 모서리에 둔다.
+// 바구니 담기 버튼(BasketBadge)과 겹치지 않게 반대쪽 모서리에 둔다.
 const FavoriteBadge = styled(View)`
   position: absolute;
   top: 8px;
@@ -152,6 +158,7 @@ export function ContentCard({
   onPressDetail,
   favorite = false,
   onToggleFavorite,
+  onToggleBasket,
   showRegion = false,
 }: ContentCardProps) {
   const category = CATEGORIES.find((c) => c.id === content.category);
@@ -172,15 +179,24 @@ export function ContentCard({
             <RegionLabel>{region.name}</RegionLabel>
           </RegionBadge>
         )}
-        {selected && (
-          <CheckBadge>
-            <Ionicons name="checkmark" size={14} color={COLORS.white} />
-          </CheckBadge>
+        {onToggleBasket && (
+          <BasketBadge
+            $active={selected}
+            onPress={() => onToggleBasket(content)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+          >
+            <Ionicons
+              name={selected ? 'basket' : 'basket-outline'}
+              size={15}
+              color={COLORS.white}
+            />
+          </BasketBadge>
         )}
       </TopRightRow>
       {onToggleFavorite && (
         <FavoriteBadge>
-          <FavoriteButton active={favorite} onPress={() => onToggleFavorite(content)} />
+          <SquareFavoriteButton active={favorite} onPress={() => onToggleFavorite(content)} />
         </FavoriteBadge>
       )}
       <Body>

@@ -147,10 +147,11 @@ export function BasketContent({
                 key={content.id}
                 content={content}
                 selected
-                onPress={() => onToggle(content)}
+                onPress={() => onPressDetail(content.id)}
                 onPressDetail={() => onPressDetail(content.id)}
                 favorite={favoriteIds.includes(content.id)}
                 onToggleFavorite={onToggleFavorite}
+                onToggleBasket={onToggle}
               />
             ))
           )}

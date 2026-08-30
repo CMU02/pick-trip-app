@@ -264,10 +264,11 @@ export function ContentExploreScreen({
                 key={content.id}
                 content={content}
                 selected={selectedIds.includes(content.id)}
-                onPress={() => onToggle(content)}
+                onPress={() => onPressDetail(content.id)}
                 onPressDetail={() => onPressDetail(content.id)}
                 favorite={favoriteIds.includes(content.id)}
                 onToggleFavorite={onToggleFavorite}
+                onToggleBasket={onToggle}
                 showRegion
               />
             ))
