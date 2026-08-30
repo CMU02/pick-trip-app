@@ -20,6 +20,7 @@ import { ContentDetailSkeleton } from '../components/molecules/ContentDetailSkel
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
 import { KAKAO_MAP_JS_KEY } from '../constants/kakao';
+import { REGIONS } from '../constants/regions';
 import { FONT } from '../constants/typography';
 import { fetchContentDetail } from '../services/contentService';
 import type { Content } from '../types/content';
@@ -247,19 +248,25 @@ const KakaoMapButtonLabel = styled(Text)`
   color: ${COLORS.gray700};
 `;
 
-const InfoRow = styled(View)`
+// 제목 바로 아래, 참고 디자인처럼 지역과 실내 여부를 아이콘+글자로 나란히 보여주는 줄.
+const MetaRow = styled(View)`
   flex-direction: row;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 12px;
 `;
 
-const InfoText = styled(Text)`
+const MetaItem = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+`;
+
+const MetaText = styled(Text)`
   font-family: ${FONT.medium};
-  flex: 1;
-  font-size: 14px;
-  color: ${COLORS.gray900};
-  line-height: 20px;
+  font-size: 13px;
+  color: ${COLORS.gray700};
 `;
 
 // 운영시간·휴무일·주차 등 상세 조회에서만 내려오는 항목들 — 아이콘 + 라벨 + 값 형태로
@@ -379,6 +386,7 @@ export function ContentDetailScreen({
   });
 
   const category = content && CATEGORIES.find((c) => c.id === content.category);
+  const regionName = content && REGIONS.find((r) => r.id === content.regionId)?.name;
 
   // 마지막 줄엔 구분선을 안 그어야 해서, 값 있는 행만 미리 걸러 목록으로 만들어둔다
   // (JSX 안에서 필터링하면 몇 번째가 마지막인지 알기 번거롭다).
@@ -489,16 +497,21 @@ export function ContentDetailScreen({
             )}
             <Body>
               <ContentName>{content.name}</ContentName>
-              {content.indoor && (
-                <InfoRow>
-                  <Ionicons
-                    name="home-outline"
-                    size={14}
-                    color={COLORS.gray900}
-                    style={{ marginTop: 3 }}
-                  />
-                  <InfoText>실내 콘텐츠</InfoText>
-                </InfoRow>
+              {(regionName || content.indoor) && (
+                <MetaRow>
+                  {regionName && (
+                    <MetaItem>
+                      <Ionicons name="location-outline" size={13} color={COLORS.gray700} />
+                      <MetaText>{regionName}</MetaText>
+                    </MetaItem>
+                  )}
+                  {content.indoor && (
+                    <MetaItem>
+                      <Ionicons name="home-outline" size={13} color={COLORS.gray700} />
+                      <MetaText>실내 콘텐츠</MetaText>
+                    </MetaItem>
+                  )}
+                </MetaRow>
               )}
               <InfoTable>
                 {infoRows.map((row, index) => (
