@@ -101,24 +101,6 @@ const Body = styled(View)`
   padding: 20px;
 `;
 
-const CategoryBadge = styled(View)`
-  flex-direction: row;
-  align-items: center;
-  gap: 4px;
-  align-self: flex-start;
-  background-color: ${COLORS.coral50};
-  border-radius: 100px;
-  padding-vertical: 4px;
-  padding-horizontal: 10px;
-  margin-bottom: 10px;
-`;
-
-const CategoryLabel = styled(Text)`
-  font-size: 12px;
-  font-family: ${FONT.semibold};
-  color: ${COLORS.coral700};
-`;
-
 const ContentName = styled(Text)`
   font-size: 20px;
   font-family: ${FONT.bold};
@@ -489,25 +471,7 @@ export function ContentDetailScreen({
               </DetailThumbnail>
             )}
             <Body>
-              {category && (
-                <CategoryBadge>
-                  <Ionicons name={category.icon} size={13} color={COLORS.coral700} />
-                  <CategoryLabel>{category.label}</CategoryLabel>
-                </CategoryBadge>
-              )}
               <ContentName>{content.name}</ContentName>
-              <InfoRow>
-                {/* InfoText는 line-height 20px인데 아이콘은 14px라, flex-start로 맞추면
-                    아이콘이 글자보다 위로 붕 떠 보인다. 그 차이(3px)만큼 내려서 글자 첫 줄과
-                    높이를 맞춘다. */}
-                <Ionicons
-                  name="location-outline"
-                  size={14}
-                  color={COLORS.gray900}
-                  style={{ marginTop: 3 }}
-                />
-                <InfoText>{content.address}</InfoText>
-              </InfoRow>
               {content.indoor && (
                 <InfoRow>
                   <Ionicons
@@ -521,6 +485,16 @@ export function ContentDetailScreen({
               )}
               <InfoTable>
                 {[
+                  {
+                    icon: category?.icon ?? 'pricetag-outline',
+                    label: '카테고리',
+                    value: category?.label ?? null,
+                  },
+                  {
+                    icon: 'location-outline' as const,
+                    label: '주소',
+                    value: content.address,
+                  },
                   {
                     icon: 'earth-outline' as const,
                     label: '지역',
