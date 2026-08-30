@@ -4,6 +4,7 @@ import { Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-na
 import styled from 'styled-components';
 import { CATEGORIES } from '../../constants/categories';
 import { COLORS } from '../../constants/colors';
+import { REGIONS } from '../../constants/regions';
 import { FONT } from '../../constants/typography';
 import { fetchContentDetail } from '../../services/contentService';
 import type { Content } from '../../types/content';
@@ -122,6 +123,38 @@ const InfoText = styled(Text)`
   line-height: 20px;
 `;
 
+// 운영시간·휴무일·주차 등 상세 조회에서만 내려오는 항목들 — 아이콘 + 라벨 + 값 형태의
+// 표처럼 나열한다. 값이 없는 항목(reservationRequired가 null인 경우가 특히 흔하다)은
+// 통째로 안 보여준다.
+const InfoTable = styled(View)`
+  background-color: ${COLORS.gray50};
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  gap: 10px;
+`;
+
+const InfoTableRow = styled(View)`
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+`;
+
+const InfoTableLabel = styled(Text)`
+  width: 60px;
+  font-family: ${FONT.medium};
+  font-size: 13px;
+  color: ${COLORS.gray500};
+`;
+
+const InfoTableValue = styled(Text)`
+  flex: 1;
+  font-family: ${FONT.medium};
+  font-size: 13px;
+  color: ${COLORS.gray900};
+  line-height: 19px;
+`;
+
 const CenterBox = styled(View)`
   height: 220px;
   align-items: center;
@@ -133,6 +166,12 @@ const ErrorText = styled(Text)`
   font-size: 13px;
   color: ${COLORS.gray500};
 `;
+
+// 백엔드 원본(TourAPI)이 줄바꿈을 <br> 태그로 넣어서 준다(예: "11:30~18:00<br>- 마지막 주문 17:00").
+// RN Text는 HTML을 해석 안 해서 그대로 두면 "<br>" 글자가 그대로 보이므로 줄바꿈으로 바꿔준다.
+function withLineBreaks(text: string): string {
+  return text.replace(/<br\s*\/?>/gi, '\n');
+}
 
 export function ContentDetailModal({
   contentId,
@@ -205,6 +244,48 @@ export function ContentDetailModal({
                       <InfoText>실내 콘텐츠</InfoText>
                     </InfoRow>
                   )}
+                  <InfoTable>
+                    {[
+                      {
+                        icon: 'earth-outline' as const,
+                        label: '지역',
+                        value: REGIONS.find((r) => r.id === content.regionId)?.name ?? null,
+                      },
+                      {
+                        icon: 'time-outline' as const,
+                        label: '운영시간',
+                        value: content.useTime,
+                      },
+                      {
+                        icon: 'calendar-outline' as const,
+                        label: '휴무일',
+                        value: content.restDate,
+                      },
+                      {
+                        icon: 'car-outline' as const,
+                        label: '주차',
+                        value: content.parking,
+                      },
+                      {
+                        icon: 'hourglass-outline' as const,
+                        label: '예상 체류',
+                        value: content.stayDuration,
+                      },
+                      {
+                        icon: 'bookmark-outline' as const,
+                        label: '예약',
+                        value: content.reservationRequired,
+                      },
+                    ]
+                      .filter((row) => row.value)
+                      .map((row) => (
+                        <InfoTableRow key={row.label}>
+                          <Ionicons name={row.icon} size={14} color={COLORS.gray500} />
+                          <InfoTableLabel>{row.label}</InfoTableLabel>
+                          <InfoTableValue>{withLineBreaks(row.value as string)}</InfoTableValue>
+                        </InfoTableRow>
+                      ))}
+                  </InfoTable>
                 </Body>
               </>
             )}

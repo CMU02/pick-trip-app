@@ -14,6 +14,11 @@ const contentById: Record<string, Content> = {
     indoor: false,
     latitude: 0,
     longitude: 0,
+    useTime: null,
+    restDate: null,
+    parking: null,
+    stayDuration: null,
+    reservationRequired: null,
   },
   b: {
     id: 'b',
@@ -26,6 +31,11 @@ const contentById: Record<string, Content> = {
     indoor: false,
     latitude: 0,
     longitude: 0,
+    useTime: null,
+    restDate: null,
+    parking: null,
+    stayDuration: null,
+    reservationRequired: null,
   },
 };
 

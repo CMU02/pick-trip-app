@@ -37,6 +37,12 @@ function toContent(item: ContentSummaryResponse): Content {
     indoor: item.indoor,
     latitude: item.latitude,
     longitude: item.longitude,
+    // 목록 응답엔 운영시간 등 상세 정보가 없다 — 상세 조회에서만 채워진다.
+    useTime: null,
+    restDate: null,
+    parking: null,
+    stayDuration: null,
+    reservationRequired: null,
   };
 }
 
@@ -74,6 +80,11 @@ interface ContentDetailResponse {
   indoor: boolean;
   region: string;
   images: { imageUrl: string; title: string }[];
+  useTime: string | null;
+  restDate: string | null;
+  parking: string | null;
+  stayDuration: string | null;
+  reservationRequired: string | null;
 }
 
 function toContentFromDetail(item: ContentDetailResponse): Content {
@@ -88,6 +99,11 @@ function toContentFromDetail(item: ContentDetailResponse): Content {
     indoor: item.indoor,
     latitude: item.latitude,
     longitude: item.longitude,
+    useTime: item.useTime,
+    restDate: item.restDate,
+    parking: item.parking,
+    stayDuration: item.stayDuration,
+    reservationRequired: item.reservationRequired,
   };
 }
 
