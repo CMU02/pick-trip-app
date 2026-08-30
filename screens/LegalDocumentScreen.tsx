@@ -20,8 +20,10 @@ const Scroll = styled(ScrollView)`
   flex: 1;
 `;
 
+// 이 화면은 네이티브 스택 헤더(RootNavigator의 headerScreenOptions)가 이미 위에 떠 있다.
+// 그 아래에 상단 패딩을 또 주면 헤더와 본문 사이가 붕 떠 보여서, 상단은 0으로 둔다.
 const Content = styled(View)`
-  padding: 20px 20px ${TAB_BAR_CLEARANCE}px;
+  padding: 0 20px ${TAB_BAR_CLEARANCE}px;
 `;
 
 const UpdatedAt = styled(Text)`
