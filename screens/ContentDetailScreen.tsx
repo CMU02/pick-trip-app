@@ -157,7 +157,7 @@ const LocationSection = styled(View)`
 
 const MapWrapper = styled(View)`
   width: 100%;
-  height: 160px;
+  height: 260px;
   border-radius: 12px;
   overflow: hidden;
   border-width: 1px;
