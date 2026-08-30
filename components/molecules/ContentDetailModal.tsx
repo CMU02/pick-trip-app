@@ -1,7 +1,17 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
-import { Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Dimensions,
+  Image,
+  Modal,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import styled from 'styled-components';
 import { CATEGORIES } from '../../constants/categories';
 import { COLORS } from '../../constants/colors';
@@ -55,11 +65,56 @@ const FavoriteBadge = styled(View)`
   z-index: 1;
 `;
 
-const DetailImage = styled(Image)`
+// 모달 시트가 화면 폭 그대로라, 사진 한 장의 너비를 화면 폭에 맞춰야 스와이프했을 때
+// 한 장씩 딱 맞게 넘어간다(pagingEnabled).
+const SCREEN_WIDTH = Dimensions.get('window').width;
+
+// 사진 캐러셀 영역. overflow: hidden으로 감싸서, 안에서 가로로 넘기는 사진들이
+// 이 모서리 둥근 영역 밖으로 삐져나오지 않게 한다.
+const ImageCarouselWrapper = styled(View)`
   width: 100%;
   height: 220px;
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
+  overflow: hidden;
+`;
+
+const CarouselImage = styled(Image)`
+  width: ${SCREEN_WIDTH}px;
+  height: 220px;
+`;
+
+// 사진이 몇 장 남았는지 보여주는 우측 하단 뱃지 ("1 / 4").
+const ImageCounterBadge = styled(View)`
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  background-color: rgba(0, 0, 0, 0.45);
+  border-radius: 100px;
+  padding-vertical: 3px;
+  padding-horizontal: 10px;
+`;
+
+const ImageCounterText = styled(Text)`
+  color: ${COLORS.white};
+  font-size: 11px;
+  font-family: ${FONT.semibold};
+`;
+
+// 좌측 하단 페이지 표시 점들. 지금 보고 있는 사진의 점만 길쭉하게 강조한다.
+const DotRow = styled(View)`
+  position: absolute;
+  bottom: 14px;
+  left: 12px;
+  flex-direction: row;
+  gap: 4px;
+`;
+
+const Dot = styled(View)<{ $active: boolean }>`
+  width: ${({ $active }) => ($active ? 14 : 5)}px;
+  height: 5px;
+  border-radius: 100px;
+  background-color: ${({ $active }) => ($active ? COLORS.white : 'rgba(255, 255, 255, 0.5)')};
 `;
 
 const DetailThumbnail = styled(View)<{ $color: string }>`
@@ -234,14 +289,25 @@ export function ContentDetailModal({
   // 3줄을 넘는 소개만 "더 보기" 토글을 보여준다 — 짧은 소개엔 눌러도 아무 변화 없는
   // 버튼이 뜨면 안 되니, 실제로 넘치는지 SummaryMeasure의 onTextLayout으로 먼저 재본다.
   const [summaryOverflows, setSummaryOverflows] = useState(false);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const carouselRef = useRef<ScrollView>(null);
   // 이 모달은 카드마다 새로 만들어지는 게 아니라 화면에 하나만 떠 있고 contentId prop만
   // 바뀌는 구조라, 안 지워주면 "더 보기"를 펼친 채로 다른 콘텐츠를 열어도 그 상태가
-  // 그대로 남아있는다(실제로 그렇게 다른 콘텐츠까지 펼쳐져 보이는 버그였음).
+  // 그대로 남아있는다(실제로 그렇게 다른 콘텐츠까지 펼쳐져 보이는 버그였음). 사진 캐러셀도
+  // 같은 이유로 스크롤 위치·페이지 번호를 안 돌려놓으면 이전 콘텐츠에서 넘겨보던 위치가
+  // 그대로 남는다.
   // biome-ignore lint/correctness/useExhaustiveDependencies: contentId가 바뀌는 시점에만 리셋하면 된다
   useEffect(() => {
     setIsSummaryExpanded(false);
     setSummaryOverflows(false);
+    setActiveImageIndex(0);
+    carouselRef.current?.scrollTo({ x: 0, animated: false });
   }, [contentId]);
+
+  const handleCarouselScrollEnd = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const index = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    setActiveImageIndex(index);
+  };
 
   return (
     <Modal visible={contentId !== null} transparent animationType="slide" onRequestClose={onClose}>
@@ -266,8 +332,34 @@ export function ContentDetailModal({
             )}
             {content && (
               <>
-                {content.imageUrl ? (
-                  <DetailImage source={{ uri: content.imageUrl }} resizeMode="cover" />
+                {content.images.length > 0 ? (
+                  <ImageCarouselWrapper>
+                    <ScrollView
+                      ref={carouselRef}
+                      horizontal
+                      pagingEnabled
+                      showsHorizontalScrollIndicator={false}
+                      onMomentumScrollEnd={handleCarouselScrollEnd}
+                    >
+                      {content.images.map((uri) => (
+                        <CarouselImage key={uri} source={{ uri }} resizeMode="cover" />
+                      ))}
+                    </ScrollView>
+                    {content.images.length > 1 && (
+                      <>
+                        <DotRow>
+                          {content.images.map((uri, index) => (
+                            <Dot key={uri} $active={index === activeImageIndex} />
+                          ))}
+                        </DotRow>
+                        <ImageCounterBadge>
+                          <ImageCounterText>
+                            {activeImageIndex + 1} / {content.images.length}
+                          </ImageCounterText>
+                        </ImageCounterBadge>
+                      </>
+                    )}
+                  </ImageCarouselWrapper>
                 ) : (
                   <DetailThumbnail $color={category?.color ?? COLORS.gray400}>
                     <Ionicons
