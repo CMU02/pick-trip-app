@@ -20,7 +20,7 @@ const Body = styled(View)`
 export function ContentCardSkeleton() {
   return (
     <Card>
-      <SkeletonBox width="100%" height={180} radius={0} />
+      <SkeletonBox width="100%" height={220} radius={0} />
       <Body>
         <SkeletonBox width={64} height={20} radius={100} style={{ marginBottom: 10 }} />
         <SkeletonBox width="60%" height={18} radius={4} style={{ marginBottom: 8 }} />
