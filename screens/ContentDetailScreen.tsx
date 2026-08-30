@@ -262,23 +262,21 @@ const InfoText = styled(Text)`
   line-height: 20px;
 `;
 
-// 운영시간·휴무일·주차 등 상세 조회에서만 내려오는 항목들 — 아이콘 + 라벨 + 값 형태의
-// 표처럼 나열한다. 값이 없는 항목(reservationRequired가 null인 경우가 특히 흔하다)은
-// 통째로 안 보여준다.
-// coral50(팔레트에서 가장 옅은 코랄)도 배경 전체를 채우니 화면에서 튀어 보여서,
-// coral500에 낮은 알파를 얹어(다른 화면의 뱃지 배경도 같은 방식) 훨씬 옅게 뺐다.
+// 운영시간·휴무일·주차 등 상세 조회에서만 내려오는 항목들 — 아이콘 + 라벨 + 값 형태로
+// 한 줄씩 나열한다. 값이 없는 항목(reservationRequired가 null인 경우가 특히 흔하다)은
+// 통째로 안 보여준다. 배경을 채운 박스 대신, 참고 디자인처럼 각 줄 아래 얇은 구분선만
+// 그어서 더 깔끔하게 보이게 한다(마지막 줄은 구분선 없음).
 const InfoTable = styled(View)`
-  background-color: ${COLORS.coral500}0D;
-  border-radius: 12px;
-  padding: 14px 16px;
   margin-bottom: 16px;
-  gap: 10px;
 `;
 
-const InfoTableRow = styled(View)`
+const InfoTableRow = styled(View)<{ $showDivider: boolean }>`
   flex-direction: row;
   align-items: flex-start;
   gap: 10px;
+  padding-vertical: 10px;
+  border-bottom-width: ${({ $showDivider }) => ($showDivider ? 1 : 0)}px;
+  border-bottom-color: ${COLORS.gray100};
 `;
 
 const InfoTableLabel = styled(Text)`
@@ -381,6 +379,24 @@ export function ContentDetailScreen({
   });
 
   const category = content && CATEGORIES.find((c) => c.id === content.category);
+
+  // 마지막 줄엔 구분선을 안 그어야 해서, 값 있는 행만 미리 걸러 목록으로 만들어둔다
+  // (JSX 안에서 필터링하면 몇 번째가 마지막인지 알기 번거롭다).
+  const infoRows = content
+    ? [
+        {
+          icon: category?.icon ?? ('pricetag-outline' as const),
+          label: '카테고리',
+          value: category?.label ?? null,
+        },
+        { icon: 'location-outline' as const, label: '주소', value: content.address },
+        { icon: 'time-outline' as const, label: '운영시간', value: content.useTime },
+        { icon: 'calendar-outline' as const, label: '휴무일', value: content.restDate },
+        { icon: 'car-outline' as const, label: '주차', value: content.parking },
+        { icon: 'hourglass-outline' as const, label: '예상 체류', value: content.stayDuration },
+        { icon: 'bookmark-outline' as const, label: '예약', value: content.reservationRequired },
+      ].filter((row) => row.value)
+    : [];
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: content.name이 처음 확정될 때 한 번만 반영하면 된다
   useEffect(() => {
@@ -485,60 +501,22 @@ export function ContentDetailScreen({
                 </InfoRow>
               )}
               <InfoTable>
-                {[
-                  {
-                    icon: category?.icon ?? 'pricetag-outline',
-                    label: '카테고리',
-                    value: category?.label ?? null,
-                  },
-                  {
-                    icon: 'location-outline' as const,
-                    label: '주소',
-                    value: content.address,
-                  },
-                  {
-                    icon: 'time-outline' as const,
-                    label: '운영시간',
-                    value: content.useTime,
-                  },
-                  {
-                    icon: 'calendar-outline' as const,
-                    label: '휴무일',
-                    value: content.restDate,
-                  },
-                  {
-                    icon: 'car-outline' as const,
-                    label: '주차',
-                    value: content.parking,
-                  },
-                  {
-                    icon: 'hourglass-outline' as const,
-                    label: '예상 체류',
-                    value: content.stayDuration,
-                  },
-                  {
-                    icon: 'bookmark-outline' as const,
-                    label: '예약',
-                    value: content.reservationRequired,
-                  },
-                ]
-                  .filter((row) => row.value)
-                  .map((row) => (
-                    <InfoTableRow key={row.label}>
-                      {/* 라벨·값은 line-height 19px인데 아이콘은 14px라, flex-start로 맞추면
-                          아이콘이 첫 줄보다 위로 붕 떠 보인다(값이 여러 줄이라 center로는 못
-                          맞춤 — 그러면 라벨이 전체 블록 가운데로 떠버린다). 그 차이(2.5px)만큼
-                          내려서 첫 줄과 높이를 맞춘다. */}
-                      <Ionicons
-                        name={row.icon}
-                        size={14}
-                        color={COLORS.gray500}
-                        style={{ marginTop: 2 }}
-                      />
-                      <InfoTableLabel>{row.label}</InfoTableLabel>
-                      <InfoTableValue>{withLineBreaks(row.value as string)}</InfoTableValue>
-                    </InfoTableRow>
-                  ))}
+                {infoRows.map((row, index) => (
+                  <InfoTableRow key={row.label} $showDivider={index < infoRows.length - 1}>
+                    {/* 라벨·값은 line-height 19px인데 아이콘은 14px라, flex-start로 맞추면
+                        아이콘이 첫 줄보다 위로 붕 떠 보인다(값이 여러 줄이라 center로는 못
+                        맞춤 — 그러면 라벨이 전체 블록 가운데로 떠버린다). 그 차이(2.5px)만큼
+                        내려서 첫 줄과 높이를 맞춘다. */}
+                    <Ionicons
+                      name={row.icon}
+                      size={14}
+                      color={COLORS.gray500}
+                      style={{ marginTop: 2 }}
+                    />
+                    <InfoTableLabel>{row.label}</InfoTableLabel>
+                    <InfoTableValue>{withLineBreaks(row.value as string)}</InfoTableValue>
+                  </InfoTableRow>
+                ))}
               </InfoTable>
               {content.summary !== '' && (
                 <SummarySection>
