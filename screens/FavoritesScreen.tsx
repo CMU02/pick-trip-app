@@ -21,8 +21,9 @@ const ScreenContainer = styled(SafeAreaView)`
   background-color: ${COLORS.gray50};
 `;
 
+// 이 화면은 네이티브 스택 헤더(RootNavigator의 headerScreenOptions)가 이미 위에 떠 있다.
+// 그 아래에 padding-top을 또 주면 헤더와 본문 사이가 붕 떠 보여서, 여기서는 0으로 둔다.
 const Header = styled(View)`
-  padding-top: 14px;
   padding-horizontal: 20px;
   padding-bottom: 12px;
 `;

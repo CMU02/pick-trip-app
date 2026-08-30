@@ -22,7 +22,8 @@ interface ContentListResponse {
   items: ContentSummaryResponse[];
 }
 
-const MAX_PAGE_SIZE = 40;
+// 탐색 화면 "더보기" 단위와 맞춘 페이지 크기. 너무 크면 첫 화면 로딩이 오래 걸린다.
+const PAGE_SIZE = 20;
 
 function toContent(item: ContentSummaryResponse): Content {
   return {
@@ -49,7 +50,7 @@ async function fetchContentsPage(
   page: number,
 ): Promise<{ items: Content[]; totalCount: number }> {
   const { data } = await apiClient.get<ContentListResponse>('/contents', {
-    params: { region: regionId.toUpperCase(), page, size: MAX_PAGE_SIZE },
+    params: { region: regionId.toUpperCase(), page, size: PAGE_SIZE },
   });
   return { items: data.items.map(toContent), totalCount: data.totalCount };
 }
@@ -58,7 +59,7 @@ export async function fetchContents(regionIds: string[], page: number): Promise<
   const results = await Promise.all(regionIds.map((regionId) => fetchContentsPage(regionId, page)));
   return {
     items: results.flatMap((r) => r.items),
-    hasMore: results.some((r) => (page + 1) * MAX_PAGE_SIZE < r.totalCount),
+    hasMore: results.some((r) => (page + 1) * PAGE_SIZE < r.totalCount),
   };
 }
 

@@ -2,7 +2,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  type NativeScrollEvent,
   ScrollView,
   Text,
   TextInput,
@@ -16,6 +15,7 @@ import { ContentCardSkeleton } from '../components/molecules/ContentCardSkeleton
 import { ContentDetailModal } from '../components/molecules/ContentDetailModal';
 import { COLORS } from '../constants/colors';
 import { TAB_BAR_CLEARANCE, TAB_BAR_TOTAL } from '../constants/layout';
+import { REGIONS } from '../constants/regions';
 import { FONT } from '../constants/typography';
 import { useContents } from '../hooks/useContents';
 import type { Content, ContentCategory } from '../types/content';
@@ -156,9 +156,25 @@ const FooterLoading = styled(View)`
   padding-vertical: 20px;
 `;
 
-function isCloseToBottom({ layoutMeasurement, contentOffset, contentSize }: NativeScrollEvent) {
-  return layoutMeasurement.height + contentOffset.y >= contentSize.height - 200;
-}
+const LoadMoreButton = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 8px;
+  margin-horizontal: 20px;
+  padding-vertical: 12px;
+  border-radius: 12px;
+  border-width: 1px;
+  border-color: ${COLORS.gray200};
+  background-color: ${COLORS.white};
+`;
+
+const LoadMoreLabel = styled(Text)`
+  font-family: ${FONT.medium};
+  font-size: 14px;
+  color: ${COLORS.gray700};
+`;
 
 // 초기 로딩 시 보여줄 스켈레톤 카드 개수 (화면 한 번에 보이는 카드 수 정도)
 const SKELETON_COUNT = 4;
@@ -175,8 +191,12 @@ export function ContentExploreScreen({
   const [searchQuery, setSearchQuery] = useState('');
   const [detailContentId, setDetailContentId] = useState<string | null>(null);
 
+  // 홈에서 "선호 지역"을 하나도 안 고르면 selectedRegions가 빈 배열이다. 이걸 "지역 조건 없음"이
+  // 아니라 "전체 지역"으로 다뤄야, 처음 들어온 사용자도 이 앱이 다루는 3개 지역 콘텐츠(현재 총
+  // 221개)를 전부 둘러볼 수 있다 — 특정 지역을 고르면 그때부터는 그 지역으로만 좁혀진다.
+  const regionIds = selectedRegions.length > 0 ? selectedRegions : REGIONS.map((r) => r.id);
   const { contents, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useContents(selectedRegions);
+    useContents(regionIds);
 
   const filtered = useMemo(() => {
     const keyword = searchQuery.trim().toLowerCase();
@@ -220,12 +240,6 @@ export function ContentExploreScreen({
         contentContainerStyle={{
           paddingBottom: selectedIds.length > 0 ? 120 + TAB_BAR_TOTAL : 40 + TAB_BAR_CLEARANCE,
         }}
-        onScroll={({ nativeEvent }) => {
-          if (hasNextPage && !isFetchingNextPage && isCloseToBottom(nativeEvent)) {
-            fetchNextPage();
-          }
-        }}
-        scrollEventThrottle={200}
       >
         <CardList>
           {isLoading ? (
@@ -254,14 +268,23 @@ export function ContentExploreScreen({
                 onPressDetail={() => setDetailContentId(content.id)}
                 favorite={favoriteIds.includes(content.id)}
                 onToggleFavorite={onToggleFavorite}
+                showRegion
               />
             ))
           )}
         </CardList>
-        {isFetchingNextPage && (
+        {isFetchingNextPage ? (
           <FooterLoading>
             <ActivityIndicator color={COLORS.coral500} />
           </FooterLoading>
+        ) : (
+          hasNextPage &&
+          filtered.length > 0 && (
+            <LoadMoreButton onPress={() => fetchNextPage()} activeOpacity={0.7}>
+              <LoadMoreLabel>더보기</LoadMoreLabel>
+              <Ionicons name="chevron-down-outline" size={14} color={COLORS.gray700} />
+            </LoadMoreButton>
+          )
         )}
       </ScrollView>
       <ContentDetailModal

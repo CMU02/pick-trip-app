@@ -3,11 +3,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components';
+import { ItineraryTitleModal } from '../components/molecules/ItineraryTitleModal';
 import {
   DEFAULT_STEP_INTERVAL_MS,
   ProgressChecklist,
 } from '../components/molecules/ProgressChecklist';
-import { SaveItineraryModal } from '../components/molecules/SaveItineraryModal';
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
 import { REGIONS } from '../constants/regions';
@@ -29,7 +29,7 @@ import { createShareLink } from '../services/shareService';
 import type { CompanionType, StylePreference } from '../types/companion';
 import type { ItineraryStop } from '../types/itinerary';
 import type { Priority } from '../types/priority';
-import { fromDateString } from '../utils/tripDate';
+import { addDays, formatDateRange, formatDayDate, fromDateString } from '../utils/tripDate';
 
 interface ItineraryResultScreenProps {
   selectedRegions: string[];
@@ -41,6 +41,7 @@ interface ItineraryResultScreenProps {
   stylePrefs: StylePreference[];
   initialStops?: ItineraryStop[];
   initialItineraryId?: string;
+  initialItineraryTitle?: string;
   isGuest: boolean;
   onRequireLogin: () => void;
   onSaved?: (summary: SavedItinerarySummary) => void;
@@ -64,29 +65,6 @@ const STEPS = [
   { key: 'priority', label: '우선순위' },
   { key: 'done', label: '완성' },
 ] as const;
-
-const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
-
-function addDays(date: Date, amount: number): Date {
-  const next = new Date(date);
-  next.setDate(next.getDate() + amount);
-  return next;
-}
-
-function formatShort(date: Date): string {
-  return `${date.getMonth() + 1}.${date.getDate()}`;
-}
-
-function formatDayDate(date: Date): string {
-  return `${formatShort(date)} (${WEEKDAYS[date.getDay()]})`;
-}
-
-function formatDateRange(travelDate: string | null, duration: number | null): string | null {
-  if (!travelDate) return null;
-  const start = fromDateString(travelDate);
-  if (!duration || duration <= 0) return formatShort(start);
-  return `${formatShort(start)} - ${formatShort(addDays(start, duration))}`;
-}
 
 const ScreenContainer = styled(SafeAreaView)`
   flex: 1;
@@ -115,8 +93,9 @@ const RetryLabel = styled(Text)`
   font-family: ${FONT.medium};
 `;
 
+// 이 화면은 네이티브 스택 헤더(RootNavigator의 headerScreenOptions)가 이미 위에 떠 있다.
+// 그 아래에 padding-top을 또 주면 헤더와 본문 사이가 붕 떠 보여서, 여기서는 0으로 둔다.
 const Header = styled(View)`
-  padding-top: 20px;
   padding-horizontal: 20px;
   padding-bottom: 12px;
 `;
@@ -239,7 +218,7 @@ const StopRow = styled(View)`
 
 const TimeColumn = styled(View)`
   align-items: center;
-  width: 44px;
+  width: 52px;
 `;
 
 const TimeText = styled(Text)`
@@ -468,6 +447,7 @@ export function ItineraryResultScreen({
   stylePrefs,
   initialStops,
   initialItineraryId,
+  initialItineraryTitle,
   isGuest,
   onRequireLogin,
   onSaved,
@@ -583,8 +563,7 @@ export function ItineraryResultScreen({
     setShowSaveModal(true);
   };
 
-  // 실제 저장 요청. 성공하면 저장된 결과를, 실패하면 null을 돌려준다 — 호출부(그냥 저장 /
-  // 저장하고 홈으로 가기)가 그 뒤에 뭘 할지는 각자 알아서 하게 분리했다.
+  // 실제 저장 요청. 성공하면 저장된 결과를, 실패하면 null을 돌려준다.
   const submitSave = async (title: string) => {
     setSaveState('saving');
     try {
@@ -634,11 +613,6 @@ export function ItineraryResultScreen({
   const handleConfirmSave = async (title: string) => {
     const saved = await submitSave(title);
     // 모달은 성공했을 때만 닫는다 — 실패하면 열어둬서 이름 다시 안 치고 바로 재시도할 수 있게.
-    if (saved) setShowSaveModal(false);
-  };
-
-  const handleConfirmSaveAndGoHome = async (title: string) => {
-    const saved = await submitSave(title);
     if (saved) {
       setShowSaveModal(false);
       onGoHome();
@@ -741,7 +715,9 @@ export function ItineraryResultScreen({
           </StepperRow>
           <Subtitle>
             {planDuration != null
-              ? `${planDuration}박 ${planDuration + 1}일 기준으로 ${isGuest ? '만들었어요' : 'AI가 만들었어요'}`
+              ? // 0박이면 "0박 1일"이 아니라 "당일치기"로 부른다 — utils/itineraryHistory.ts의
+                // formatItinerarySub와 같은 표기 규칙.
+                `${planDuration > 0 ? `${planDuration}박 ${planDuration + 1}일` : '당일치기'} 기준으로 ${isGuest ? '만들었어요' : 'AI가 만들었어요'}`
               : isGuest
                 ? '나만의 일정이 완성됐어요'
                 : 'AI가 나만의 일정을 만들었어요'}
@@ -801,7 +777,7 @@ export function ItineraryResultScreen({
                 return (
                   <StopRow key={stop.contentId}>
                     <TimeColumn>
-                      <TimeText>{stop.startTime}</TimeText>
+                      <TimeText numberOfLines={1}>{stop.startTime}</TimeText>
                       <TimeDot />
                       {index < dayStops.length - 1 && <TimeConnector />}
                     </TimeColumn>
@@ -903,12 +879,13 @@ export function ItineraryResultScreen({
           {isSharing ? '공유 링크 만드는 중...' : isGuest ? '로그인하고 공유하기' : '공유하기'}
         </ShareButtonLabel>
       </ShareButton>
-      <SaveItineraryModal
+      <ItineraryTitleModal
         visible={showSaveModal}
-        initialTitle={plan?.title ?? '나만의 여행 일정'}
+        initialTitle={plan?.title ?? initialItineraryTitle ?? '나만의 여행 일정'}
         isSaving={saveState === 'saving'}
+        heading="여행 이름을 정해주세요"
+        subtitle="나중에 '저장한 여행' 목록에서 이 이름으로 보여요"
         onConfirm={handleConfirmSave}
-        onConfirmAndGoHome={handleConfirmSaveAndGoHome}
         onClose={() => setShowSaveModal(false)}
       />
     </ScreenContainer>

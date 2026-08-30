@@ -44,8 +44,9 @@ const ScreenContainer = styled(SafeAreaView)`
   background-color: ${COLORS.gray50};
 `;
 
+// 이 화면은 네이티브 스택 헤더(RootNavigator의 headerScreenOptions)가 이미 위에 떠 있다.
+// 그 아래에 padding-top을 또 주면 헤더와 본문 사이가 붕 떠 보여서, 여기서는 0으로 둔다.
 const Header = styled(View)`
-  padding-top: 20px;
   padding-horizontal: 20px;
   padding-bottom: 12px;
 `;
@@ -168,10 +169,14 @@ const LegendItem = styled(View)`
   gap: 6px;
 `;
 
+// "시간 남으면"의 coral50처럼 흰 배경에 거의 묻히는 옅은 색도 있어서, 테두리를 얇게 둘러
+// 어떤 배경 위에서도 점이 보이게 한다.
 const LegendDot = styled(View)<{ $color: string }>`
   width: 8px;
   height: 8px;
   border-radius: 100px;
+  border-width: 1px;
+  border-color: ${COLORS.gray200};
   background-color: ${({ $color }) => $color};
 `;
 

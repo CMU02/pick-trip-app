@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { FavoriteButton } from '../components/atoms/FavoriteButton';
@@ -20,9 +20,9 @@ import type { CompanionType, StylePreference } from '../types/companion';
 // 이 파일에 이미 스타일 컴포넌트 `Content`가 있어서 타입 이름을 바꿔 가져온다.
 import type { Content as ContentItem } from '../types/content';
 import { formatItinerarySub } from '../utils/itineraryHistory';
+import { shuffle } from '../utils/shuffle';
 
 interface HomeContentProps {
-  companionLabel: string;
   isGuest: boolean;
   selectedRegions: string[];
   selectedIds: string[];
@@ -417,7 +417,6 @@ const RecommendName = styled(Text)`
 `;
 
 export function HomeContent({
-  companionLabel,
   isGuest,
   selectedRegions,
   selectedIds,
@@ -443,9 +442,32 @@ export function HomeContent({
   const count = selectedIds.length;
   const regionNames = REGIONS.filter((r) => selectedRegions.includes(r.id)).map((r) => r.name);
   const { contents } = useContents(selectedRegions);
-  const recommendations = contents.filter((c) => !selectedIds.includes(c.id)).slice(0, 6);
+
+  // 지역 선택이 바뀔 때마다(같은 지역을 다시 골라도) 추천 콘텐츠를 새로 섞는다.
+  // contents는 useContents 안에서 매 렌더마다 새 배열로 만들어지므로, 그 자체를 의존성으로
+  // 쓰면 렌더될 때마다 섞여서 스크롤 중에도 순서가 계속 바뀐다 — id 목록을 문자열로 묶어 비교한다.
+  const contentIdsKey = contents.map((c) => c.id).join(',');
+  const regionsKey = selectedRegions.join(',');
+  const [shuffleSeed, setShuffleSeed] = useState(0);
+  const prevRegionsKey = useRef<string | null>(null);
+  useEffect(() => {
+    if (prevRegionsKey.current !== regionsKey) {
+      prevRegionsKey.current = regionsKey;
+      setShuffleSeed((seed) => seed + 1);
+    }
+  }, [regionsKey]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: contentIdsKey/shuffleSeed가 바뀔 때만 다시 섞으면 되고, contents 참조 자체는 매 렌더 새로 생겨 의존성에서 뺀다
+  const shuffledContents = useMemo(() => shuffle(contents), [contentIdsKey, shuffleSeed]);
+  const recommendations = shuffledContents.filter((c) => !selectedIds.includes(c.id)).slice(0, 6);
   const { user } = useCurrentUser(!isGuest);
-  const displayName = user?.nickname ?? companionLabel;
+  // "게스트님"은 진짜 게스트일 때만 써야 한다 — 로그인은 했는데 닉네임을 아직 못
+  // 받아온 것뿐이면(로딩 중이거나 네트워크 실패) 로그인 바가 안 뜨는 것과 모순돼 보인다.
+  // ProfileContent.tsx와 같은 패턴: 그 경우엔 "불러오는 중..."으로 구분한다.
+  const greeting = isGuest
+    ? '게스트님'
+    : user?.nickname
+      ? `${user.nickname} 여행자님`
+      : '불러오는 중...';
 
   return (
     <Scroll showsVerticalScrollIndicator={false}>
@@ -459,7 +481,7 @@ export function HomeContent({
           </LoginBar>
         )}
         <Greeting>
-          {isGuest ? '안녕하세요, 게스트님' : `안녕하세요, ${displayName} 여행자님`}{' '}
+          안녕하세요, {greeting}{' '}
           <Ionicons name="hand-right-outline" size={18} color={COLORS.white} />
         </Greeting>
         <GreetingSubRow>

@@ -4,12 +4,13 @@ import styled from 'styled-components';
 import { COLORS } from '../../constants/colors';
 import { FONT } from '../../constants/typography';
 
-interface SaveItineraryModalProps {
+interface ItineraryTitleModalProps {
   visible: boolean;
   initialTitle: string;
   isSaving: boolean;
+  heading: string;
+  subtitle: string;
   onConfirm: (title: string) => void;
-  onConfirmAndGoHome: (title: string) => void;
   onClose: () => void;
 }
 
@@ -66,29 +67,18 @@ const ConfirmButtonLabel = styled(Text)<{ $disabled: boolean }>`
   font-family: ${FONT.medium};
 `;
 
-const GoHomeButton = styled(TouchableOpacity)`
-  border-radius: 12px;
-  border-width: 1px;
-  border-color: ${COLORS.gray200};
-  padding-vertical: 14px;
-  align-items: center;
-  margin-top: 10px;
-`;
-
-const GoHomeButtonLabel = styled(Text)`
-  color: ${COLORS.gray700};
-  font-size: 15px;
-  font-family: ${FONT.semibold};
-`;
-
-export function SaveItineraryModal({
+// 여행 이름을 입력받는 모달. "일정 저장" 시 처음 이름을 정할 때(ItineraryResultScreen)와
+// 저장된 일정의 이름을 나중에 바꿀 때(SavedItineraryScreen) 둘 다 여기서 쓴다 — heading/subtitle만
+// 상황에 맞게 바꿔서 넘긴다.
+export function ItineraryTitleModal({
   visible,
   initialTitle,
   isSaving,
+  heading,
+  subtitle,
   onConfirm,
-  onConfirmAndGoHome,
   onClose,
-}: SaveItineraryModalProps) {
+}: ItineraryTitleModalProps) {
   const [title, setTitle] = useState(initialTitle);
 
   // 열릴 때마다 그 시점의 기본 이름으로 다시 맞춘다 (이전에 열었을 때 지웠던 값이 남지 않게).
@@ -105,18 +95,13 @@ export function SaveItineraryModal({
     onConfirm(trimmed);
   };
 
-  const handleConfirmAndGoHome = () => {
-    if (!ready) return;
-    onConfirmAndGoHome(trimmed);
-  };
-
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       {/* 배경(카드 바깥) 탭하면 닫힘. 카드 자체도 터치 가능한 컴포넌트로 감싸서 탭이 배경까지 안 뚫고 가게 한다. */}
       <ModalOverlay activeOpacity={1} onPress={onClose}>
         <ModalSheet activeOpacity={1} onPress={() => {}}>
-          <ModalTitle>여행 이름을 정해주세요</ModalTitle>
-          <ModalSubtitle>나중에 "저장한 여행" 목록에서 이 이름으로 보여요</ModalSubtitle>
+          <ModalTitle>{heading}</ModalTitle>
+          <ModalSubtitle>{subtitle}</ModalSubtitle>
 
           <NameInput
             value={title}
@@ -134,9 +119,6 @@ export function SaveItineraryModal({
               {isSaving ? '저장 중...' : '저장'}
             </ConfirmButtonLabel>
           </ConfirmButton>
-          <GoHomeButton disabled={!ready} onPress={handleConfirmAndGoHome}>
-            <GoHomeButtonLabel>저장하고 홈으로 가기</GoHomeButtonLabel>
-          </GoHomeButton>
         </ModalSheet>
       </ModalOverlay>
     </Modal>
