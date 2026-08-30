@@ -3,6 +3,7 @@ import type { ItineraryStop } from '../types/itinerary';
 import type { Priority } from '../types/priority';
 import { apiDurationToNights, nightsToApiDuration } from '../utils/tripDate';
 import { apiClient } from './apiClient';
+import type { SavedItinerarySummary } from './itineraryHistoryStorage';
 
 interface ApiItem {
   contentId: string;
@@ -114,12 +115,33 @@ export async function updateItineraryPlan(
   return toPlan(data);
 }
 
-// 로그인 사용자의 저장된 일정을 전체 목록으로 주는 API는 없다(단건 조회만 존재, 웹팀 확인 완료).
-// "내 여행" 목록 화면은 그래서 아직 못 만들고, 대신 마지막으로 저장한 일정 1건을
-// services/lastItineraryStorage.ts에 남겨뒀다가 이 함수로 다시 불러와 보여준다.
 export async function getItineraryPlan(itineraryId: string): Promise<ItineraryPlan> {
   const { data } = await apiClient.get<SavedResponse>(`/itineraries/${itineraryId}`);
   return toPlan(data);
+}
+
+interface ListItineraryItem {
+  itineraryId: string;
+  title: string;
+  region: string;
+  travelDate: string | null;
+  duration: number | null; // 백엔드 값(일수, 1=당일치기)
+  lastModifiedAt: string;
+}
+
+// 로그인 사용자가 저장한 일정 전체 목록. 백엔드팀이 2026-08-26에 새로 배포했다(단건 삭제
+// API는 아직 확인 전이라, "삭제"는 services/itineraryHistoryStorage.ts의 로컬 숨김 목록으로
+// 처리한다 — 자세한 배경은 그 파일 참고).
+export async function listItineraryPlans(): Promise<SavedItinerarySummary[]> {
+  const { data } = await apiClient.get<ListItineraryItem[]>('/itineraries');
+  return data.map((item) => ({
+    itineraryId: item.itineraryId,
+    title: item.title,
+    region: item.region.toLowerCase(),
+    travelDate: item.travelDate,
+    duration: apiDurationToNights(item.duration),
+    savedAt: item.lastModifiedAt,
+  }));
 }
 
 interface GenerateItineraryInput {

@@ -1,6 +1,5 @@
 import { createContext, type ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
-import { COMPANIONS } from '../constants/companions';
 import { useBasket } from '../hooks/useBasket';
 import { toErrorMessage } from '../services/apiError';
 import { promptLogin } from '../services/authPrompt';
@@ -8,11 +7,11 @@ import { logout } from '../services/authService';
 import { hasStoredSession } from '../services/authStorage';
 import { addFavorite, getFavoriteIds, removeFavorite } from '../services/favoriteApi';
 import {
-  loadItineraryHistory,
-  recordItineraryHistory,
-  removeItineraryHistory,
+  hideItineraryId,
+  loadHiddenItineraryIds,
   type SavedItinerarySummary,
 } from '../services/itineraryHistoryStorage';
+import { listItineraryPlans } from '../services/itineraryService';
 import {
   cancelAllTripReminders,
   ensureNotificationPermission,
@@ -39,7 +38,6 @@ interface AppStateValue {
   setTripDate: (value: TripDate | null) => void;
   companion: CompanionType | null;
   setCompanion: (value: CompanionType | null) => void;
-  companionLabel: string;
   stylePrefs: StylePreference[];
   setStylePrefs: (value: StylePreference[]) => void;
   handleToggleStylePref: (pref: StylePreference) => void;
@@ -54,6 +52,10 @@ interface AppStateValue {
   setInitialStops: (value: ItineraryStop[] | undefined) => void;
   initialItineraryId: string | undefined;
   setInitialItineraryId: (value: string | undefined) => void;
+  // 저장된 일정을 "수정"으로 열었을 때 원래 이름. 저장 모달의 기본값으로 써서, 그냥 저장만
+  // 다시 눌러도 제목이 "나만의 여행 일정"으로 바뀌어버리지 않게 한다.
+  initialItineraryTitle: string | undefined;
+  setInitialItineraryTitle: (value: string | undefined) => void;
   isBasketLoading: boolean;
   hasBasketItems: boolean;
   selectedIds: string[];
@@ -87,6 +89,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [initialStops, setInitialStops] = useState<ItineraryStop[] | undefined>(undefined);
   const [initialItineraryId, setInitialItineraryId] = useState<string | undefined>(undefined);
+  const [initialItineraryTitle, setInitialItineraryTitle] = useState<string | undefined>(undefined);
 
   // 앱을 다시 켰을 때 저장된 토큰으로 로그인 상태를 복원한다.
   // 이 확인이 끝나기 전에 화면을 그리면 게스트 UI가 잠깐 보였다 바뀌므로,
@@ -108,19 +111,43 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // 이 기기에서 저장했던 일정 히스토리를 복원한다. 계정 기준 전체 목록 API가 없어
-  // "저장한 여행" 목록은 이 기기·이 앱에서 저장한 것만 보여준다 (자세한 배경은
-  // itineraryHistoryStorage.ts 참고).
+  // "저장한 여행" 목록은 계정 기준 서버 API(GET /itineraries)에서 받아온다. 찜하기(favoriteIds)와
+  // 같은 패턴: 로그인 여부가 확정되기 전엔 기다리고, 게스트는 서버에 저장한 게 있을 수 없으니
+  // 빈 목록으로 둔다. 로그인하면 이 effect가 isGuest 변화를 감지해 다시 불러온다.
+  // 단건 삭제 API는 아직 없어서, 로컬에 숨긴 id는 매번 이 목록에서 걸러낸다
+  // (자세한 배경은 services/itineraryHistoryStorage.ts 참고).
   useEffect(() => {
-    loadItineraryHistory().then(setItineraryHistory);
-  }, []);
+    if (isAuthLoading) return;
+    if (isGuest) {
+      setItineraryHistory([]);
+      return;
+    }
+    let cancelled = false;
+    Promise.all([listItineraryPlans(), loadHiddenItineraryIds()])
+      .then(([list, hiddenIds]) => {
+        if (cancelled) return;
+        const hidden = new Set(hiddenIds);
+        setItineraryHistory(list.filter((item) => !hidden.has(item.itineraryId)));
+      })
+      .catch(() => {
+        // 목록을 못 불러와도 조용히 빈 상태로 둔다 — 화면을 다시 열면 재시도된다.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthLoading, isGuest]);
 
+  // 방금 저장한 일정을 서버를 다시 조회하지 않고 목록 맨 앞에 바로 반영한다(낙관적 업데이트).
   const recordSavedItinerary = (summary: SavedItinerarySummary) => {
-    recordItineraryHistory(summary).then(setItineraryHistory);
+    setItineraryHistory((prev) => [
+      summary,
+      ...prev.filter((item) => item.itineraryId !== summary.itineraryId),
+    ]);
   };
 
   const removeSavedItinerary = (itineraryId: string) => {
-    removeItineraryHistory(itineraryId).then(setItineraryHistory);
+    setItineraryHistory((prev) => prev.filter((item) => item.itineraryId !== itineraryId));
+    hideItineraryId(itineraryId);
   };
 
   // 여행 리마인더는 서버 없이 기기에 로컬로 예약하는 알림이라(services/notifications.ts 참고),
@@ -301,14 +328,13 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setIsGuest(true);
     setInitialStops(undefined);
     setInitialItineraryId(undefined);
+    setInitialItineraryTitle(undefined);
   };
 
   const handleLogout = () => {
     logout();
     resetSessionState();
   };
-
-  const companionLabel = COMPANIONS.find((c) => c.id === companion)?.label ?? '가족';
 
   const value: AppStateValue = {
     isGuest,
@@ -321,7 +347,6 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setTripDate,
     companion,
     setCompanion,
-    companionLabel,
     stylePrefs,
     setStylePrefs,
     handleToggleStylePref,
@@ -336,6 +361,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setInitialStops,
     initialItineraryId,
     setInitialItineraryId,
+    initialItineraryTitle,
+    setInitialItineraryTitle,
     isBasketLoading,
     hasBasketItems: basketItems.length > 0,
     selectedIds,
