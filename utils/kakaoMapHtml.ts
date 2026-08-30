@@ -49,6 +49,15 @@ export function buildKakaoMapHtml(params: {
         content: content,
         yAnchor: 1.6,
       }).setMap(map);
+
+      // 카카오맵은 지도를 만든 시점의 컨테이너 크기를 내부에 그대로 굳혀버려서, 그 뒤에
+      // 웹뷰 높이가 최종 크기로 자리 잡으면(RN 쪽 레이아웃이 한 프레임 늦게 끝나는 경우가
+      // 흔하다) 지도 내부 좌표계가 낡은 크기 기준으로 남아 핀이 중앙에서 벗어나 보인다.
+      // relayout으로 실제 크기를 다시 재고 center를 다시 맞춰서 바로잡는다.
+      setTimeout(function () {
+        map.relayout();
+        map.setCenter(center);
+      }, 200);
     });
   </script>
 </body>
