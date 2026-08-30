@@ -275,6 +275,10 @@ const MetaText = styled(Text)`
 // 그어서 더 깔끔하게 보이게 한다(마지막 줄은 구분선 없음).
 const InfoTable = styled(View)`
   margin-bottom: 16px;
+  border-width: 1px;
+  border-color: ${COLORS.coral300};
+  border-radius: 12px;
+  padding: 4px 16px;
 `;
 
 const InfoTableRow = styled(View)<{ $showDivider: boolean }>`
@@ -283,7 +287,7 @@ const InfoTableRow = styled(View)<{ $showDivider: boolean }>`
   gap: 10px;
   padding-vertical: 10px;
   border-bottom-width: ${({ $showDivider }) => ($showDivider ? 1 : 0)}px;
-  border-bottom-color: ${COLORS.gray100};
+  border-bottom-color: ${COLORS.coral300};
 `;
 
 const InfoTableLabel = styled(Text)`
