@@ -20,7 +20,6 @@ import { ContentDetailSkeleton } from '../components/molecules/ContentDetailSkel
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
 import { KAKAO_MAP_JS_KEY } from '../constants/kakao';
-import { REGIONS } from '../constants/regions';
 import { FONT } from '../constants/typography';
 import { fetchContentDetail } from '../services/contentService';
 import type { Content } from '../types/content';
@@ -494,11 +493,6 @@ export function ContentDetailScreen({
                     icon: 'location-outline' as const,
                     label: '주소',
                     value: content.address,
-                  },
-                  {
-                    icon: 'earth-outline' as const,
-                    label: '지역',
-                    value: REGIONS.find((r) => r.id === content.regionId)?.name ?? null,
                   },
                   {
                     icon: 'time-outline' as const,
