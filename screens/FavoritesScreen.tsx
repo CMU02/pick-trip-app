@@ -1,10 +1,8 @@
-import { useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components';
 import { ContentCard } from '../components/molecules/ContentCard';
 import { ContentCardSkeleton } from '../components/molecules/ContentCardSkeleton';
-import { ContentDetailModal } from '../components/molecules/ContentDetailModal';
 import { COLORS } from '../constants/colors';
 import { TAB_BAR_CLEARANCE } from '../constants/layout';
 import { FONT } from '../constants/typography';
@@ -14,6 +12,7 @@ import type { Content } from '../types/content';
 interface FavoritesScreenProps {
   favoriteIds: string[];
   onToggleFavorite: (content: Content) => void;
+  onPressDetail: (contentId: string) => void;
 }
 
 const ScreenContainer = styled(SafeAreaView)`
@@ -65,9 +64,12 @@ const RetryLabel = styled(Text)`
   font-family: ${FONT.medium};
 `;
 
-export function FavoritesScreen({ favoriteIds, onToggleFavorite }: FavoritesScreenProps) {
+export function FavoritesScreen({
+  favoriteIds,
+  onToggleFavorite,
+  onPressDetail,
+}: FavoritesScreenProps) {
   const { contents: items, isLoading, isError, refetch } = useContentsByIds(favoriteIds);
-  const [detailContentId, setDetailContentId] = useState<string | null>(null);
 
   return (
     <ScreenContainer>
@@ -98,8 +100,8 @@ export function FavoritesScreen({ favoriteIds, onToggleFavorite }: FavoritesScre
               <ContentCard
                 key={content.id}
                 content={content}
-                onPress={() => setDetailContentId(content.id)}
-                onPressDetail={() => setDetailContentId(content.id)}
+                onPress={() => onPressDetail(content.id)}
+                onPressDetail={() => onPressDetail(content.id)}
                 favorite={favoriteIds.includes(content.id)}
                 onToggleFavorite={onToggleFavorite}
               />
@@ -107,12 +109,6 @@ export function FavoritesScreen({ favoriteIds, onToggleFavorite }: FavoritesScre
           )}
         </CardList>
       </ScrollView>
-      <ContentDetailModal
-        contentId={detailContentId}
-        onClose={() => setDetailContentId(null)}
-        favorite={detailContentId ? favoriteIds.includes(detailContentId) : false}
-        onToggleFavorite={onToggleFavorite}
-      />
     </ScreenContainer>
   );
 }

@@ -12,7 +12,6 @@ import styled from 'styled-components';
 import { CategoryFilter } from '../components/molecules/CategoryFilter';
 import { ContentCard } from '../components/molecules/ContentCard';
 import { ContentCardSkeleton } from '../components/molecules/ContentCardSkeleton';
-import { ContentDetailModal } from '../components/molecules/ContentDetailModal';
 import { COLORS } from '../constants/colors';
 import { TAB_BAR_CLEARANCE, TAB_BAR_TOTAL } from '../constants/layout';
 import { REGIONS } from '../constants/regions';
@@ -27,6 +26,7 @@ interface ContentExploreScreenProps {
   onContinue: (selectedIds: string[]) => void;
   favoriteIds: string[];
   onToggleFavorite: (content: Content) => void;
+  onPressDetail: (contentId: string) => void;
 }
 
 const ScreenContainer = styled(View)`
@@ -186,10 +186,10 @@ export function ContentExploreScreen({
   onContinue,
   favoriteIds,
   onToggleFavorite,
+  onPressDetail,
 }: ContentExploreScreenProps) {
   const [selectedCategory, setSelectedCategory] = useState<ContentCategory | 'all'>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [detailContentId, setDetailContentId] = useState<string | null>(null);
 
   // 홈에서 "선호 지역"을 하나도 안 고르면 selectedRegions가 빈 배열이다. 이걸 "지역 조건 없음"이
   // 아니라 "전체 지역"으로 다뤄야, 처음 들어온 사용자도 이 앱이 다루는 3개 지역 콘텐츠(현재 총
@@ -265,7 +265,7 @@ export function ContentExploreScreen({
                 content={content}
                 selected={selectedIds.includes(content.id)}
                 onPress={() => onToggle(content)}
-                onPressDetail={() => setDetailContentId(content.id)}
+                onPressDetail={() => onPressDetail(content.id)}
                 favorite={favoriteIds.includes(content.id)}
                 onToggleFavorite={onToggleFavorite}
                 showRegion
@@ -287,12 +287,6 @@ export function ContentExploreScreen({
           )
         )}
       </ScrollView>
-      <ContentDetailModal
-        contentId={detailContentId}
-        onClose={() => setDetailContentId(null)}
-        favorite={detailContentId ? favoriteIds.includes(detailContentId) : false}
-        onToggleFavorite={onToggleFavorite}
-      />
       {selectedIds.length > 0 && (
         <BottomBar>
           <BasketCount>{selectedIds.length}개 담음</BasketCount>

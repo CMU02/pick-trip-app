@@ -151,6 +151,7 @@ function ExploreTabScreen() {
       onContinue={() => navigation.navigate('Priority')}
       favoriteIds={favoriteIds}
       onToggleFavorite={handleToggleFavorite}
+      onPressDetail={(contentId) => navigation.navigate('ContentDetail', { contentId })}
     />
   );
 }
@@ -168,6 +169,7 @@ function BasketTabScreen() {
       onCreateItinerary={() => navigation.navigate('Priority')}
       favoriteIds={favoriteIds}
       onToggleFavorite={handleToggleFavorite}
+      onPressDetail={(contentId) => navigation.navigate('ContentDetail', { contentId })}
     />
   );
 }

@@ -14,6 +14,7 @@ import {
 import { FONT } from '../constants/typography';
 import { useAppState } from '../contexts/AppStateContext';
 import { AuthScreen } from '../screens/AuthScreen';
+import { ContentDetailScreen } from '../screens/ContentDetailScreen';
 import { FavoritesScreen } from '../screens/FavoritesScreen';
 import { ItineraryResultScreen } from '../screens/ItineraryResultScreen';
 import { LegalDocumentScreen } from '../screens/LegalDocumentScreen';
@@ -210,8 +211,33 @@ function LoginGate() {
 }
 
 function FavoritesGate() {
+  const navigation = useNavigation<Nav>();
   const { favoriteIds, handleToggleFavorite } = useAppState();
-  return <FavoritesScreen favoriteIds={favoriteIds} onToggleFavorite={handleToggleFavorite} />;
+  return (
+    <FavoritesScreen
+      favoriteIds={favoriteIds}
+      onToggleFavorite={handleToggleFavorite}
+      onPressDetail={(contentId) => navigation.navigate('ContentDetail', { contentId })}
+    />
+  );
+}
+
+// 콘텐츠 카드에서 "자세히 보기"를 눌렀을 때 들어오는 화면. 예전엔 팝업 시트(모달)였는데,
+// 뒤로가기·헤더 없이 화면 위에 겹쳐 뜨는 방식이 다른 화면들과 이질감이 있어서 일반 스택
+// 화면으로 바꿨다 — 뒤로가기는 네이티브 헤더가 대신 처리해준다.
+function ContentDetailGate({ route }: { route: { params: RootStackParamList['ContentDetail'] } }) {
+  const navigation = useNavigation<Nav>();
+  const { favoriteIds, handleToggleFavorite } = useAppState();
+  const { contentId } = route.params;
+
+  return (
+    <ContentDetailScreen
+      contentId={contentId}
+      favorite={favoriteIds.includes(contentId)}
+      onToggleFavorite={handleToggleFavorite}
+      onTitleReady={(title) => navigation.setOptions({ title })}
+    />
+  );
 }
 
 function TermsGate() {
@@ -267,6 +293,11 @@ export function RootNavigator() {
       />
       <Stack.Screen name="Shared" component={SharedGate} options={{ title: '공유된 일정' }} />
       <Stack.Screen name="Favorites" component={FavoritesGate} options={{ title: '찜한 콘텐츠' }} />
+      <Stack.Screen
+        name="ContentDetail"
+        component={ContentDetailGate}
+        options={{ title: '콘텐츠 정보' }}
+      />
       <Stack.Screen name="Terms" component={TermsGate} options={{ title: '이용약관' }} />
       <Stack.Screen
         name="Privacy"

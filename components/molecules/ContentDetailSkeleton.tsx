@@ -2,7 +2,7 @@ import { View } from 'react-native';
 import styled from 'styled-components';
 import { SkeletonBox } from '../atoms/SkeletonBox';
 
-// ContentDetailModal의 실제 레이아웃(썸네일 220px + 본문)과 치수를 맞춘 로딩 자리표시자.
+// ContentDetailScreen의 실제 레이아웃(썸네일 220px + 본문)과 치수를 맞춘 로딩 자리표시자.
 const Body = styled(View)`
   padding: 20px;
 `;
