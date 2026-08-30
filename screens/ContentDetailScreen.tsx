@@ -265,8 +265,10 @@ const InfoText = styled(Text)`
 // 운영시간·휴무일·주차 등 상세 조회에서만 내려오는 항목들 — 아이콘 + 라벨 + 값 형태의
 // 표처럼 나열한다. 값이 없는 항목(reservationRequired가 null인 경우가 특히 흔하다)은
 // 통째로 안 보여준다.
+// coral50(팔레트에서 가장 옅은 코랄)도 배경 전체를 채우니 화면에서 튀어 보여서,
+// coral500에 낮은 알파를 얹어(다른 화면의 뱃지 배경도 같은 방식) 훨씬 옅게 뺐다.
 const InfoTable = styled(View)`
-  background-color: ${COLORS.coral50};
+  background-color: ${COLORS.coral500}0D;
   border-radius: 12px;
   padding: 14px 16px;
   margin-bottom: 16px;
