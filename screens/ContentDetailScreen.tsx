@@ -396,8 +396,10 @@ export function ContentDetailScreen({
   };
 
   return (
-    <ScreenContainer>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    // 네이티브 헤더가 이미 상태표시줄 영역을 차지하고 있어서, SafeAreaView의 상단 여백까지
+    // 더해지면 헤더와 사진 사이에 빈 틈이 생긴다. top을 빼서 사진이 헤더 바로 아래에 붙게 한다.
+    <ScreenContainer edges={['left', 'right', 'bottom']}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false}>
         {isLoading && <ContentDetailSkeleton />}
         {isError && (
           <CenterBox>
