@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import styled from 'styled-components';
+import { API_BASE_URL } from '../../constants/api';
 import { CATEGORIES } from '../../constants/categories';
 import { COLORS } from '../../constants/colors';
 import { KAKAO_MAP_JS_KEY } from '../../constants/kakao';
@@ -601,6 +602,11 @@ export function ContentDetailModal({
                               longitude: content.longitude,
                               label: content.name,
                             }),
+                            // 이 HTML은 실제로 API_BASE_URL에 호스팅된 페이지가 아니라 앱 안에서
+                            // 즉석으로 만든 것이다. baseUrl을 지정하면 웹뷰가 이 주소에서 로드된
+                            // 것처럼 취급해서, 카카오맵 SDK 스크립트를 요청할 때 이 도메인을
+                            // Referer로 보낸다 — 카카오 콘솔에 등록한 도메인과 맞춰야 지도가 뜬다.
+                            baseUrl: API_BASE_URL,
                           }}
                         />
                       ) : (
