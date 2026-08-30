@@ -303,6 +303,8 @@ const InfoTableLabel = styled(Text)`
   font-family: ${FONT.medium};
   font-size: 13px;
   color: ${COLORS.gray500};
+  /* InfoTableValue와 line-height를 맞춰야 라벨·값·아이콘이 같은 줄에서 높이가 안 어긋난다. */
+  line-height: 19px;
 `;
 
 const InfoTableValue = styled(Text)`
@@ -495,12 +497,25 @@ export function ContentDetailScreen({
               )}
               <ContentName>{content.name}</ContentName>
               <InfoRow>
-                <Ionicons name="location-outline" size={14} color={COLORS.gray900} />
+                {/* InfoText는 line-height 20px인데 아이콘은 14px라, flex-start로 맞추면
+                    아이콘이 글자보다 위로 붕 떠 보인다. 그 차이(3px)만큼 내려서 글자 첫 줄과
+                    높이를 맞춘다. */}
+                <Ionicons
+                  name="location-outline"
+                  size={14}
+                  color={COLORS.gray900}
+                  style={{ marginTop: 3 }}
+                />
                 <InfoText>{content.address}</InfoText>
               </InfoRow>
               {content.indoor && (
                 <InfoRow>
-                  <Ionicons name="home-outline" size={14} color={COLORS.gray900} />
+                  <Ionicons
+                    name="home-outline"
+                    size={14}
+                    color={COLORS.gray900}
+                    style={{ marginTop: 3 }}
+                  />
                   <InfoText>실내 콘텐츠</InfoText>
                 </InfoRow>
               )}
@@ -540,7 +555,16 @@ export function ContentDetailScreen({
                   .filter((row) => row.value)
                   .map((row) => (
                     <InfoTableRow key={row.label}>
-                      <Ionicons name={row.icon} size={14} color={COLORS.gray500} />
+                      {/* 라벨·값은 line-height 19px인데 아이콘은 14px라, flex-start로 맞추면
+                          아이콘이 첫 줄보다 위로 붕 떠 보인다(값이 여러 줄이라 center로는 못
+                          맞춤 — 그러면 라벨이 전체 블록 가운데로 떠버린다). 그 차이(2.5px)만큼
+                          내려서 첫 줄과 높이를 맞춘다. */}
+                      <Ionicons
+                        name={row.icon}
+                        size={14}
+                        color={COLORS.gray500}
+                        style={{ marginTop: 2 }}
+                      />
                       <InfoTableLabel>{row.label}</InfoTableLabel>
                       <InfoTableValue>{withLineBreaks(row.value as string)}</InfoTableValue>
                     </InfoTableRow>
