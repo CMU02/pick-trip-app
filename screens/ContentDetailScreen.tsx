@@ -16,7 +16,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { WebView } from 'react-native-webview';
 import styled from 'styled-components';
-import { FavoriteButton } from '../components/atoms/FavoriteButton';
 import { ContentDetailSkeleton } from '../components/molecules/ContentDetailSkeleton';
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
@@ -41,14 +40,6 @@ interface ContentDetailScreenProps {
 const ScreenContainer = styled(SafeAreaView)`
   flex: 1;
   background-color: ${COLORS.white};
-`;
-
-// 닫기 버튼이 없어졌다(네이티브 헤더 뒤로가기가 대신한다) — 찜 버튼만 이미지 위에 남는다.
-const FavoriteBadge = styled(View)`
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  z-index: 1;
 `;
 
 // 사진 한 장의 너비를 화면 폭에 맞춰야 스와이프했을 때 한 장씩 딱 맞게 넘어간다(pagingEnabled).
@@ -354,8 +345,6 @@ const BottomBar = styled(View)`
   background-color: ${COLORS.white};
 `;
 
-// 이미지 위에 겹치는 FavoriteButton(반투명 원형, 어두운 배경 가정)과 달리, 여긴 흰 배경
-// 바 위라 테두리 있는 정사각형 버튼으로 따로 만든다.
 const FavoriteBarButton = styled(TouchableOpacity)`
   width: 48px;
   height: 48px;
@@ -496,11 +485,6 @@ export function ContentDetailScreen({
                   color={COLORS.gray500}
                 />
               </DetailThumbnail>
-            )}
-            {onToggleFavorite && (
-              <FavoriteBadge>
-                <FavoriteButton active={favorite} onPress={() => onToggleFavorite(content)} />
-              </FavoriteBadge>
             )}
             <Body>
               {category && (
