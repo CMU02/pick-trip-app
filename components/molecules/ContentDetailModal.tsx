@@ -614,6 +614,13 @@ export function ContentDetailModal({
                             // Referer로 보낸다 — 카카오 콘솔에 등록한 도메인과 맞춰야 지도가 뜬다.
                             baseUrl: API_BASE_URL,
                           }}
+                          // 지도가 안 뜰 때 원인을 알아야 해서, 웹뷰 안 에러/콘솔 로그를
+                          // 밖으로 흘려보내 RN 콘솔(adb logcat)에서 볼 수 있게 한다.
+                          // 문제 원인이 확실해지면 이 로그와 buildKakaoMapHtml의 계측 코드는
+                          // 지워도 된다.
+                          onMessage={(e) => {
+                            console.warn('[kakao-map]', e.nativeEvent.data);
+                          }}
                         />
                       ) : (
                         <MapPlaceholder>

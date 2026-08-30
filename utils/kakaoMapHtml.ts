@@ -22,29 +22,58 @@ export function buildKakaoMapHtml(params: {
 </head>
 <body>
   <div id="map"></div>
-  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false"></script>
   <script>
-    kakao.maps.load(function () {
-      var center = new kakao.maps.LatLng(${latitude}, ${longitude});
-      var map = new kakao.maps.Map(document.getElementById('map'), {
-        center: center,
-        level: 4,
-      });
-      map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
-
-      new kakao.maps.Marker({ position: center, map: map });
-
-      var content = document.createElement('div');
-      content.style.cssText =
-        'padding:4px 10px;background:#111827;color:#fff;font-size:12px;' +
-        'font-weight:600;border-radius:100px;white-space:nowrap;transform:translateY(-6px);';
-      content.innerText = ${safeLabel};
-      new kakao.maps.CustomOverlay({
-        position: center,
-        content: content,
-        yAnchor: 1.6,
-      }).setMap(map);
+    // WebView 안에서 나는 에러는 RN 쪽 콘솔에 안 잡혀서 원인을 알 수가 없다 —
+    // window.onerror와 console.*을 postMessage로 흘려보내서 ContentDetailModal의
+    // onMessage가 console.warn으로 다시 찍게 한다(adb logcat으로 확인 가능).
+    function report(type, payload) {
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({ type: type, payload: payload }));
+      }
+    }
+    window.onerror = function (message, source, lineno, colno) {
+      report('error', message + ' (' + source + ':' + lineno + ':' + colno + ')');
+    };
+    ['log', 'warn', 'error'].forEach(function (level) {
+      var original = console[level];
+      console[level] = function () {
+        report('console.' + level, Array.prototype.slice.call(arguments).join(' '));
+        original.apply(console, arguments);
+      };
     });
+  </script>
+  <script
+    src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false"
+    onerror="report('error', 'sdk.js 스크립트 로드 실패 — appKey 또는 등록 도메인을 확인하세요')"
+  ></script>
+  <script>
+    try {
+      kakao.maps.load(function () {
+        var center = new kakao.maps.LatLng(${latitude}, ${longitude});
+        var map = new kakao.maps.Map(document.getElementById('map'), {
+          center: center,
+          level: 4,
+        });
+        map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
+
+        new kakao.maps.Marker({ position: center, map: map });
+
+        var content = document.createElement('div');
+        content.style.cssText =
+          'padding:4px 10px;background:#111827;color:#fff;font-size:12px;' +
+          'font-weight:600;border-radius:100px;white-space:nowrap;transform:translateY(-6px);';
+        content.innerText = ${safeLabel};
+        new kakao.maps.CustomOverlay({
+          position: center,
+          content: content,
+          yAnchor: 1.6,
+        }).setMap(map);
+
+        report('log', 'map rendered ok');
+      });
+    } catch (e) {
+      report('error', 'kakao.maps.load 실패: ' + e.message);
+    }
   </script>
 </body>
 </html>`;
