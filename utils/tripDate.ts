@@ -34,3 +34,28 @@ export function nightsToApiDuration(nights: number | null): number | null {
 export function apiDurationToNights(duration: number | null): number | null {
   return duration === null ? null : duration - 1;
 }
+
+const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+export function addDays(date: Date, amount: number): Date {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
+}
+
+function formatShort(date: Date): string {
+  return `${date.getMonth() + 1}.${date.getDate()}`;
+}
+
+// "8.26 (수)" 형태 — 일정 화면의 일차별 날짜 표시에 쓴다.
+export function formatDayDate(date: Date): string {
+  return `${formatShort(date)} (${WEEKDAYS[date.getDay()]})`;
+}
+
+// "8.26 - 8.27" 형태 — 일정 요약 카드의 여행 기간 표시에 쓴다.
+export function formatDateRange(travelDate: string | null, duration: number | null): string | null {
+  if (!travelDate) return null;
+  const start = fromDateString(travelDate);
+  if (!duration || duration <= 0) return formatShort(start);
+  return `${formatShort(start)} - ${formatShort(addDays(start, duration))}`;
+}
