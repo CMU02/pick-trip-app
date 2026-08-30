@@ -6,7 +6,6 @@ import { COLORS } from '../../constants/colors';
 import { REGIONS } from '../../constants/regions';
 import { FONT } from '../../constants/typography';
 import type { Content } from '../../types/content';
-import { SquareFavoriteButton } from '../atoms/SquareFavoriteButton';
 
 interface ContentCardProps {
   content: Content;
@@ -84,6 +83,14 @@ const FavoriteBadge = styled(View)`
   position: absolute;
   top: 8px;
   left: 8px;
+`;
+
+// 사각형 배경 없이 하트 아이콘만 보여준다 — 상세 화면의 흰 사각형 찜 버튼과 달리, 카드
+// 썸네일 위에서는 배경 없는 하트만 쓰는 게 낫다는 피드백. 탭 영역은 hitSlop으로 넓혀서
+// 시각적으로는 작아도 누르기는 어렵지 않게 한다.
+const FavoriteIconButton = styled(TouchableOpacity)`
+  align-items: center;
+  justify-content: center;
 `;
 
 const Body = styled(View)`
@@ -196,7 +203,17 @@ export function ContentCard({
       </TopRightRow>
       {onToggleFavorite && (
         <FavoriteBadge>
-          <SquareFavoriteButton active={favorite} onPress={() => onToggleFavorite(content)} />
+          <FavoriteIconButton
+            onPress={() => onToggleFavorite(content)}
+            activeOpacity={0.7}
+            hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
+          >
+            <Ionicons
+              name={favorite ? 'heart' : 'heart-outline'}
+              size={20}
+              color={favorite ? COLORS.coral500 : COLORS.white}
+            />
+          </FavoriteIconButton>
         </FavoriteBadge>
       )}
       <Body>
