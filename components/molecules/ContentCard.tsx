@@ -35,13 +35,9 @@ const Thumbnail = styled(View)<{ $color: string }>`
   justify-content: center;
 `;
 
-// cover 대신 contain을 써서 사진이 잘리지 않고 전체가 다 보이게 한다. contain은 사진
-// 비율에 따라 위아래(또는 좌우)에 여백이 생길 수 있어서, 그 여백이 빈 화면처럼 안 보이게
-// 옅은 회색 배경을 깔아둔다.
 const ThumbnailImage = styled(Image)`
   height: 220px;
   width: 100%;
-  background-color: ${COLORS.gray100};
 `;
 
 // 지역 뱃지(RegionBadge)와 선택 표시(CheckBadge)가 둘 다 뜨면 겹치지 않도록,
@@ -164,7 +160,7 @@ export function ContentCard({
   return (
     <Card $selected={selected} onPress={onPress} activeOpacity={0.8}>
       {content.imageUrl ? (
-        <ThumbnailImage source={{ uri: content.imageUrl }} resizeMode="contain" />
+        <ThumbnailImage source={{ uri: content.imageUrl }} resizeMode="cover" />
       ) : (
         <Thumbnail $color={category?.color ?? COLORS.gray400}>
           <Ionicons name={category?.icon ?? 'location-outline'} size={48} color={COLORS.gray500} />

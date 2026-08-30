@@ -51,13 +51,9 @@ const ImageCarouselWrapper = styled(View)`
   overflow: hidden;
 `;
 
-// cover 대신 contain을 써서 사진이 잘리지 않고 전체가 다 보이게 한다. contain은 사진
-// 비율에 따라 위아래(또는 좌우)에 여백이 생길 수 있어서, 그 여백이 빈 화면처럼 안 보이게
-// 옅은 회색 배경을 깔아둔다.
 const CarouselImage = styled(Image)`
   width: ${SCREEN_WIDTH}px;
   height: 260px;
-  background-color: ${COLORS.gray100};
 `;
 
 // 사진이 몇 장 남았는지 보여주는 우측 하단 뱃지 ("1 / 4").
@@ -446,7 +442,7 @@ export function ContentDetailScreen({
                     // 자체가 새로 마운트되므로) 통째로 새로 오는 정적 목록이라 인덱스를 key로
                     // 써도 안전하다.
                     // biome-ignore lint/suspicious/noArrayIndexKey: 위 설명 참고
-                    <CarouselImage key={index} source={{ uri }} resizeMode="contain" />
+                    <CarouselImage key={index} source={{ uri }} resizeMode="cover" />
                   ))}
                 </ScrollView>
                 {content.images.length > 1 && (
