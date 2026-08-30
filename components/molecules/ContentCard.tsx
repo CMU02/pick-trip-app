@@ -3,6 +3,7 @@ import { Image, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { CATEGORIES } from '../../constants/categories';
 import { COLORS } from '../../constants/colors';
+import { REGIONS } from '../../constants/regions';
 import { FONT } from '../../constants/typography';
 import type { Content } from '../../types/content';
 import { FavoriteButton } from '../atoms/FavoriteButton';
@@ -14,6 +15,8 @@ interface ContentCardProps {
   onPressDetail?: () => void;
   favorite?: boolean;
   onToggleFavorite?: (content: Content) => void;
+  // 카드 오른쪽 위에 지역 뱃지(하동/영주/예천)를 보여줄지. 화면마다 필요 여부가 달라서 옵트인으로 둔다.
+  showRegion?: boolean;
 }
 
 const Card = styled(TouchableOpacity)<{ $selected: boolean }>`
@@ -37,10 +40,31 @@ const ThumbnailImage = styled(Image)`
   width: 100%;
 `;
 
-const CheckBadge = styled(View)`
+// 지역 뱃지(RegionBadge)와 선택 표시(CheckBadge)가 둘 다 뜨면 겹치지 않도록,
+// 이 행 하나에 나란히 두고 오른쪽 위 모서리에 고정한다.
+const TopRightRow = styled(View)`
   position: absolute;
   top: 8px;
   right: 8px;
+  flex-direction: row;
+  align-items: center;
+  gap: 6px;
+`;
+
+const RegionBadge = styled(View)`
+  background-color: ${COLORS.coral500};
+  border-radius: 100px;
+  padding-vertical: 3px;
+  padding-horizontal: 8px;
+`;
+
+const RegionLabel = styled(Text)`
+  font-size: 11px;
+  font-family: ${FONT.medium};
+  color: ${COLORS.white};
+`;
+
+const CheckBadge = styled(View)`
   background-color: ${COLORS.coral500};
   border-radius: 100px;
   width: 24px;
@@ -128,8 +152,10 @@ export function ContentCard({
   onPressDetail,
   favorite = false,
   onToggleFavorite,
+  showRegion = false,
 }: ContentCardProps) {
   const category = CATEGORIES.find((c) => c.id === content.category);
+  const region = showRegion ? REGIONS.find((r) => r.id === content.regionId) : undefined;
 
   return (
     <Card $selected={selected} onPress={onPress} activeOpacity={0.8}>
@@ -140,11 +166,18 @@ export function ContentCard({
           <Ionicons name={category?.icon ?? 'location-outline'} size={48} color={COLORS.gray500} />
         </Thumbnail>
       )}
-      {selected && (
-        <CheckBadge>
-          <Ionicons name="checkmark" size={14} color={COLORS.white} />
-        </CheckBadge>
-      )}
+      <TopRightRow>
+        {region && (
+          <RegionBadge>
+            <RegionLabel>{region.name}</RegionLabel>
+          </RegionBadge>
+        )}
+        {selected && (
+          <CheckBadge>
+            <Ionicons name="checkmark" size={14} color={COLORS.white} />
+          </CheckBadge>
+        )}
+      </TopRightRow>
       {onToggleFavorite && (
         <FavoriteBadge>
           <FavoriteButton active={favorite} onPress={() => onToggleFavorite(content)} />
