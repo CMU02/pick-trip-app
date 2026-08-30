@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { CATEGORIES } from '../../constants/categories';
@@ -100,12 +101,47 @@ const ContentName = styled(Text)`
   margin-bottom: 10px;
 `;
 
+const SectionTitle = styled(Text)`
+  font-size: 15px;
+  font-family: ${FONT.bold};
+  color: ${COLORS.gray900};
+  margin-bottom: 8px;
+`;
+
+const SummarySection = styled(View)`
+  margin-bottom: 16px;
+`;
+
 const Summary = styled(Text)`
   font-family: ${FONT.medium};
   font-size: 15px;
   color: ${COLORS.gray900};
   line-height: 23px;
-  margin-bottom: 16px;
+`;
+
+// 실제로는 안 보이지만(height: 0 + overflow: hidden), 줄바꿈 제한 없이 렌더링해서
+// onTextLayout으로 전체 줄 수를 재는 용도. Summary와 같은 스타일이어야 줄바꿈 위치가
+// 똑같이 계산된다.
+const SummaryMeasure = styled(Text)`
+  font-family: ${FONT.medium};
+  font-size: 15px;
+  line-height: 23px;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+`;
+
+const ExpandToggle = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+  margin-top: 4px;
+`;
+
+const ExpandToggleLabel = styled(Text)`
+  font-family: ${FONT.medium};
+  font-size: 13px;
+  color: ${COLORS.gray500};
 `;
 
 const InfoRow = styled(View)`
@@ -173,6 +209,9 @@ function withLineBreaks(text: string): string {
   return text.replace(/<br\s*\/?>/gi, '\n');
 }
 
+// 소개 문구가 이 줄 수를 넘으면 접어두고 "더 보기"로 펼칠 수 있게 한다.
+const SUMMARY_COLLAPSED_LINES = 3;
+
 export function ContentDetailModal({
   contentId,
   onClose,
@@ -190,6 +229,11 @@ export function ContentDetailModal({
   });
 
   const category = content && CATEGORIES.find((c) => c.id === content.category);
+
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState(false);
+  // 3줄을 넘는 소개만 "더 보기" 토글을 보여준다 — 짧은 소개엔 눌러도 아무 변화 없는
+  // 버튼이 뜨면 안 되니, 실제로 넘치는지 SummaryMeasure의 onTextLayout으로 먼저 재본다.
+  const [summaryOverflows, setSummaryOverflows] = useState(false);
 
   return (
     <Modal visible={contentId !== null} transparent animationType="slide" onRequestClose={onClose}>
@@ -233,7 +277,6 @@ export function ContentDetailModal({
                     </CategoryBadge>
                   )}
                   <ContentName>{content.name}</ContentName>
-                  {content.summary !== '' && <Summary>{content.summary}</Summary>}
                   <InfoRow>
                     <Ionicons name="location-outline" size={14} color={COLORS.gray900} />
                     <InfoText>{content.address}</InfoText>
@@ -286,6 +329,39 @@ export function ContentDetailModal({
                         </InfoTableRow>
                       ))}
                   </InfoTable>
+                  {content.summary !== '' && (
+                    <SummarySection>
+                      <SectionTitle>소개</SectionTitle>
+                      <Summary
+                        numberOfLines={isSummaryExpanded ? undefined : SUMMARY_COLLAPSED_LINES}
+                      >
+                        {content.summary}
+                      </Summary>
+                      {/* 화면엔 안 보이고 줄 수만 재서, 실제로 넘칠 때만 토글을 보여준다 */}
+                      <SummaryMeasure
+                        onTextLayout={(e) =>
+                          setSummaryOverflows(e.nativeEvent.lines.length > SUMMARY_COLLAPSED_LINES)
+                        }
+                      >
+                        {content.summary}
+                      </SummaryMeasure>
+                      {summaryOverflows && (
+                        <ExpandToggle
+                          onPress={() => setIsSummaryExpanded((prev) => !prev)}
+                          activeOpacity={0.7}
+                        >
+                          <ExpandToggleLabel>
+                            {isSummaryExpanded ? '접기' : '더 보기'}
+                          </ExpandToggleLabel>
+                          <Ionicons
+                            name={isSummaryExpanded ? 'chevron-up' : 'chevron-down'}
+                            size={12}
+                            color={COLORS.gray500}
+                          />
+                        </ExpandToggle>
+                      )}
+                    </SummarySection>
+                  )}
                 </Body>
               </>
             )}
