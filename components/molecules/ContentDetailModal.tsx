@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Image, Modal, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { CATEGORIES } from '../../constants/categories';
@@ -234,6 +234,14 @@ export function ContentDetailModal({
   // 3줄을 넘는 소개만 "더 보기" 토글을 보여준다 — 짧은 소개엔 눌러도 아무 변화 없는
   // 버튼이 뜨면 안 되니, 실제로 넘치는지 SummaryMeasure의 onTextLayout으로 먼저 재본다.
   const [summaryOverflows, setSummaryOverflows] = useState(false);
+  // 이 모달은 카드마다 새로 만들어지는 게 아니라 화면에 하나만 떠 있고 contentId prop만
+  // 바뀌는 구조라, 안 지워주면 "더 보기"를 펼친 채로 다른 콘텐츠를 열어도 그 상태가
+  // 그대로 남아있는다(실제로 그렇게 다른 콘텐츠까지 펼쳐져 보이는 버그였음).
+  // biome-ignore lint/correctness/useExhaustiveDependencies: contentId가 바뀌는 시점에만 리셋하면 된다
+  useEffect(() => {
+    setIsSummaryExpanded(false);
+    setSummaryOverflows(false);
+  }, [contentId]);
 
   return (
     <Modal visible={contentId !== null} transparent animationType="slide" onRequestClose={onClose}>
