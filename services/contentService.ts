@@ -1,4 +1,5 @@
 import type { Content, ContentCategory } from '../types/content';
+import type { NearbyContentItem, NearbyDistanceBasis } from '../types/nearbyContent';
 import { apiClient } from './apiClient';
 
 interface ContentSummaryResponse {
@@ -112,4 +113,53 @@ function toContentFromDetail(item: ContentDetailResponse): Content {
 export async function fetchContentDetail(contentId: string): Promise<Content> {
   const { data } = await apiClient.get<ContentDetailResponse>(`/contents/${contentId}`);
   return toContentFromDetail(data);
+}
+
+interface NearbyContentItemResponse {
+  contentId: string;
+  title: string;
+  contentTypeId: string;
+  address: string;
+  firstImage: string;
+  latitude: number;
+  longitude: number;
+  category: string;
+  summary: string | null;
+  region: string | null;
+  distanceKm: number;
+  durationMinutes: number | null;
+  distanceBasis: NearbyDistanceBasis;
+}
+
+interface NearbyContentResponse {
+  originContentId: string;
+  radiusKm: number;
+  source: 'LOCAL' | 'TOURAPI';
+  items: NearbyContentItemResponse[];
+}
+
+function toNearbyContentItem(item: NearbyContentItemResponse): NearbyContentItem {
+  return {
+    contentId: item.contentId,
+    title: item.title,
+    address: item.address,
+    imageUrl: item.firstImage || null,
+    category: item.category.toLowerCase() as ContentCategory,
+    summary: item.summary,
+    region: item.region ? item.region.toLowerCase() : null,
+    distanceKm: item.distanceKm,
+    durationMinutes: item.durationMinutes,
+    distanceBasis: item.distanceBasis,
+  };
+}
+
+// 콘텐츠 상세의 "주변 콘텐츠" 추천용. 비로그인도 허용되는 API라 게스트 화면에서도 그대로 쓴다.
+export async function fetchNearbyContents(
+  contentId: string,
+  options?: { radiusKm?: number; size?: number },
+): Promise<NearbyContentItem[]> {
+  const { data } = await apiClient.get<NearbyContentResponse>(`/contents/${contentId}/nearby`, {
+    params: { radiusKm: options?.radiusKm, size: options?.size },
+  });
+  return data.items.map(toNearbyContentItem);
 }

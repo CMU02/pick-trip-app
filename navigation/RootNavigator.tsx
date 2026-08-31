@@ -238,6 +238,9 @@ function ContentDetailGate({ route }: { route: { params: RootStackParamList['Con
       inBasket={selectedIds.includes(contentId)}
       onToggleBasket={handleToggleContent}
       onTitleReady={(title) => navigation.setOptions({ title })}
+      onPressNearby={(nearbyContentId) =>
+        navigation.push('ContentDetail', { contentId: nearbyContentId })
+      }
     />
   );
 }

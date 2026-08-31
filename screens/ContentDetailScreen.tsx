@@ -18,11 +18,13 @@ import { WebView } from 'react-native-webview';
 import styled from 'styled-components';
 import { SquareFavoriteButton } from '../components/atoms/SquareFavoriteButton';
 import { ContentDetailSkeleton } from '../components/molecules/ContentDetailSkeleton';
+import { NearbyContentCard } from '../components/molecules/NearbyContentCard';
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
 import { KAKAO_MAP_JS_KEY } from '../constants/kakao';
 import { REGIONS } from '../constants/regions';
 import { FONT } from '../constants/typography';
+import { useNearbyContents } from '../hooks/useNearbyContents';
 import { fetchContentDetail } from '../services/contentService';
 import type { Content } from '../types/content';
 import { buildKakaoMapHtml } from '../utils/kakaoMapHtml';
@@ -36,6 +38,8 @@ interface ContentDetailScreenProps {
   onTitleReady?: (title: string) => void;
   inBasket?: boolean;
   onToggleBasket?: (content: Content) => void;
+  // 주변 콘텐츠 카드를 눌렀을 때. 없으면 "주변 콘텐츠" 섹션 자체를 안 보여준다.
+  onPressNearby?: (contentId: string) => void;
 }
 
 const ScreenContainer = styled(SafeAreaView)`
@@ -181,6 +185,10 @@ const MapPlaceholderText = styled(Text)`
   font-size: 12px;
   color: ${COLORS.gray500};
   text-align: center;
+`;
+
+const NearbySection = styled(View)`
+  margin-bottom: 16px;
 `;
 
 // "카카오맵으로 보기"와 "복사"를 나란히 두는 줄.
@@ -341,6 +349,7 @@ export function ContentDetailScreen({
   onTitleReady,
   inBasket = false,
   onToggleBasket,
+  onPressNearby,
 }: ContentDetailScreenProps) {
   const {
     data: content,
@@ -350,6 +359,7 @@ export function ContentDetailScreen({
     queryKey: ['content-detail', contentId],
     queryFn: () => fetchContentDetail(contentId),
   });
+  const { data: nearbyItems } = useNearbyContents(contentId, 3);
 
   const category = content && CATEGORIES.find((c) => c.id === content.category);
   const regionName = content && REGIONS.find((r) => r.id === content.regionId)?.name;
@@ -564,6 +574,24 @@ export function ContentDetailScreen({
                   </CopyButton>
                 </LocationButtonRow>
               </LocationSection>
+              {onPressNearby && nearbyItems != null && nearbyItems.length > 0 && (
+                <NearbySection>
+                  <SectionTitle>주변 콘텐츠</SectionTitle>
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={{ gap: 10 }}
+                  >
+                    {nearbyItems.map((item) => (
+                      <NearbyContentCard
+                        key={item.contentId}
+                        item={item}
+                        onPress={() => onPressNearby(item.contentId)}
+                      />
+                    ))}
+                  </ScrollView>
+                </NearbySection>
+              )}
             </Body>
           </>
         )}
