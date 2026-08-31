@@ -71,11 +71,7 @@ const StepCircle = styled(View)<{ $variant: 'done' | 'active' | 'pending' }>`
   align-items: center;
   justify-content: center;
   background-color: ${({ $variant }) =>
-    $variant === 'done'
-      ? COLORS.success
-      : $variant === 'active'
-        ? COLORS.coral500
-        : COLORS.gray200};
+    $variant === 'done' || $variant === 'active' ? COLORS.coral500 : COLORS.gray200};
 `;
 
 const StepCircleLabel = styled(Text)<{ $variant: 'done' | 'active' | 'pending' }>`

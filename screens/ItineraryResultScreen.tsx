@@ -119,7 +119,7 @@ const StepCircle = styled(View)<{ $active: boolean }>`
   border-radius: 100px;
   align-items: center;
   justify-content: center;
-  background-color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.success)};
+  background-color: ${COLORS.coral500};
 `;
 
 const StepLabel = styled(Text)<{ $active: boolean }>`
