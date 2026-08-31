@@ -63,3 +63,111 @@ export function buildKakaoMapHtml(params: {
 </body>
 </html>`;
 }
+
+export interface RouteMapPoint {
+  latitude: number;
+  longitude: number;
+  /** 다음 지점까지 구간 거리(km). 그 일차의 마지막 지점이면 없다. */
+  distanceToNextKm?: number;
+}
+
+export interface RouteMapDay {
+  dayIndex: number;
+  /** 이 일차의 마커·선 색(hex). constants/dayColors.ts의 getDayRouteColor로 정한다. */
+  color: string;
+  points: RouteMapPoint[];
+  /** 일차 탭에서 다른 날을 골랐을 때 이 날을 흐리게 보여주기 위한 값(0~1). 기본 1. */
+  opacity?: number;
+}
+
+/**
+ * 일정 전체 경로를 한 지도에 그린다. 일차마다 색을 구분해 순서대로 선으로 잇고,
+ * 마커에는 그 일차 안에서의 방문 순번을, 구간 중점에는 거리 라벨을 붙인다.
+ * baseUrl을 안 주는 이유·Referer 관련 동작은 buildKakaoMapHtml 상단 주석과 같다.
+ */
+export function buildKakaoRouteMapHtml(params: { appKey: string; days: RouteMapDay[] }): string {
+  const { appKey, days } = params;
+  // 좌표는 숫자라 안전하지만, 이 객체 전체를 <script> 안에 통째로 꽂으므로 문자열이
+  // 섞여 들어올 여지를 없애기 위해 JSON.stringify로 한 번에 이스케이프한다.
+  const safeDays = JSON.stringify(days);
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <style>
+    html, body, #map { width: 100%; height: 100%; margin: 0; padding: 0; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${appKey}&autoload=false"></script>
+  <script>
+    var days = ${safeDays};
+
+    kakao.maps.load(function () {
+      var map = new kakao.maps.Map(document.getElementById('map'), {
+        center: new kakao.maps.LatLng(35.8, 128.4),
+        level: 8,
+      });
+      map.addControl(new kakao.maps.ZoomControl(), kakao.maps.ControlPosition.RIGHT);
+
+      var bounds = new kakao.maps.LatLngBounds();
+
+      days.forEach(function (day) {
+        var path = [];
+        var opacity = typeof day.opacity === 'number' ? day.opacity : 1;
+
+        day.points.forEach(function (point, index) {
+          var position = new kakao.maps.LatLng(point.latitude, point.longitude);
+          path.push(position);
+          bounds.extend(position);
+
+          var marker = document.createElement('div');
+          marker.style.cssText =
+            'width:24px;height:24px;border-radius:100px;background:' + day.color + ';' +
+            'color:#fff;font-size:12px;font-weight:700;display:flex;' +
+            'align-items:center;justify-content:center;border:2px solid #fff;' +
+            'box-shadow:0 1px 4px rgba(0,0,0,0.35);opacity:' + opacity + ';';
+          marker.innerText = String(index + 1);
+          new kakao.maps.CustomOverlay({ position: position, content: marker }).setMap(map);
+
+          if (typeof point.distanceToNextKm === 'number' && index < day.points.length - 1) {
+            var next = day.points[index + 1];
+            var midpoint = new kakao.maps.LatLng(
+              (point.latitude + next.latitude) / 2,
+              (point.longitude + next.longitude) / 2
+            );
+            var label = document.createElement('div');
+            label.style.cssText =
+              'padding:2px 8px;background:#111827;color:#fff;font-size:11px;' +
+              'font-weight:600;border-radius:100px;white-space:nowrap;opacity:' + opacity + ';';
+            label.innerText = point.distanceToNextKm.toFixed(1) + 'km';
+            new kakao.maps.CustomOverlay({ position: midpoint, content: label }).setMap(map);
+          }
+        });
+
+        new kakao.maps.Polyline({
+          path: path,
+          strokeWeight: 4,
+          strokeColor: day.color,
+          strokeOpacity: 0.85 * opacity,
+          strokeStyle: 'solid',
+        }).setMap(map);
+      });
+
+      function fit() {
+        if (!bounds.isEmpty()) map.setBounds(bounds, 60);
+      }
+      fit();
+
+      // 컨테이너 크기가 뒤늦게 자리 잡는 문제 보정 — buildKakaoMapHtml 상단 주석과 같은 이유.
+      setTimeout(function () {
+        map.relayout();
+        fit();
+      }, 200);
+    });
+  </script>
+</body>
+</html>`;
+}
