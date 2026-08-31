@@ -12,6 +12,7 @@ import styled from 'styled-components';
 import { CategoryFilter } from '../components/molecules/CategoryFilter';
 import { ContentCard } from '../components/molecules/ContentCard';
 import { ContentCardSkeleton } from '../components/molecules/ContentCardSkeleton';
+import { RegionFilter } from '../components/molecules/RegionFilter';
 import { COLORS } from '../constants/colors';
 import { TAB_BAR_CLEARANCE, TAB_BAR_TOTAL } from '../constants/layout';
 import { REGIONS } from '../constants/regions';
@@ -84,6 +85,7 @@ const ClearButton = styled(TouchableOpacity)`
 `;
 
 const FilterRow = styled(View)`
+  gap: 4px;
   padding-vertical: 12px;
 `;
 
@@ -189,12 +191,28 @@ export function ContentExploreScreen({
   onPressDetail,
 }: ContentExploreScreenProps) {
   const [selectedCategory, setSelectedCategory] = useState<ContentCategory | 'all'>('all');
+  const regionIds = REGIONS.map((r) => r.id);
+  // 지역 칩은 복수 선택(체크박스 방식) — "전체" 칩 없이 3개 지역 칩을 모두 선택하면 그 자체가
+  // 전체 보기다. 홈에서 "선호 지역"을 일부만(1~2개) 골랐으면 그 지역들로 시작하고, 안
+  // 골랐거나 전부 골랐으면 3개 지역 전부 선택된 상태로 시작한다. 탐색 화면 안에서는 칩으로
+  // 지역을 자유롭게 바꿀 수 있어야 하므로, 콘텐츠 자체는(아래 useContents) 항상 3개 지역
+  // 전부 불러온다 — 그래야 칩을 바꿔도 다시 불러오는 지연 없이 바로 걸러진다.
+  const [selectedRegionIds, setSelectedRegionIds] = useState<string[]>(
+    selectedRegions.length > 0 && selectedRegions.length < regionIds.length
+      ? selectedRegions
+      : regionIds,
+  );
   const [searchQuery, setSearchQuery] = useState('');
 
-  // 홈에서 "선호 지역"을 하나도 안 고르면 selectedRegions가 빈 배열이다. 이걸 "지역 조건 없음"이
-  // 아니라 "전체 지역"으로 다뤄야, 처음 들어온 사용자도 이 앱이 다루는 3개 지역 콘텐츠(현재 총
-  // 221개)를 전부 둘러볼 수 있다 — 특정 지역을 고르면 그때부터는 그 지역으로만 좁혀진다.
-  const regionIds = selectedRegions.length > 0 ? selectedRegions : REGIONS.map((r) => r.id);
+  const handleToggleRegion = (id: string) => {
+    setSelectedRegionIds((prev) => {
+      if (!prev.includes(id)) return [...prev, id];
+      // 최소 하나는 선택된 상태를 유지한다 — 다 해제하면 콘텐츠가 하나도 안 보이게 된다.
+      if (prev.length === 1) return prev;
+      return prev.filter((r) => r !== id);
+    });
+  };
+
   const { contents, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useContents(regionIds);
 
@@ -202,13 +220,14 @@ export function ContentExploreScreen({
     const keyword = searchQuery.trim().toLowerCase();
     return contents.filter((c) => {
       const matchesCategory = selectedCategory === 'all' || c.category === selectedCategory;
+      const matchesRegion = selectedRegionIds.includes(c.regionId);
       const matchesKeyword =
         keyword === '' ||
         c.name.toLowerCase().includes(keyword) ||
         c.address.toLowerCase().includes(keyword);
-      return matchesCategory && matchesKeyword;
+      return matchesCategory && matchesRegion && matchesKeyword;
     });
-  }, [contents, selectedCategory, searchQuery]);
+  }, [contents, selectedCategory, selectedRegionIds, searchQuery]);
 
   return (
     <ScreenContainer>
@@ -233,6 +252,11 @@ export function ContentExploreScreen({
         </SearchBox>
       </SearchRow>
       <FilterRow>
+        <RegionFilter
+          regionIds={regionIds}
+          selectedRegionIds={selectedRegionIds}
+          onToggleRegion={handleToggleRegion}
+        />
         <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
       </FilterRow>
       <ScrollView
