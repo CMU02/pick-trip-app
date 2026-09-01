@@ -394,12 +394,22 @@ export function ContentDetailScreen({
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const carouselRef = useRef<ScrollView>(null);
   const [addressCopied, setAddressCopied] = useState(false);
+  // "복사됨" 표시를 되돌리는 타이머가 다 울리기 전에 화면을 나가면(뒤로가기), 이미 사라진
+  // 화면의 상태를 뒤늦게 바꾸려는 시도가 남는다. ref에 잡아뒀다가 언마운트 시 정리한다.
+  const addressCopiedTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  useEffect(() => {
+    return () => {
+      if (addressCopiedTimerRef.current) clearTimeout(addressCopiedTimerRef.current);
+    };
+  }, []);
 
   const handleCopyAddress = async () => {
     if (!content) return;
     await Clipboard.setStringAsync(content.address);
     setAddressCopied(true);
-    setTimeout(() => setAddressCopied(false), 1500);
+    if (addressCopiedTimerRef.current) clearTimeout(addressCopiedTimerRef.current);
+    addressCopiedTimerRef.current = setTimeout(() => setAddressCopied(false), 1500);
   };
 
   // 카카오맵 앱이 깔려있으면 앱으로, 없으면 웹으로 열리는 범용 링크라 별도 딥링크 스킴
