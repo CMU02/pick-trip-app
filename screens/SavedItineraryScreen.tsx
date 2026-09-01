@@ -709,7 +709,10 @@ export function SavedItineraryScreen({ itineraryId, onSaved }: SavedItineraryScr
                 const content = contentById[stop.contentId];
                 const category = content && CATEGORIES.find((c) => c.id === content.category);
                 const accentColor = category?.color ?? COLORS.gray500;
-                const hopToNext = dayLegs[index];
+                // dayLegs를 index로 바로 집으면 안 된다 — ItineraryResultScreen과 같은 이유로,
+                // 좌표 미상 콘텐츠가 낀 구간은 배열에서 빠지며 압축되므로 dayStops 위치 기준과
+                // 어긋난다. fromContentId로 이 정류지에서 출발하는 구간을 직접 찾는다.
+                const hopToNext = dayLegs.find((leg) => leg.fromContentId === stop.contentId);
                 return (
                   <StopRow key={stop.contentId}>
                     <TimeColumn>

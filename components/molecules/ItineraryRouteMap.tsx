@@ -117,24 +117,28 @@ export function ItineraryRouteMap({
     return dayList
       .map((day): RouteMapDay | null => {
         const dayStops = stops.filter((stop) => stop.day === day);
-        const points = dayStops
-          .map((stop) => contentById[stop.contentId])
-          .filter((content): content is Content => content != null)
-          .map((content) => ({ latitude: content.latitude, longitude: content.longitude }));
-        if (points.length === 0) return null;
+        const loadedPoints = dayStops
+          .map((stop) => ({ stop, content: contentById[stop.contentId] }))
+          .filter(
+            (entry): entry is { stop: ItineraryStop; content: Content } => entry.content != null,
+          );
+        if (loadedPoints.length === 0) return null;
 
+        // route.legs(ROAD)와 computeDayHops(STRAIGHT 폴백) 둘 다 좌표 미상 콘텐츠가 낀 구간은
+        // 건너뛰어 배열이 압축된다. loadedPoints(=points)의 인덱스로 바로 짝지으면(예전 hops[index])
+        // 그 압축분만큼 밀려서 엉뚱한 구간 거리가 붙으므로, fromContentId로 이 지점에서
+        // 출발하는 구간을 직접 찾는다.
         const route = routeByDay[day];
-        const hops =
-          route?.legs.map((leg) => leg.distanceKm) ??
-          computeDayHops(dayStops, contentById).map((hop) => hop.distanceKm);
+        const legs = route?.legs ?? computeDayHops(dayStops, contentById);
 
         return {
           dayIndex: day,
           color: getDayRouteColor(day),
           opacity: day === selectedDay ? 1 : 0.35,
-          points: points.map((point, index) => ({
-            ...point,
-            distanceToNextKm: hops[index],
+          points: loadedPoints.map(({ stop, content }) => ({
+            latitude: content.latitude,
+            longitude: content.longitude,
+            distanceToNextKm: legs.find((leg) => leg.fromContentId === stop.contentId)?.distanceKm,
           })),
         };
       })

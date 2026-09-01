@@ -816,7 +816,11 @@ export function ItineraryResultScreen({
                 const content = contentById[stop.contentId];
                 const category = content && CATEGORIES.find((c) => c.id === content.category);
                 const accentColor = category?.color ?? COLORS.gray500;
-                const hopToNext = dayLegs[index];
+                // dayLegs를 index로 바로 집으면 안 된다 — 좌표 미상 콘텐츠가 낀 구간은
+                // dayLegs(및 STRAIGHT 폴백인 computeDayHops)에서 건너뛰어져 배열이 압축되므로,
+                // dayStops 위치(index) 기준과 dayLegs 위치 기준이 어긋나 엉뚱한 구간 거리가
+                // 붙을 수 있다. fromContentId로 이 정류지에서 출발하는 구간을 직접 찾는다.
+                const hopToNext = dayLegs.find((leg) => leg.fromContentId === stop.contentId);
                 return (
                   <StopRow key={stop.contentId}>
                     <TimeColumn>
