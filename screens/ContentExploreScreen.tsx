@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -202,6 +202,22 @@ export function ContentExploreScreen({
       ? selectedRegions
       : regionIds,
   );
+  // 위 useState 초기값은 이 화면이 "처음 만들어질 때" 딱 한 번만 반영된다. 탐색 탭은
+  // react-navigation 탭 특성상 한 번 열리면 계속 마운트된 채로 남아있어서, 그 뒤 홈에서
+  // "선호 지역"을 바꿔도 이 초기값은 안 따라간다. selectedRegions(prop)가 실제로 바뀔
+  // 때만 다시 맞춰준다 — 매 렌더마다 도는 게 아니라 값이 바뀔 때만 돌도록 join한 키로 비교.
+  const selectedRegionsKey = selectedRegions.join(',');
+  const prevSelectedRegionsKey = useRef(selectedRegionsKey);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: regionIds/selectedRegions는 매 렌더 새 배열이라, 의존성에 넣으면 매번 돈다 — selectedRegionsKey로만 변화를 감지한다
+  useEffect(() => {
+    if (prevSelectedRegionsKey.current === selectedRegionsKey) return;
+    prevSelectedRegionsKey.current = selectedRegionsKey;
+    setSelectedRegionIds(
+      selectedRegions.length > 0 && selectedRegions.length < regionIds.length
+        ? selectedRegions
+        : regionIds,
+    );
+  }, [selectedRegionsKey]);
   const [searchQuery, setSearchQuery] = useState('');
 
   const handleToggleRegion = (id: string) => {
