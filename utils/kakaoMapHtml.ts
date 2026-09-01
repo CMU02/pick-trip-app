@@ -15,7 +15,12 @@ export function buildKakaoMapHtml(params: {
   const { appKey, latitude, longitude, label } = params;
   // label은 장소 이름(사용자 데이터)이라, <script> 안에 그대로 꽂으면 따옴표 등으로 깨질 수
   // 있다. JSON.stringify로 안전한 JS 문자열 리터럴로 이스케이프해서 넣는다.
-  const safeLabel = JSON.stringify(label);
+  // 근데 JSON.stringify는 따옴표·역슬래시만 처리하고 꺾쇠(<)는 그대로 둔다 — 이름에 우연히
+  // "</script>"가 들어있으면 HTML 파서가 JS를 파싱하기도 전에 그 지점에서 스크립트 태그를
+  // 끊어버린다(뒷부분은 그냥 문서 본문으로 렌더됨). 꺾쇠를 JS 유니코드 이스케이프
+  // 6글자(백슬래시+u003c)로 한 번 더 바꿔두면, HTML 파서는 리터럴 꺾쇠를 못 보고 그냥
+  // 텍스트로 지나가고, JS 엔진이 문자열을 실행할 때만 꺾쇠로 되돌려 읽는다.
+  const safeLabel = JSON.stringify(label).replace(/</g, '\\u003c');
 
   return `<!DOCTYPE html>
 <html>
@@ -89,7 +94,10 @@ export function buildKakaoRouteMapHtml(params: { appKey: string; days: RouteMapD
   const { appKey, days } = params;
   // 좌표는 숫자라 안전하지만, 이 객체 전체를 <script> 안에 통째로 꽂으므로 문자열이
   // 섞여 들어올 여지를 없애기 위해 JSON.stringify로 한 번에 이스케이프한다.
-  const safeDays = JSON.stringify(days);
+  // 지금은 color(hex)·숫자뿐이라 당장 위험하진 않지만, RouteMapDay/RouteMapPoint에
+  // 문자열 필드(예: 지점 이름)가 나중에 늘면 buildKakaoMapHtml의 safeLabel과 같은
+  // "</script>" 조기 종료 문제가 그대로 생긴다. 미리 같은 방식으로 막아둔다.
+  const safeDays = JSON.stringify(days).replace(/</g, '\\u003c');
 
   return `<!DOCTYPE html>
 <html>
