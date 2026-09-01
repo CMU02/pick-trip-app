@@ -26,7 +26,13 @@ export function useItineraryRoutes(
         dayStops.map((stop) => stop.contentId).join(','),
       ],
       queryFn: () => getDayRoute(dayStops, contentById),
-      enabled: dayStops.length > 1,
+      // dayStops.length > 1만 보면, 콘텐츠 상세정보(contentById)가 아직 하나도 안 채워진
+      // 첫 렌더 시점에도 쿼리가 나가버린다. 그 순간엔 getDayRoute 안에서 좌표를 못 찾아
+      // null이 반환되는데, 이 null이 queryKey(day+contentId 목록)에 고정 캐시돼서
+      // 이후 contentById가 채워져도 재조회가 안 됐다(콘텐츠가 도착해도 queryKey가 그대로라
+      // react-query가 "이미 답이 있다"고 판단). 그래서 항상 STRAIGHT 폴백만 보였다.
+      // 이 날짜에 속한 모든 콘텐츠가 로드된 뒤에만 쿼리를 시작해 이 문제를 막는다.
+      enabled: dayStops.length > 1 && dayStops.every((stop) => contentById[stop.contentId] != null),
     })),
   });
 
