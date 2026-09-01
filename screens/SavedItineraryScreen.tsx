@@ -176,6 +176,7 @@ const StopRow = styled(View)`
 const TimeColumn = styled(View)`
   align-items: center;
   width: 52px;
+  position: relative;
 `;
 
 const TimeText = styled(Text)`
@@ -450,6 +451,14 @@ export function SavedItineraryScreen({ itineraryId, onSaved }: SavedItineraryScr
   }, [regionContents, stopContents]);
   const candidates = regionContents.filter((c) => !stopIds.includes(c.id));
 
+  // plan이 아직 없으면(로딩 중) 1로 둔다 — 이 값은 그 상태에서 화면에 그려지지 않으므로
+  // 실제로 쓰이진 않는다.
+  const totalDays = plan
+    ? plan.duration != null
+      ? plan.duration + 1
+      : Math.max(1, ...stops.map((s) => s.day))
+    : 1;
+
   // updateItineraryPlan은 PATCH로 일정 전체(제목 포함)를 다시 보내는 방식이라, 이름만 바꿀 때도
   // days[].items의 title을 채워야 한다 — 편집 저장(handleSaveEdits)과 이름 저장(handleConfirmTitle)
   // 둘 다 이 매핑이 필요해서 공통으로 뺐다.
@@ -587,8 +596,6 @@ export function SavedItineraryScreen({ itineraryId, onSaved }: SavedItineraryScr
 
   const regionName = REGIONS.find((r) => r.id === plan.region)?.name ?? null;
   const dateRange = formatDateRange(plan.travelDate, plan.duration);
-  const totalDays =
-    plan.duration != null ? plan.duration + 1 : Math.max(1, ...stops.map((s) => s.day));
   const dayList = Array.from({ length: totalDays }, (_, i) => i + 1);
 
   return (

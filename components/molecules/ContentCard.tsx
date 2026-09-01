@@ -6,7 +6,6 @@ import { COLORS } from '../../constants/colors';
 import { REGIONS } from '../../constants/regions';
 import { FONT } from '../../constants/typography';
 import type { Content } from '../../types/content';
-import { FavoriteButton } from '../atoms/FavoriteButton';
 
 interface ContentCardProps {
   content: Content;
@@ -15,6 +14,8 @@ interface ContentCardProps {
   onPressDetail?: () => void;
   favorite?: boolean;
   onToggleFavorite?: (content: Content) => void;
+  // 바구니 담기/빼기. 없으면(예: 찜한 콘텐츠 화면) 바구니 아이콘 자체를 안 보여준다.
+  onToggleBasket?: (content: Content) => void;
   // 카드 오른쪽 위에 지역 뱃지(하동/영주/예천)를 보여줄지. 화면마다 필요 여부가 달라서 옵트인으로 둔다.
   showRegion?: boolean;
 }
@@ -28,33 +29,48 @@ const Card = styled(TouchableOpacity)<{ $selected: boolean }>`
   margin-horizontal: 20px;
 `;
 
+const PHOTO_HEIGHT = 220;
+
 const Thumbnail = styled(View)<{ $color: string }>`
-  height: 180px;
+  height: ${PHOTO_HEIGHT}px;
   background-color: ${({ $color }) => `${$color}33`};
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 `;
 
 const ThumbnailImage = styled(Image)`
-  height: 180px;
+  height: ${PHOTO_HEIGHT}px;
   width: 100%;
 `;
 
-// 지역 뱃지(RegionBadge)와 선택 표시(CheckBadge)가 둘 다 뜨면 겹치지 않도록,
-// 이 행 하나에 나란히 두고 오른쪽 위 모서리에 고정한다.
-const TopRightRow = styled(View)`
+// 사진 위 좌상단에 나란히 얹는 카테고리·지역 뱃지.
+const TopLeftRow = styled(View)`
   position: absolute;
   top: 8px;
-  right: 8px;
+  left: 8px;
   flex-direction: row;
   align-items: center;
   gap: 6px;
 `;
 
+const PhotoCategoryBadge = styled(View)`
+  background-color: rgba(255, 255, 255, 0.92);
+  border-radius: 100px;
+  padding-vertical: 4px;
+  padding-horizontal: 10px;
+`;
+
+const PhotoCategoryLabel = styled(Text)`
+  font-size: 12px;
+  font-family: ${FONT.semibold};
+  color: ${COLORS.gray900};
+`;
+
 const RegionBadge = styled(View)`
   background-color: ${COLORS.coral500};
   border-radius: 100px;
-  padding-vertical: 3px;
+  padding-vertical: 4px;
   padding-horizontal: 8px;
 `;
 
@@ -64,39 +80,47 @@ const RegionLabel = styled(Text)`
   color: ${COLORS.white};
 `;
 
-const CheckBadge = styled(View)`
-  background-color: ${COLORS.coral500};
+// 하트만 배경 없이 뒀던 예전 방식은 사진 위에서 잘 안 보인다는 참고 디자인 피드백으로,
+// 다른 뱃지들과 통일된 흰 원형 배경을 다시 얹는다(정사각형이 아니라 원형이라 이전에
+// 없앤 사각형 배경 피드백과는 다른 모양).
+const FavoriteBadge = styled(TouchableOpacity)`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
   border-radius: 100px;
-  width: 24px;
-  height: 24px;
+  background-color: ${COLORS.white};
   align-items: center;
   justify-content: center;
 `;
 
-// 담기 선택 표시(CheckBadge)와 겹치지 않게 반대쪽 모서리에 둔다.
-const FavoriteBadge = styled(View)`
-  position: absolute;
-  top: 8px;
-  left: 8px;
+// 예전엔 카드 전체를 눌러야 바구니에 담겼고, 이 자리엔 담겼는지 보여주기만 하는 체크
+// 표시(비활성)가 있었다. 이제는 카드를 누르면 상세 화면으로 이동하고, 바구니 담기/빼기는
+// 이 버튼을 직접 눌러야 하는 별도 동작이다. "자세히 보기"와 같은 줄에 나란히 두기로 한
+// 의도라, Footer 안의 일반 flex 아이템으로 둔다(사진 기준 절대위치가 아님) — 그래야
+// 본문 내용 길이가 카드마다 달라져도 항상 "자세히 보기"와 짝을 맞춰 같은 줄에 남는다.
+// 담겼으면 코랄 배경 + 체크, 아니면 흰 배경 + 담기 아이콘으로 상태를 구분한다.
+const AddToBasketBadge = styled(TouchableOpacity)<{ $active: boolean }>`
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  padding-vertical: 8px;
+  padding-horizontal: 13px;
+  border-radius: 100px;
+  border-width: 1px;
+  border-color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.gray200)};
+  background-color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.white)};
+`;
+
+const AddToBasketLabel = styled(Text)<{ $active: boolean }>`
+  font-size: 13px;
+  font-family: ${FONT.semibold};
+  color: ${({ $active }) => ($active ? COLORS.white : COLORS.gray900)};
 `;
 
 const Body = styled(View)`
   padding: 14px 16px 16px;
-`;
-
-const CategoryBadge = styled(View)`
-  background-color: ${COLORS.coral50};
-  border-radius: 100px;
-  padding-vertical: 2px;
-  padding-horizontal: 8px;
-  align-self: flex-start;
-  margin-bottom: 6px;
-`;
-
-const CategoryLabel = styled(Text)`
-  font-size: 12px;
-  font-family: ${FONT.medium};
-  color: ${COLORS.coral700};
 `;
 
 const ContentName = styled(Text)`
@@ -131,12 +155,19 @@ const InfoText = styled(Text)`
   color: ${COLORS.gray500};
 `;
 
+// "자세히 보기"와 "담기" 버튼을 한 줄로 묶는 행. margin-top은 원래 DetailLink 혼자
+// 가지고 있던 값을 그대로 옮겨왔다 — 정보 표 아래 12px 띄우는 간격은 그대로 유지.
+const Footer = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+`;
+
 const DetailLink = styled(TouchableOpacity)`
   flex-direction: row;
   align-items: center;
   gap: 2px;
-  align-self: flex-start;
-  margin-top: 12px;
 `;
 
 const DetailLinkLabel = styled(Text)`
@@ -152,41 +183,46 @@ export function ContentCard({
   onPressDetail,
   favorite = false,
   onToggleFavorite,
+  onToggleBasket,
   showRegion = false,
 }: ContentCardProps) {
   const category = CATEGORIES.find((c) => c.id === content.category);
   const region = showRegion ? REGIONS.find((r) => r.id === content.regionId) : undefined;
+  const accentColor = category?.color ?? COLORS.gray400;
 
   return (
     <Card $selected={selected} onPress={onPress} activeOpacity={0.8}>
       {content.imageUrl ? (
         <ThumbnailImage source={{ uri: content.imageUrl }} resizeMode="cover" />
       ) : (
-        <Thumbnail $color={category?.color ?? COLORS.gray400}>
+        <Thumbnail $color={accentColor}>
           <Ionicons name={category?.icon ?? 'location-outline'} size={48} color={COLORS.gray500} />
         </Thumbnail>
       )}
-      <TopRightRow>
+      <TopLeftRow>
+        <PhotoCategoryBadge>
+          <PhotoCategoryLabel>{category?.label ?? content.category}</PhotoCategoryLabel>
+        </PhotoCategoryBadge>
         {region && (
           <RegionBadge>
             <RegionLabel>{region.name}</RegionLabel>
           </RegionBadge>
         )}
-        {selected && (
-          <CheckBadge>
-            <Ionicons name="checkmark" size={14} color={COLORS.white} />
-          </CheckBadge>
-        )}
-      </TopRightRow>
+      </TopLeftRow>
       {onToggleFavorite && (
-        <FavoriteBadge>
-          <FavoriteButton active={favorite} onPress={() => onToggleFavorite(content)} />
+        <FavoriteBadge
+          onPress={() => onToggleFavorite(content)}
+          activeOpacity={0.7}
+          hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+        >
+          <Ionicons
+            name={favorite ? 'heart' : 'heart-outline'}
+            size={20}
+            color={favorite ? COLORS.coral500 : COLORS.gray400}
+          />
         </FavoriteBadge>
       )}
       <Body>
-        <CategoryBadge>
-          <CategoryLabel>{category?.label ?? content.category}</CategoryLabel>
-        </CategoryBadge>
         <ContentName>{content.name}</ContentName>
         <Address numberOfLines={1}>{content.address}</Address>
         <InfoRow>
@@ -197,11 +233,35 @@ export function ContentCard({
             </InfoChip>
           )}
         </InfoRow>
-        {onPressDetail && (
-          <DetailLink onPress={onPressDetail} activeOpacity={0.7}>
-            <DetailLinkLabel>자세히 보기</DetailLinkLabel>
-            <Ionicons name="chevron-forward" size={12} color={COLORS.coral700} />
-          </DetailLink>
+        {(onPressDetail || onToggleBasket) && (
+          <Footer>
+            {onPressDetail ? (
+              <DetailLink onPress={onPressDetail} activeOpacity={0.7}>
+                <DetailLinkLabel>자세히 보기</DetailLinkLabel>
+                <Ionicons name="chevron-forward" size={12} color={COLORS.coral700} />
+              </DetailLink>
+            ) : (
+              // onToggleBasket만 있고 onPressDetail은 없는 화면이 생기더라도, space-between이
+              // "담기" 버튼을 왼쪽으로 붙여버리지 않도록 빈 자리를 잡아둔다.
+              <View />
+            )}
+            {onToggleBasket && (
+              <AddToBasketBadge
+                $active={selected}
+                onPress={() => onToggleBasket(content)}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  // 하단 탭바 "바구니"와 같은 북마크 아이콘으로 통일 — 이 버튼도 결국 그 바구니에
+                  // 담는 동작이라 아이콘이 다르면 헷갈린다는 피드백.
+                  name={selected ? 'bookmark' : 'bookmark-outline'}
+                  size={16}
+                  color={selected ? COLORS.white : COLORS.gray900}
+                />
+                <AddToBasketLabel $active={selected}>{selected ? '담음' : '담기'}</AddToBasketLabel>
+              </AddToBasketBadge>
+            )}
+          </Footer>
         )}
       </Body>
     </Card>

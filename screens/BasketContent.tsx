@@ -1,9 +1,7 @@
-import { useState } from 'react';
 import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { ContentCard } from '../components/molecules/ContentCard';
 import { ContentCardSkeleton } from '../components/molecules/ContentCardSkeleton';
-import { ContentDetailModal } from '../components/molecules/ContentDetailModal';
 import { COLORS } from '../constants/colors';
 import { TAB_BAR_CLEARANCE, TAB_BAR_TOTAL } from '../constants/layout';
 import { FONT } from '../constants/typography';
@@ -18,6 +16,7 @@ interface BasketContentProps {
   onCreateItinerary: () => void;
   favoriteIds: string[];
   onToggleFavorite: (content: Content) => void;
+  onPressDetail: (contentId: string) => void;
 }
 
 const Container = styled(View)`
@@ -112,10 +111,10 @@ export function BasketContent({
   onCreateItinerary,
   favoriteIds,
   onToggleFavorite,
+  onPressDetail,
 }: BasketContentProps) {
   const { contents: items, isLoading, isError, refetch } = useContentsByIds(selectedIds);
   const ready = selectedIds.length >= 2;
-  const [detailContentId, setDetailContentId] = useState<string | null>(null);
 
   return (
     <Container>
@@ -148,21 +147,16 @@ export function BasketContent({
                 key={content.id}
                 content={content}
                 selected
-                onPress={() => onToggle(content)}
-                onPressDetail={() => setDetailContentId(content.id)}
+                onPress={() => onPressDetail(content.id)}
+                onPressDetail={() => onPressDetail(content.id)}
                 favorite={favoriteIds.includes(content.id)}
                 onToggleFavorite={onToggleFavorite}
+                onToggleBasket={onToggle}
               />
             ))
           )}
         </CardList>
       </ScrollView>
-      <ContentDetailModal
-        contentId={detailContentId}
-        onClose={() => setDetailContentId(null)}
-        favorite={detailContentId ? favoriteIds.includes(detailContentId) : false}
-        onToggleFavorite={onToggleFavorite}
-      />
       {items.length > 0 && (
         <BottomBar>
           <BasketCount>

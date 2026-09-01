@@ -1,4 +1,5 @@
 import type { Content, ContentCategory } from '../types/content';
+import type { NearbyContentItem, NearbyDistanceBasis } from '../types/nearbyContent';
 import { apiClient } from './apiClient';
 
 interface ContentSummaryResponse {
@@ -34,9 +35,16 @@ function toContent(item: ContentSummaryResponse): Content {
     summary: item.summary ?? '',
     address: item.address,
     imageUrl: item.firstImage || null,
+    images: item.firstImage ? [item.firstImage] : [],
     indoor: item.indoor,
     latitude: item.latitude,
     longitude: item.longitude,
+    // 목록 응답엔 운영시간 등 상세 정보가 없다 — 상세 조회에서만 채워진다.
+    useTime: null,
+    restDate: null,
+    parking: null,
+    stayDuration: null,
+    reservationRequired: null,
   };
 }
 
@@ -74,6 +82,11 @@ interface ContentDetailResponse {
   indoor: boolean;
   region: string;
   images: { imageUrl: string; title: string }[];
+  useTime: string | null;
+  restDate: string | null;
+  parking: string | null;
+  stayDuration: string | null;
+  reservationRequired: string | null;
 }
 
 function toContentFromDetail(item: ContentDetailResponse): Content {
@@ -85,13 +98,68 @@ function toContentFromDetail(item: ContentDetailResponse): Content {
     summary: item.summary ?? '',
     address: item.address,
     imageUrl: item.images[0]?.imageUrl ?? null,
+    images: item.images.map((image) => image.imageUrl),
     indoor: item.indoor,
     latitude: item.latitude,
     longitude: item.longitude,
+    useTime: item.useTime,
+    restDate: item.restDate,
+    parking: item.parking,
+    stayDuration: item.stayDuration,
+    reservationRequired: item.reservationRequired,
   };
 }
 
 export async function fetchContentDetail(contentId: string): Promise<Content> {
   const { data } = await apiClient.get<ContentDetailResponse>(`/contents/${contentId}`);
   return toContentFromDetail(data);
+}
+
+interface NearbyContentItemResponse {
+  contentId: string;
+  title: string;
+  contentTypeId: string;
+  address: string;
+  firstImage: string;
+  latitude: number;
+  longitude: number;
+  category: string;
+  summary: string | null;
+  region: string | null;
+  distanceKm: number;
+  durationMinutes: number | null;
+  distanceBasis: NearbyDistanceBasis;
+}
+
+interface NearbyContentResponse {
+  originContentId: string;
+  radiusKm: number;
+  source: 'LOCAL' | 'TOURAPI';
+  items: NearbyContentItemResponse[];
+}
+
+function toNearbyContentItem(item: NearbyContentItemResponse): NearbyContentItem {
+  return {
+    contentId: item.contentId,
+    title: item.title,
+    address: item.address,
+    imageUrl: item.firstImage || null,
+    category: item.category.toLowerCase() as ContentCategory,
+    summary: item.summary,
+    region: item.region ? item.region.toLowerCase() : null,
+    distanceKm: item.distanceKm,
+    durationMinutes: item.durationMinutes,
+    distanceBasis: item.distanceBasis,
+  };
+}
+
+// 콘텐츠 상세의 "주변 콘텐츠" 추천용. 비로그인도 허용되는 API라 게스트 화면에서도 그대로 쓴다.
+export async function fetchNearbyContents(
+  contentId: string,
+  options?: { radiusKm?: number; size?: number },
+): Promise<NearbyContentItem[]> {
+  const { data } = await apiClient.get<NearbyContentResponse>(`/contents/${contentId}/nearby`, {
+    params: { radiusKm: options?.radiusKm, size: options?.size },
+  });
+  return data.items.map(toNearbyContentItem);
 }

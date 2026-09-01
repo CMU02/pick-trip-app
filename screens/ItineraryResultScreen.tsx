@@ -119,7 +119,7 @@ const StepCircle = styled(View)<{ $active: boolean }>`
   border-radius: 100px;
   align-items: center;
   justify-content: center;
-  background-color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.success)};
+  background-color: ${COLORS.coral500};
 `;
 
 const StepLabel = styled(Text)<{ $active: boolean }>`
@@ -219,6 +219,7 @@ const StopRow = styled(View)`
 const TimeColumn = styled(View)`
   align-items: center;
   width: 52px;
+  position: relative;
 `;
 
 const TimeText = styled(Text)`
@@ -655,6 +656,10 @@ export function ItineraryResultScreen({
   const usedIds = stops.map((s) => s.contentId);
   const candidates = regionContents.filter((c) => !usedIds.includes(c.id));
 
+  const planDurationForDays = plan?.duration ?? duration;
+  const totalDays =
+    planDurationForDays != null ? planDurationForDays + 1 : Math.max(1, ...stops.map((s) => s.day));
+
   if (status === 'loading') {
     return (
       <ScreenContainer>
@@ -686,11 +691,9 @@ export function ItineraryResultScreen({
 
   const planRegion = plan?.region ?? selectedRegions[0] ?? null;
   const planTravelDate = plan?.travelDate ?? travelDate;
-  const planDuration = plan?.duration ?? duration;
+  const planDuration = planDurationForDays;
   const regionName = REGIONS.find((r) => r.id === planRegion)?.name ?? null;
   const dateRange = formatDateRange(planTravelDate, planDuration);
-  const totalDays =
-    planDuration != null ? planDuration + 1 : Math.max(1, ...stops.map((s) => s.day));
   const dayList = Array.from({ length: totalDays }, (_, i) => i + 1);
 
   return (

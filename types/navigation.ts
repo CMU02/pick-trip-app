@@ -9,6 +9,7 @@ export type RootStackParamList = {
   SavedItinerary: { itineraryId: string };
   Shared: { token: string };
   Favorites: undefined;
+  ContentDetail: { contentId: string };
   Terms: undefined;
   Privacy: undefined;
 };

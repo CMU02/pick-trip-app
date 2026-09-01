@@ -1,10 +1,11 @@
 import { NavigationContainer, type NavigationContainerRef } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Linking from 'expo-linking';
-import { type RefObject, useEffect, useRef } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ConfirmModal } from './components/molecules/ConfirmModal';
 import { AppStateProvider, useAppState } from './contexts/AppStateContext';
 import { RootNavigator } from './navigation/RootNavigator';
 import { setOnSessionExpired } from './services/apiClient';
@@ -41,19 +42,28 @@ function SessionExpiryHandler({ navigationRef }: { navigationRef: NavRef }) {
 }
 
 // AppStateContext(네비게이션에 직접 접근 못함)가 로그인이 필요한 동작(찜하기 등)을
-// 게스트가 시도했을 때 로그인 화면으로 보내기 위한 등록.
+// 게스트가 시도했을 때 로그인 화면으로 보내기 위한 등록. OS 기본 Alert 대신 앱 디자인이
+// 적용된 ConfirmModal을 쓴다.
 function RequireLoginHandler({ navigationRef }: { navigationRef: NavRef }) {
-  // biome-ignore lint/correctness/useExhaustiveDependencies: 마운트 시 1회만 콜백 등록
+  const [visible, setVisible] = useState(false);
+
   useEffect(() => {
-    setOnRequireLogin(() => {
-      Alert.alert('로그인이 필요해요', '찜하기는 로그인 후 이용할 수 있어요.', [
-        { text: '취소', style: 'cancel' },
-        { text: '로그인', onPress: () => navigationRef.current?.navigate('Login') },
-      ]);
-    });
+    setOnRequireLogin(() => setVisible(true));
   }, []);
 
-  return null;
+  return (
+    <ConfirmModal
+      visible={visible}
+      title="로그인이 필요해요"
+      message="찜하기는 로그인 후 이용할 수 있어요."
+      confirmLabel="로그인"
+      onConfirm={() => {
+        setVisible(false);
+        navigationRef.current?.navigate('Login');
+      }}
+      onCancel={() => setVisible(false)}
+    />
+  );
 }
 
 export default function App() {

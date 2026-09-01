@@ -543,6 +543,84 @@ export function HomeContent({
           )}
         </StatusCard>
 
+        {recommendations.length > 0 && (
+          <View style={{ marginBottom: 24 }}>
+            <SectionHead>
+              <SectionEyebrow>FOR YOU</SectionEyebrow>
+              <SectionTitle>추천 콘텐츠</SectionTitle>
+            </SectionHead>
+            <RecommendRow horizontal showsHorizontalScrollIndicator={false}>
+              {recommendations.map((item) => {
+                const category = CATEGORIES.find((c) => c.id === item.category);
+                return (
+                  <RecommendCard key={item.id}>
+                    {item.imageUrl ? (
+                      <RecommendImage source={{ uri: item.imageUrl }} resizeMode="cover" />
+                    ) : (
+                      <RecommendThumb $color={category?.color ?? COLORS.gray400}>
+                        <Ionicons
+                          name={category?.icon ?? 'location-outline'}
+                          size={26}
+                          color={COLORS.gray500}
+                        />
+                      </RecommendThumb>
+                    )}
+                    <RecommendFavoriteBadge>
+                      <FavoriteButton
+                        active={favoriteIds.includes(item.id)}
+                        onPress={() => onToggleFavorite(item)}
+                        size={12}
+                        diameter={22}
+                      />
+                    </RecommendFavoriteBadge>
+                    <RecommendBody>
+                      <RecommendName numberOfLines={1}>{item.name}</RecommendName>
+                    </RecommendBody>
+                  </RecommendCard>
+                );
+              })}
+            </RecommendRow>
+          </View>
+        )}
+
+        {itineraryHistory.length > 0 && (
+          <View style={{ marginBottom: 24 }}>
+            <SectionHead>
+              <SectionEyebrow>MY TRIP</SectionEyebrow>
+              <SectionTitle>저장한 여행</SectionTitle>
+            </SectionHead>
+            <TripRow horizontal showsHorizontalScrollIndicator={false}>
+              {itineraryHistory.map((item) => {
+                const isOpening = openingItineraryId === item.itineraryId;
+                return (
+                  <TripCard
+                    key={item.itineraryId}
+                    onPress={() => onOpenItinerary(item.itineraryId)}
+                    disabled={openingItineraryId != null}
+                    activeOpacity={0.8}
+                  >
+                    <TripCardTopRow>
+                      <Ionicons name="map-outline" size={20} color={COLORS.coral500} />
+                      <TripCardTopRowRight>
+                        {isOpening && <ActivityIndicator color={COLORS.coral500} />}
+                        <DeleteTripButton
+                          onPress={() => onDeleteItinerary(item.itineraryId, item.title)}
+                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                          activeOpacity={0.7}
+                        >
+                          <Ionicons name="trash-outline" size={16} color={COLORS.gray400} />
+                        </DeleteTripButton>
+                      </TripCardTopRowRight>
+                    </TripCardTopRow>
+                    <TripCardTitle numberOfLines={1}>{item.title}</TripCardTitle>
+                    <TripCardSub numberOfLines={1}>{formatItinerarySub(item)}</TripCardSub>
+                  </TripCard>
+                );
+              })}
+            </TripRow>
+          </View>
+        )}
+
         <PrefCard>
           <PrefCardTitle>여행 취향</PrefCardTitle>
           <PrefCardDesc>온보딩에서 고른 취향이에요.</PrefCardDesc>
@@ -598,84 +676,6 @@ export function HomeContent({
             ))}
           </ChipRow>
         </PrefCard>
-
-        {itineraryHistory.length > 0 && (
-          <View style={{ marginBottom: 24 }}>
-            <SectionHead>
-              <SectionEyebrow>MY TRIP</SectionEyebrow>
-              <SectionTitle>저장한 여행</SectionTitle>
-            </SectionHead>
-            <TripRow horizontal showsHorizontalScrollIndicator={false}>
-              {itineraryHistory.map((item) => {
-                const isOpening = openingItineraryId === item.itineraryId;
-                return (
-                  <TripCard
-                    key={item.itineraryId}
-                    onPress={() => onOpenItinerary(item.itineraryId)}
-                    disabled={openingItineraryId != null}
-                    activeOpacity={0.8}
-                  >
-                    <TripCardTopRow>
-                      <Ionicons name="map-outline" size={20} color={COLORS.coral500} />
-                      <TripCardTopRowRight>
-                        {isOpening && <ActivityIndicator color={COLORS.coral500} />}
-                        <DeleteTripButton
-                          onPress={() => onDeleteItinerary(item.itineraryId, item.title)}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                          activeOpacity={0.7}
-                        >
-                          <Ionicons name="trash-outline" size={16} color={COLORS.gray400} />
-                        </DeleteTripButton>
-                      </TripCardTopRowRight>
-                    </TripCardTopRow>
-                    <TripCardTitle numberOfLines={1}>{item.title}</TripCardTitle>
-                    <TripCardSub numberOfLines={1}>{formatItinerarySub(item)}</TripCardSub>
-                  </TripCard>
-                );
-              })}
-            </TripRow>
-          </View>
-        )}
-
-        {recommendations.length > 0 && (
-          <View>
-            <SectionHead>
-              <SectionEyebrow>FOR YOU</SectionEyebrow>
-              <SectionTitle>추천 콘텐츠</SectionTitle>
-            </SectionHead>
-            <RecommendRow horizontal showsHorizontalScrollIndicator={false}>
-              {recommendations.map((item) => {
-                const category = CATEGORIES.find((c) => c.id === item.category);
-                return (
-                  <RecommendCard key={item.id}>
-                    {item.imageUrl ? (
-                      <RecommendImage source={{ uri: item.imageUrl }} resizeMode="cover" />
-                    ) : (
-                      <RecommendThumb $color={category?.color ?? COLORS.gray400}>
-                        <Ionicons
-                          name={category?.icon ?? 'location-outline'}
-                          size={26}
-                          color={COLORS.gray500}
-                        />
-                      </RecommendThumb>
-                    )}
-                    <RecommendFavoriteBadge>
-                      <FavoriteButton
-                        active={favoriteIds.includes(item.id)}
-                        onPress={() => onToggleFavorite(item)}
-                        size={12}
-                        diameter={22}
-                      />
-                    </RecommendFavoriteBadge>
-                    <RecommendBody>
-                      <RecommendName numberOfLines={1}>{item.name}</RecommendName>
-                    </RecommendBody>
-                  </RecommendCard>
-                );
-              })}
-            </RecommendRow>
-          </View>
-        )}
       </Content>
 
       <TripDatePickerModal
