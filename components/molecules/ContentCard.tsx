@@ -97,12 +97,11 @@ const FavoriteBadge = styled(TouchableOpacity)`
 
 // 예전엔 카드 전체를 눌러야 바구니에 담겼고, 이 자리엔 담겼는지 보여주기만 하는 체크
 // 표시(비활성)가 있었다. 이제는 카드를 누르면 상세 화면으로 이동하고, 바구니 담기/빼기는
-// 이 버튼을 직접 눌러야 하는 별도 동작이다. 사진 우하단에 아이콘+글자 알약 버튼으로 두고,
+// 이 버튼을 직접 눌러야 하는 별도 동작이다. "자세히 보기"와 같은 줄에 나란히 두기로 한
+// 의도라, Footer 안의 일반 flex 아이템으로 둔다(사진 기준 절대위치가 아님) — 그래야
+// 본문 내용 길이가 카드마다 달라져도 항상 "자세히 보기"와 짝을 맞춰 같은 줄에 남는다.
 // 담겼으면 코랄 배경 + 체크, 아니면 흰 배경 + 담기 아이콘으로 상태를 구분한다.
 const AddToBasketBadge = styled(TouchableOpacity)<{ $active: boolean }>`
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
   flex-direction: row;
   align-items: center;
   gap: 5px;
@@ -156,12 +155,19 @@ const InfoText = styled(Text)`
   color: ${COLORS.gray500};
 `;
 
+// "자세히 보기"와 "담기" 버튼을 한 줄로 묶는 행. margin-top은 원래 DetailLink 혼자
+// 가지고 있던 값을 그대로 옮겨왔다 — 정보 표 아래 12px 띄우는 간격은 그대로 유지.
+const Footer = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+`;
+
 const DetailLink = styled(TouchableOpacity)`
   flex-direction: row;
   align-items: center;
   gap: 2px;
-  align-self: flex-start;
-  margin-top: 12px;
 `;
 
 const DetailLinkLabel = styled(Text)`
@@ -216,22 +222,6 @@ export function ContentCard({
           />
         </FavoriteBadge>
       )}
-      {onToggleBasket && (
-        <AddToBasketBadge
-          $active={selected}
-          onPress={() => onToggleBasket(content)}
-          activeOpacity={0.8}
-        >
-          <Ionicons
-            // 하단 탭바 "바구니"와 같은 북마크 아이콘으로 통일 — 이 버튼도 결국 그 바구니에
-            // 담는 동작이라 아이콘이 다르면 헷갈린다는 피드백.
-            name={selected ? 'bookmark' : 'bookmark-outline'}
-            size={16}
-            color={selected ? COLORS.white : COLORS.gray900}
-          />
-          <AddToBasketLabel $active={selected}>{selected ? '담음' : '담기'}</AddToBasketLabel>
-        </AddToBasketBadge>
-      )}
       <Body>
         <ContentName>{content.name}</ContentName>
         <Address numberOfLines={1}>{content.address}</Address>
@@ -243,11 +233,35 @@ export function ContentCard({
             </InfoChip>
           )}
         </InfoRow>
-        {onPressDetail && (
-          <DetailLink onPress={onPressDetail} activeOpacity={0.7}>
-            <DetailLinkLabel>자세히 보기</DetailLinkLabel>
-            <Ionicons name="chevron-forward" size={12} color={COLORS.coral700} />
-          </DetailLink>
+        {(onPressDetail || onToggleBasket) && (
+          <Footer>
+            {onPressDetail ? (
+              <DetailLink onPress={onPressDetail} activeOpacity={0.7}>
+                <DetailLinkLabel>자세히 보기</DetailLinkLabel>
+                <Ionicons name="chevron-forward" size={12} color={COLORS.coral700} />
+              </DetailLink>
+            ) : (
+              // onToggleBasket만 있고 onPressDetail은 없는 화면이 생기더라도, space-between이
+              // "담기" 버튼을 왼쪽으로 붙여버리지 않도록 빈 자리를 잡아둔다.
+              <View />
+            )}
+            {onToggleBasket && (
+              <AddToBasketBadge
+                $active={selected}
+                onPress={() => onToggleBasket(content)}
+                activeOpacity={0.8}
+              >
+                <Ionicons
+                  // 하단 탭바 "바구니"와 같은 북마크 아이콘으로 통일 — 이 버튼도 결국 그 바구니에
+                  // 담는 동작이라 아이콘이 다르면 헷갈린다는 피드백.
+                  name={selected ? 'bookmark' : 'bookmark-outline'}
+                  size={16}
+                  color={selected ? COLORS.white : COLORS.gray900}
+                />
+                <AddToBasketLabel $active={selected}>{selected ? '담음' : '담기'}</AddToBasketLabel>
+              </AddToBasketBadge>
+            )}
+          </Footer>
         )}
       </Body>
     </Card>
