@@ -74,7 +74,12 @@ export async function getDayRoute(
     const route = await fetchDirections(
       orderedContents.map((content) => ({ lat: content.latitude, lng: content.longitude })),
     );
-    if (route) {
+    // route.segments는 orderedContents.length - 1개가 온다는 게 웹 프록시 쪽 계약일 뿐,
+    // 여기서 검증 없이 route.segments[index]로 바로 접근하면 응답이 그보다 짧게 왔을 때(청크
+    // 경계 처리나 부분 실패 등) TypeError가 나서 getDayRoute 전체가 reject된다 — 그러면 아래
+    // STRAIGHT 폴백조차 못 타서, 받은 응답을 하나도 못 쓰고 날리게 된다. 개수를 먼저 확인해
+    // 부족하면 ROAD를 포기하고 곧장 폴백으로 넘어간다.
+    if (route && route.segments.length >= orderedContents.length - 1) {
       const legs = orderedContents.slice(0, -1).map((content, index) => ({
         fromContentId: content.id,
         toContentId: orderedContents[index + 1].id,
