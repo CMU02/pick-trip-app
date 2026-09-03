@@ -183,6 +183,8 @@ function ProfileTabScreen() {
     setCompanion,
     handleToggleStylePref,
     handleToggleRegion,
+    favoriteIds,
+    handleToggleFavorite,
     handleLogout,
     tripReminderEnabled,
     handleToggleTripReminder,
@@ -205,11 +207,16 @@ function ProfileTabScreen() {
         onChangeCompanion={setCompanion}
         onToggleStylePref={handleToggleStylePref}
         onToggleRegion={handleToggleRegion}
+        favoriteIds={favoriteIds}
+        onToggleFavorite={handleToggleFavorite}
+        onOpenFavorites={() => navigation.navigate('Favorites')}
+        onPressContent={(contentId) => navigation.navigate('ContentDetail', { contentId })}
         onLogin={() => navigation.navigate('Login')}
         onLogout={() => {
           handleLogout();
           navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
         }}
+        onOpenAccountManagement={() => navigation.navigate('AccountManagement')}
         tripReminderEnabled={tripReminderEnabled}
         onToggleTripReminder={handleToggleTripReminder}
         onOpenTerms={() => navigation.navigate('Terms')}

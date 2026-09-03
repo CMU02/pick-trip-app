@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { Alert, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components';
+import { ConfirmModal } from '../components/molecules/ConfirmModal';
 import { PriorityCardSkeleton } from '../components/molecules/PriorityCardSkeleton';
 import { PRIORITY_ACTIVE_COLORS, PriorityChips } from '../components/molecules/PriorityChips';
 import { TripDatePickerModal } from '../components/molecules/TripDatePickerModal';
@@ -244,6 +245,9 @@ export function PrioritySelectScreen({
 }: PrioritySelectScreenProps) {
   const { contents: selectedContents, isLoading } = useContentsByIds(selectedIds);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  // CTA를 눌렀는데 날짜가 없을 때 뜨는 안내. 날짜 선택 시트와 동시에 띄우지 않고,
+  // 이 안내를 닫아야(확인을 눌러야) 그 다음 시트가 열리도록 순서를 분리한다.
+  const [showDateRequiredModal, setShowDateRequiredModal] = useState(false);
 
   const [priorities, setPriorities] = useState<Record<string, Priority>>(() =>
     Object.fromEntries(selectedIds.map((id) => [id, initialPriorities[id] ?? 'good'])),
@@ -288,36 +292,41 @@ export function PrioritySelectScreen({
         <Subtitle>담은 콘텐츠별로 얼마나 가고 싶은지 알려주세요</Subtitle>
       </Header>
 
-      {regionNames !== '' && (
-        <SummaryCard>
-          <SummaryItem>
-            <Ionicons name="location-outline" size={13} color={COLORS.gray900} />
-            <SummaryText>{regionNames}</SummaryText>
-          </SummaryItem>
-          <SummaryDivider />
-          {/* 날짜가 없어도 항상 탭 가능하게 해서, 탐색 화면에서 날짜 없이 바로 넘어온
-              경우에도 이 화면에서 날짜를 고를 방법이 있게 한다. */}
-          <TouchableOpacity
-            onPress={() => setShowDatePicker(true)}
-            activeOpacity={0.7}
-            hitSlop={{ top: 8, bottom: 8 }}
-          >
+      {/* 예전엔 이 카드 전체가 regionNames가 있을 때만 떠서, 지역 정보 없이 이 화면에
+          들어온 경우 날짜를 고를 곳도 고른 날짜를 확인할 곳도 없었다. 지역 표시만
+          조건부로 두고, 날짜는 지역 유무와 무관하게 항상 뜨도록 분리한다. */}
+      <SummaryCard>
+        {regionNames !== '' && (
+          <>
             <SummaryItem>
-              <Ionicons
-                name="calendar-outline"
-                size={13}
-                color={dateRange ? COLORS.gray900 : COLORS.coral500}
-              />
-              <SummaryText style={!dateRange && { color: COLORS.coral700 }}>
-                {dateRange ?? '날짜를 선택해주세요'}
-              </SummaryText>
-              <Ionicons name="chevron-down-outline" size={12} color={COLORS.gray400} />
+              <Ionicons name="location-outline" size={13} color={COLORS.gray900} />
+              <SummaryText>{regionNames}</SummaryText>
             </SummaryItem>
-          </TouchableOpacity>
-          <SummaryDivider />
-          <SummaryText>{selectedIds.length}곳 담음</SummaryText>
-        </SummaryCard>
-      )}
+            <SummaryDivider />
+          </>
+        )}
+        {/* 날짜가 없어도 항상 탭 가능하게 해서, 탐색 화면에서 날짜 없이 바로 넘어온
+            경우에도 이 화면에서 날짜를 고를 방법이 있게 한다. */}
+        <TouchableOpacity
+          onPress={() => setShowDatePicker(true)}
+          activeOpacity={0.7}
+          hitSlop={{ top: 8, bottom: 8 }}
+        >
+          <SummaryItem>
+            <Ionicons
+              name="calendar-outline"
+              size={13}
+              color={dateRange ? COLORS.gray900 : COLORS.coral500}
+            />
+            <SummaryText style={!dateRange && { color: COLORS.coral700 }}>
+              {dateRange ?? '날짜를 선택해주세요'}
+            </SummaryText>
+            <Ionicons name="chevron-down-outline" size={12} color={COLORS.gray400} />
+          </SummaryItem>
+        </TouchableOpacity>
+        <SummaryDivider />
+        <SummaryText>{selectedIds.length}곳 담음</SummaryText>
+      </SummaryCard>
 
       <InfoBanner>
         <Ionicons name="bulb-outline" size={16} color={COLORS.coral700} />
@@ -382,8 +391,7 @@ export function PrioritySelectScreen({
         <CTAButton
           onPress={() => {
             if (!tripDate) {
-              Alert.alert('날짜를 선택해주세요', '언제 떠나는지 알려주시면 일정을 만들 수 있어요.');
-              setShowDatePicker(true);
+              setShowDateRequiredModal(true);
               return;
             }
             onContinue(priorities);
@@ -393,6 +401,18 @@ export function PrioritySelectScreen({
           <CTALabel>{selectedIds.length}곳으로 일정 만들기</CTALabel>
         </CTAButton>
       </BottomBar>
+
+      <ConfirmModal
+        visible={showDateRequiredModal}
+        title="날짜를 선택해주세요"
+        message="언제 떠나는지 알려주시면 일정을 만들 수 있어요."
+        confirmLabel="날짜 선택하기"
+        onConfirm={() => {
+          setShowDateRequiredModal(false);
+          setShowDatePicker(true);
+        }}
+        onCancel={() => setShowDateRequiredModal(false)}
+      />
 
       <TripDatePickerModal
         visible={showDatePicker}

@@ -47,13 +47,6 @@ const Title = styled(Text)`
   color: ${COLORS.gray900};
 `;
 
-const Subtitle = styled(Text)`
-  font-family: ${FONT.regular};
-  font-size: 15px;
-  color: ${COLORS.gray500};
-  margin-top: 6px;
-`;
-
 const SearchRow = styled(View)`
   padding-horizontal: 20px;
 `;
@@ -249,7 +242,6 @@ export function ContentExploreScreen({
     <ScreenContainer>
       <Header>
         <Title>어떤 곳이 끌리나요?</Title>
-        <Subtitle>마음에 드는 콘텐츠를 찾아보세요</Subtitle>
       </Header>
       <SearchRow>
         <SearchBox>
