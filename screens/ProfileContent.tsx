@@ -1,15 +1,19 @@
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
+import { FavoriteButton } from '../components/atoms/FavoriteButton';
 import { COLORS } from '../constants/colors';
 import { COMPANIONS, STYLE_OPTIONS } from '../constants/companions';
 import { TAB_BAR_CLEARANCE } from '../constants/layout';
 import { REGIONS } from '../constants/regions';
 import { FONT } from '../constants/typography';
+import { useContentsByIds } from '../hooks/useContentsByIds';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import type { SavedItinerarySummary } from '../services/itineraryHistoryStorage';
 import type { CompanionType, StylePreference } from '../types/companion';
+// 이 파일에 이미 스타일 컴포넌트 `Content`가 있어서 타입 이름을 바꿔 가져온다.
+import type { Content as ContentItem } from '../types/content';
 import type { CurrentUser } from '../types/user';
 import { formatItinerarySub } from '../utils/itineraryHistory';
 
@@ -40,6 +44,10 @@ interface ProfileContentProps {
   onChangeCompanion: (companion: CompanionType) => void;
   onToggleStylePref: (pref: StylePreference) => void;
   onToggleRegion: (regionId: string) => void;
+  favoriteIds: string[];
+  onToggleFavorite: (content: ContentItem) => void;
+  onOpenFavorites: () => void;
+  onPressContent: (contentId: string) => void;
   onLogin: () => void;
   onLogout: () => void;
   onWithdraw: () => void;
@@ -164,6 +172,96 @@ const TripSub = styled(Text)`
 
 const DeleteTripButton = styled(TouchableOpacity)`
   padding: 2px;
+`;
+
+const SectionTitleRow = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+`;
+
+const SectionTitleGroup = styled(View)`
+  flex-direction: row;
+  align-items: baseline;
+  gap: 6px;
+`;
+
+const SectionTitleText = styled(Text)`
+  font-size: 15px;
+  font-family: ${FONT.bold};
+  color: ${COLORS.gray900};
+`;
+
+const SectionTitleCount = styled(Text)`
+  font-size: 15px;
+  font-family: ${FONT.bold};
+  color: ${COLORS.coral500};
+`;
+
+const SeeAllButton = styled(TouchableOpacity)`
+  flex-direction: row;
+  align-items: center;
+  gap: 2px;
+`;
+
+const SeeAllLabel = styled(Text)`
+  font-size: 13px;
+  font-family: ${FONT.medium};
+  color: ${COLORS.gray500};
+`;
+
+const FavoriteRow = styled(ScrollView)``;
+
+const FavoriteCard = styled(TouchableOpacity)`
+  width: 110px;
+  margin-right: 12px;
+`;
+
+const FavoriteThumbWrap = styled(View)`
+  width: 110px;
+  height: 110px;
+  border-radius: 12px;
+  background-color: ${COLORS.gray100};
+  overflow: hidden;
+  margin-bottom: 8px;
+`;
+
+const FavoriteThumbImage = styled(Image)`
+  width: 100%;
+  height: 100%;
+`;
+
+const FavoriteThumbPlaceholder = styled(View)`
+  width: 100%;
+  height: 100%;
+  align-items: center;
+  justify-content: center;
+`;
+
+const FavoriteBadge = styled(View)`
+  position: absolute;
+  top: 6px;
+  right: 6px;
+`;
+
+const FavoriteName = styled(Text)`
+  font-size: 13px;
+  font-family: ${FONT.semibold};
+  color: ${COLORS.gray900};
+  margin-bottom: 2px;
+`;
+
+const FavoriteRegion = styled(Text)`
+  font-family: ${FONT.regular};
+  font-size: 12px;
+  color: ${COLORS.gray500};
+`;
+
+const FavoriteLoadingRow = styled(View)`
+  height: 110px;
+  align-items: center;
+  justify-content: center;
 `;
 
 const Card = styled(View)`
@@ -322,6 +420,10 @@ export function ProfileContent({
   onChangeCompanion,
   onToggleStylePref,
   onToggleRegion,
+  favoriteIds,
+  onToggleFavorite,
+  onOpenFavorites,
+  onPressContent,
   onLogin,
   onLogout,
   onWithdraw,
@@ -332,6 +434,8 @@ export function ProfileContent({
 }: ProfileContentProps) {
   const { user } = useCurrentUser(!isGuest);
   const displayName = isGuest ? '게스트님' : (user?.nickname ?? '불러오는 중...');
+  const { contents: favoriteContents, isLoading: isFavoritesLoading } =
+    useContentsByIds(favoriteIds);
 
   return (
     <Scroll showsVerticalScrollIndicator={false}>
@@ -358,6 +462,62 @@ export function ProfileContent({
             </LoginButton>
           )}
         </IdentityCard>
+
+        {!isGuest && favoriteIds.length > 0 && (
+          <Card>
+            <SectionTitleRow>
+              <SectionTitleGroup>
+                <SectionTitleText>찜한 장소</SectionTitleText>
+                <SectionTitleCount>{favoriteIds.length}</SectionTitleCount>
+              </SectionTitleGroup>
+              <SeeAllButton onPress={onOpenFavorites} activeOpacity={0.7}>
+                <SeeAllLabel>전체보기</SeeAllLabel>
+                <Ionicons name="chevron-forward" size={14} color={COLORS.gray400} />
+              </SeeAllButton>
+            </SectionTitleRow>
+            {isFavoritesLoading ? (
+              <FavoriteLoadingRow>
+                <ActivityIndicator color={COLORS.coral500} />
+              </FavoriteLoadingRow>
+            ) : (
+              <FavoriteRow horizontal showsHorizontalScrollIndicator={false}>
+                {favoriteContents.map((content) => {
+                  const region = REGIONS.find((r) => r.id === content.regionId);
+                  return (
+                    <FavoriteCard
+                      key={content.id}
+                      onPress={() => onPressContent(content.id)}
+                      activeOpacity={0.8}
+                    >
+                      <FavoriteThumbWrap>
+                        {content.imageUrl ? (
+                          <FavoriteThumbImage
+                            source={{ uri: content.imageUrl }}
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <FavoriteThumbPlaceholder>
+                            <Ionicons name="image-outline" size={22} color={COLORS.gray400} />
+                          </FavoriteThumbPlaceholder>
+                        )}
+                        <FavoriteBadge>
+                          <FavoriteButton
+                            active
+                            onPress={() => onToggleFavorite(content)}
+                            size={12}
+                            diameter={22}
+                          />
+                        </FavoriteBadge>
+                      </FavoriteThumbWrap>
+                      <FavoriteName numberOfLines={1}>{content.name}</FavoriteName>
+                      {region && <FavoriteRegion numberOfLines={1}>{region.name}</FavoriteRegion>}
+                    </FavoriteCard>
+                  );
+                })}
+              </FavoriteRow>
+            )}
+          </Card>
+        )}
 
         {itineraryHistory.length > 0 && (
           <Card>

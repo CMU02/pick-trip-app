@@ -184,6 +184,8 @@ function ProfileTabScreen() {
     setCompanion,
     handleToggleStylePref,
     handleToggleRegion,
+    favoriteIds,
+    handleToggleFavorite,
     handleLogout,
     handleWithdraw,
     tripReminderEnabled,
@@ -221,6 +223,10 @@ function ProfileTabScreen() {
         onChangeCompanion={setCompanion}
         onToggleStylePref={handleToggleStylePref}
         onToggleRegion={handleToggleRegion}
+        favoriteIds={favoriteIds}
+        onToggleFavorite={handleToggleFavorite}
+        onOpenFavorites={() => navigation.navigate('Favorites')}
+        onPressContent={(contentId) => navigation.navigate('ContentDetail', { contentId })}
         onLogin={() => navigation.navigate('Login')}
         onLogout={() => {
           handleLogout();
