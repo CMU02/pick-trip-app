@@ -50,7 +50,7 @@ interface ProfileContentProps {
   onPressContent: (contentId: string) => void;
   onLogin: () => void;
   onLogout: () => void;
-  onWithdraw: () => void;
+  onOpenAccountManagement: () => void;
   tripReminderEnabled: boolean;
   onToggleTripReminder: (enabled: boolean) => void;
   onOpenTerms: () => void;
@@ -358,6 +358,31 @@ const ToggleKnob = styled(View)<{ $on: boolean }>`
   margin-left: ${({ $on }) => ($on ? 18 : 0)}px;
 `;
 
+const AccountManageCard = styled(TouchableOpacity)`
+  background-color: ${COLORS.white};
+  border-radius: 14px;
+  border-width: 1px;
+  border-color: ${COLORS.gray200};
+  padding: 18px;
+  margin-bottom: 16px;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+`;
+
+const AccountManageTitle = styled(Text)`
+  font-size: 15px;
+  font-family: ${FONT.bold};
+  color: ${COLORS.gray900};
+  margin-bottom: 4px;
+`;
+
+const AccountManageDesc = styled(Text)`
+  font-family: ${FONT.regular};
+  font-size: 12px;
+  color: ${COLORS.gray500};
+`;
+
 const LogoutButton = styled(TouchableOpacity)`
   padding-vertical: 13px;
   border-radius: 12px;
@@ -395,19 +420,6 @@ const LegalDivider = styled(Text)`
   color: ${COLORS.gray300};
 `;
 
-const WithdrawRow = styled(View)`
-  align-items: center;
-  margin-top: 16px;
-`;
-
-const WithdrawLink = styled(TouchableOpacity)``;
-
-const WithdrawLinkLabel = styled(Text)`
-  font-size: 12px;
-  font-family: ${FONT.regular};
-  color: ${COLORS.gray400};
-`;
-
 export function ProfileContent({
   isGuest,
   companion,
@@ -426,7 +438,7 @@ export function ProfileContent({
   onPressContent,
   onLogin,
   onLogout,
-  onWithdraw,
+  onOpenAccountManagement,
   tripReminderEnabled,
   onToggleTripReminder,
   onOpenTerms,
@@ -629,6 +641,16 @@ export function ProfileContent({
           </NotifyRow>
         </Card>
 
+        {!isGuest && (
+          <AccountManageCard onPress={onOpenAccountManagement} activeOpacity={0.7}>
+            <View>
+              <AccountManageTitle>계정 관리</AccountManageTitle>
+              <AccountManageDesc>로그인 정보, 회원 탈퇴</AccountManageDesc>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={COLORS.gray400} />
+          </AccountManageCard>
+        )}
+
         <LogoutButton onPress={onLogout} activeOpacity={0.8}>
           <LogoutLabel>로그아웃</LogoutLabel>
         </LogoutButton>
@@ -642,14 +664,6 @@ export function ProfileContent({
             <LegalLinkLabel>개인정보처리방침</LegalLinkLabel>
           </LegalLink>
         </LegalRow>
-
-        {!isGuest && (
-          <WithdrawRow>
-            <WithdrawLink onPress={onWithdraw} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-              <WithdrawLinkLabel>회원 탈퇴</WithdrawLinkLabel>
-            </WithdrawLink>
-          </WithdrawRow>
-        )}
       </Content>
     </Scroll>
   );
