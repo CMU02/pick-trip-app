@@ -18,6 +18,7 @@ import {
   scheduleTripReminder,
 } from '../services/notifications';
 import { loadTripReminderEnabled, saveTripReminderEnabled } from '../services/tripReminderStorage';
+import { withdrawAccount } from '../services/userService';
 import type { CompanionType, StylePreference } from '../types/companion';
 import type { Content } from '../types/content';
 import type { ItineraryStop } from '../types/itinerary';
@@ -72,6 +73,7 @@ interface AppStateValue {
   }) => Promise<void>;
   resetSessionState: () => void;
   handleLogout: () => void;
+  handleWithdraw: () => Promise<{ success: true } | { success: false; message: string }>;
 }
 
 const AppStateContext = createContext<AppStateValue | null>(null);
@@ -336,6 +338,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     resetSessionState();
   };
 
+  const handleWithdraw = async (): Promise<
+    { success: true } | { success: false; message: string }
+  > => {
+    try {
+      await withdrawAccount();
+      resetSessionState();
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: toErrorMessage(error, '탈퇴에 실패했어요. 잠시 후 다시 시도해주세요.'),
+      };
+    }
+  };
+
   const value: AppStateValue = {
     isGuest,
     setIsGuest,
@@ -373,6 +390,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     updateConditions,
     resetSessionState,
     handleLogout,
+    handleWithdraw,
   };
 
   return <AppStateContext.Provider value={value}>{children}</AppStateContext.Provider>;

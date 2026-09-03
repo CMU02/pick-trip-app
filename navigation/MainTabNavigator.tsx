@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { useState } from 'react';
+import { Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components';
 import { ConfirmModal } from '../components/molecules/ConfirmModal';
@@ -184,12 +185,27 @@ function ProfileTabScreen() {
     handleToggleStylePref,
     handleToggleRegion,
     handleLogout,
+    handleWithdraw,
     tripReminderEnabled,
     handleToggleTripReminder,
   } = useAppState();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList>>();
   const { itineraryHistory, openingItineraryId, openItinerary, deleteItinerary, deleteModal } =
     useOpenSavedItinerary();
+
+  // 되돌릴 수 없어 보이는 결정이라 확인 모달을 한 번 더 거친다. 실제로는 30일 유예
+  // 기간이 있지만(같은 계정으로 재로그인하면 자동 복구), 그 안내는 모달 문구로 대신한다.
+  const [withdrawConfirmVisible, setWithdrawConfirmVisible] = useState(false);
+
+  const confirmWithdraw = async () => {
+    setWithdrawConfirmVisible(false);
+    const result = await handleWithdraw();
+    if (result.success) {
+      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+    } else {
+      Alert.alert('탈퇴에 실패했어요', result.message);
+    }
+  };
 
   return (
     <>
@@ -210,12 +226,22 @@ function ProfileTabScreen() {
           handleLogout();
           navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
         }}
+        onWithdraw={() => setWithdrawConfirmVisible(true)}
         tripReminderEnabled={tripReminderEnabled}
         onToggleTripReminder={handleToggleTripReminder}
         onOpenTerms={() => navigation.navigate('Terms')}
         onOpenPrivacy={() => navigation.navigate('Privacy')}
       />
       {deleteModal}
+      <ConfirmModal
+        visible={withdrawConfirmVisible}
+        title="정말 탈퇴하시겠어요?"
+        message="탈퇴 후 30일 안에 같은 계정으로 다시 로그인하면 자동으로 복구돼요. 그 기간이 지나면 계정과 모든 데이터가 완전히 삭제돼요."
+        confirmLabel="탈퇴하기"
+        destructive
+        onConfirm={confirmWithdraw}
+        onCancel={() => setWithdrawConfirmVisible(false)}
+      />
     </>
   );
 }
