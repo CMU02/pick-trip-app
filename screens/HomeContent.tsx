@@ -9,14 +9,12 @@ import {
 } from '../components/molecules/TripDatePickerModal';
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
-import { COMPANIONS, STYLE_OPTIONS } from '../constants/companions';
 import { TAB_BAR_CLEARANCE } from '../constants/layout';
 import { REGIONS } from '../constants/regions';
 import { FONT } from '../constants/typography';
 import { useContents } from '../hooks/useContents';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import type { SavedItinerarySummary } from '../services/itineraryHistoryStorage';
-import type { CompanionType, StylePreference } from '../types/companion';
 // 이 파일에 이미 스타일 컴포넌트 `Content`가 있어서 타입 이름을 바꿔 가져온다.
 import type { Content as ContentItem } from '../types/content';
 import { formatItinerarySub } from '../utils/itineraryHistory';
@@ -26,8 +24,6 @@ interface HomeContentProps {
   isGuest: boolean;
   selectedRegions: string[];
   selectedIds: string[];
-  companion: CompanionType | null;
-  stylePrefs: StylePreference[];
   tripDate: TripDateValue | null;
   itineraryHistory: SavedItinerarySummary[];
   openingItineraryId: string | null;
@@ -36,13 +32,11 @@ interface HomeContentProps {
   onBrowse: () => void;
   onOpenBasket: () => void;
   onLogin: () => void;
-  onChangeCompanion: (companion: CompanionType) => void;
-  onToggleStylePref: (pref: StylePreference) => void;
-  onToggleRegion: (regionId: string) => void;
   onSelectDate: (value: TripDateValue) => void;
   favoriteIds: string[];
   onToggleFavorite: (content: ContentItem) => void;
   onOpenFavorites: () => void;
+  onPressDetail: (contentId: string) => void;
 }
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'];
@@ -259,62 +253,6 @@ const SecondaryButtonLabel = styled(Text)`
   font-family: ${FONT.semibold};
 `;
 
-const PrefCard = styled(View)`
-  background-color: ${COLORS.white};
-  border-radius: 18px;
-  padding: 18px;
-  margin-bottom: 24px;
-`;
-
-const PrefCardTitle = styled(Text)`
-  font-size: 15px;
-  font-family: ${FONT.bold};
-  color: ${COLORS.gray900};
-  margin-bottom: 4px;
-`;
-
-const PrefCardDesc = styled(Text)`
-  font-family: ${FONT.regular};
-  font-size: 12px;
-  color: ${COLORS.gray500};
-  margin-bottom: 14px;
-`;
-
-const FieldLabelRow = styled(View)`
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
-`;
-
-const FieldLabel = styled(Text)`
-  font-size: 13px;
-  font-family: ${FONT.semibold};
-  color: ${COLORS.gray500};
-`;
-
-const ChipRow = styled(View)<{ $last?: boolean }>`
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: ${({ $last }) => ($last ? '0px' : '16px')};
-`;
-
-const Chip = styled(TouchableOpacity)<{ $active: boolean }>`
-  padding-vertical: 8px;
-  padding-horizontal: 14px;
-  border-radius: 100px;
-  border-width: 1px;
-  background-color: ${({ $active }) => ($active ? COLORS.coral50 : COLORS.white)};
-  border-color: ${({ $active }) => ($active ? COLORS.coral500 : COLORS.gray200)};
-`;
-
-const ChipLabel = styled(Text)<{ $active: boolean }>`
-  font-size: 13px;
-  font-family: ${FONT.medium};
-  color: ${({ $active }) => ($active ? COLORS.coral700 : COLORS.gray700)};
-`;
-
 const TripRow = styled(ScrollView)``;
 
 const TripCard = styled(TouchableOpacity)`
@@ -378,7 +316,7 @@ const SectionTitle = styled(Text)`
 
 const RecommendRow = styled(ScrollView)``;
 
-const RecommendCard = styled(View)`
+const RecommendCard = styled(TouchableOpacity)`
   width: 150px;
   background-color: ${COLORS.white};
   border-radius: 14px;
@@ -420,8 +358,6 @@ export function HomeContent({
   isGuest,
   selectedRegions,
   selectedIds,
-  companion,
-  stylePrefs,
   tripDate,
   itineraryHistory,
   openingItineraryId,
@@ -430,13 +366,11 @@ export function HomeContent({
   onBrowse,
   onOpenBasket,
   onLogin,
-  onChangeCompanion,
-  onToggleStylePref,
-  onToggleRegion,
   onSelectDate,
   favoriteIds,
   onToggleFavorite,
   onOpenFavorites,
+  onPressDetail,
 }: HomeContentProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const count = selectedIds.length;
@@ -553,7 +487,11 @@ export function HomeContent({
               {recommendations.map((item) => {
                 const category = CATEGORIES.find((c) => c.id === item.category);
                 return (
-                  <RecommendCard key={item.id}>
+                  <RecommendCard
+                    key={item.id}
+                    onPress={() => onPressDetail(item.id)}
+                    activeOpacity={0.8}
+                  >
                     {item.imageUrl ? (
                       <RecommendImage source={{ uri: item.imageUrl }} resizeMode="cover" />
                     ) : (
@@ -620,62 +558,6 @@ export function HomeContent({
             </TripRow>
           </View>
         )}
-
-        <PrefCard>
-          <PrefCardTitle>여행 취향</PrefCardTitle>
-          <PrefCardDesc>온보딩에서 고른 취향이에요.</PrefCardDesc>
-
-          <FieldLabelRow>
-            <Ionicons name="people-outline" size={13} color={COLORS.gray500} />
-            <FieldLabel>누구와 함께 가나요?</FieldLabel>
-          </FieldLabelRow>
-          <ChipRow>
-            {COMPANIONS.map((c) => (
-              <Chip
-                key={c.id}
-                $active={companion === c.id}
-                onPress={() => onChangeCompanion(c.id)}
-                activeOpacity={0.8}
-              >
-                <ChipLabel $active={companion === c.id}>{c.label}</ChipLabel>
-              </Chip>
-            ))}
-          </ChipRow>
-
-          <FieldLabelRow>
-            <Ionicons name="color-palette-outline" size={13} color={COLORS.gray500} />
-            <FieldLabel>여행 스타일</FieldLabel>
-          </FieldLabelRow>
-          <ChipRow>
-            {STYLE_OPTIONS.map((option) => (
-              <Chip
-                key={option.id}
-                $active={stylePrefs.includes(option.id)}
-                onPress={() => onToggleStylePref(option.id)}
-                activeOpacity={0.8}
-              >
-                <ChipLabel $active={stylePrefs.includes(option.id)}>{option.label}</ChipLabel>
-              </Chip>
-            ))}
-          </ChipRow>
-
-          <FieldLabelRow>
-            <Ionicons name="location-outline" size={13} color={COLORS.gray500} />
-            <FieldLabel>선호 지역</FieldLabel>
-          </FieldLabelRow>
-          <ChipRow $last>
-            {REGIONS.map((region) => (
-              <Chip
-                key={region.id}
-                $active={selectedRegions.includes(region.id)}
-                onPress={() => onToggleRegion(region.id)}
-                activeOpacity={0.8}
-              >
-                <ChipLabel $active={selectedRegions.includes(region.id)}>{region.name}</ChipLabel>
-              </Chip>
-            ))}
-          </ChipRow>
-        </PrefCard>
       </Content>
 
       <TripDatePickerModal

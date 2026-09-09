@@ -95,12 +95,7 @@ function HomeTabScreen() {
     isGuest,
     selectedRegions,
     selectedIds,
-    companion,
-    stylePrefs,
     tripDate,
-    setCompanion,
-    handleToggleStylePref,
-    handleToggleRegion,
     setTripDate,
     favoriteIds,
     handleToggleFavorite,
@@ -115,8 +110,6 @@ function HomeTabScreen() {
         isGuest={isGuest}
         selectedRegions={selectedRegions}
         selectedIds={selectedIds}
-        companion={companion}
-        stylePrefs={stylePrefs}
         tripDate={tripDate}
         itineraryHistory={itineraryHistory}
         openingItineraryId={openingItineraryId}
@@ -125,13 +118,11 @@ function HomeTabScreen() {
         onBrowse={() => navigation.navigate('Explore')}
         onOpenBasket={() => navigation.navigate('Basket')}
         onLogin={() => navigation.navigate('Login')}
-        onChangeCompanion={setCompanion}
-        onToggleStylePref={handleToggleStylePref}
-        onToggleRegion={handleToggleRegion}
         onSelectDate={setTripDate}
         favoriteIds={favoriteIds}
         onToggleFavorite={handleToggleFavorite}
         onOpenFavorites={() => navigation.navigate('Favorites')}
+        onPressDetail={(contentId) => navigation.navigate('ContentDetail', { contentId })}
       />
       {deleteModal}
     </>
