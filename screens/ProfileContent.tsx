@@ -651,9 +651,11 @@ export function ProfileContent({
           </AccountManageCard>
         )}
 
-        <LogoutButton onPress={onLogout} activeOpacity={0.8}>
-          <LogoutLabel>로그아웃</LogoutLabel>
-        </LogoutButton>
+        {!isGuest && (
+          <LogoutButton onPress={onLogout} activeOpacity={0.8}>
+            <LogoutLabel>로그아웃</LogoutLabel>
+          </LogoutButton>
+        )}
 
         <LegalRow>
           <LegalLink onPress={onOpenTerms} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
