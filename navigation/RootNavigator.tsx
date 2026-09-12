@@ -252,7 +252,7 @@ function FavoritesGate() {
   );
 }
 
-// 콘텐츠 카드에서 "자세히 보기"를 눌렀을 때 들어오는 화면. 예전엔 팝업 시트(모달)였는데,
+// 콘텐츠 카드에서 "상세 설명"을 눌렀을 때 들어오는 화면. 예전엔 팝업 시트(모달)였는데,
 // 뒤로가기·헤더 없이 화면 위에 겹쳐 뜨는 방식이 다른 화면들과 이질감이 있어서 일반 스택
 // 화면으로 바꿨다 — 뒤로가기는 네이티브 헤더가 대신 처리해준다.
 function ContentDetailGate({ route }: { route: { params: RootStackParamList['ContentDetail'] } }) {
