@@ -14,6 +14,7 @@ import {
 } from '../constants/legalDocuments';
 import { FONT } from '../constants/typography';
 import { useAppState } from '../contexts/AppStateContext';
+import { useOpenSavedItinerary } from '../hooks/useOpenSavedItinerary';
 import { AuthScreen } from '../screens/AuthScreen';
 import { ContentDetailScreen } from '../screens/ContentDetailScreen';
 import { FavoritesScreen } from '../screens/FavoritesScreen';
@@ -21,6 +22,7 @@ import { ItineraryResultScreen } from '../screens/ItineraryResultScreen';
 import { LegalDocumentScreen } from '../screens/LegalDocumentScreen';
 import { PrioritySelectScreen } from '../screens/PrioritySelectScreen';
 import { SavedItineraryScreen } from '../screens/SavedItineraryScreen';
+import { SavedTripsScreen } from '../screens/SavedTripsScreen';
 import { SharedItineraryScreen } from '../screens/SharedItineraryScreen';
 import { SplashScreen } from '../screens/SplashScreen';
 import type { RootStackParamList } from '../types/navigation';
@@ -195,6 +197,24 @@ function SavedItineraryGate({
   );
 }
 
+// 홈의 "저장한 여행 → 전체보기"로 들어오는 전체 목록 화면. 카드 눌렀을 때 동작(SavedItinerary로
+// 이동/삭제 확인 모달)은 홈·마이페이지와 완전히 같아서 useOpenSavedItinerary를 그대로 쓴다.
+function SavedTripsGate() {
+  const { itineraryHistory, openingItineraryId, openItinerary, deleteItinerary, deleteModal } =
+    useOpenSavedItinerary();
+  return (
+    <>
+      <SavedTripsScreen
+        itineraryHistory={itineraryHistory}
+        openingItineraryId={openingItineraryId}
+        onOpenItinerary={openItinerary}
+        onDeleteItinerary={deleteItinerary}
+      />
+      {deleteModal}
+    </>
+  );
+}
+
 function LoginGate() {
   const navigation = useNavigation<Nav>();
   const { setIsGuest } = useAppState();
@@ -316,6 +336,11 @@ export function RootNavigator() {
         name="SavedItinerary"
         component={SavedItineraryGate}
         options={{ title: '저장한 일정' }}
+      />
+      <Stack.Screen
+        name="SavedTrips"
+        component={SavedTripsGate}
+        options={{ title: '저장한 여행' }}
       />
       <Stack.Screen name="Shared" component={SharedGate} options={{ title: '공유된 일정' }} />
       <Stack.Screen name="Favorites" component={FavoritesGate} options={{ title: '찜한 콘텐츠' }} />

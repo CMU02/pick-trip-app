@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import styled from 'styled-components';
 import { FavoriteButton } from '../components/atoms/FavoriteButton';
+import { SavedTripCard } from '../components/molecules/SavedTripCard';
 import {
   TripDatePickerModal,
   type TripDateValue,
@@ -15,10 +16,11 @@ import { FONT } from '../constants/typography';
 import { useContents } from '../hooks/useContents';
 import { useContentsByIds } from '../hooks/useContentsByIds';
 import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useItineraryFirstStopPhotos } from '../hooks/useItineraryFirstStopPhotos';
+import { useItineraryShare } from '../hooks/useItineraryShare';
 import type { SavedItinerarySummary } from '../services/itineraryHistoryStorage';
 // 이 파일에 이미 스타일 컴포넌트 `Content`가 있어서 타입 이름을 바꿔 가져온다.
 import type { Content as ContentItem } from '../types/content';
-import { formatItinerarySub } from '../utils/itineraryHistory';
 import { shuffle } from '../utils/shuffle';
 
 interface HomeContentProps {
@@ -30,6 +32,8 @@ interface HomeContentProps {
   openingItineraryId: string | null;
   onOpenItinerary: (itineraryId: string) => void;
   onDeleteItinerary: (itineraryId: string, title: string) => void;
+  // "저장한 여행" 섹션의 "전체보기" — 전체 목록 화면(SavedTripsScreen)으로 이동한다.
+  onOpenSavedTrips: () => void;
   onBrowse: () => void;
   onOpenBasket: () => void;
   onLogin: () => void;
@@ -262,44 +266,11 @@ const SecondaryButtonLabel = styled(Text)`
 
 const TripRow = styled(ScrollView)``;
 
-const TripCard = styled(TouchableOpacity)`
-  width: 220px;
-  background-color: ${COLORS.white};
-  border-radius: 16px;
-  border-width: 1px;
-  border-color: ${COLORS.gray200};
-  padding: 16px;
+// SavedTripCard 자체는 폭을 안 정하므로, 홈의 가로 스크롤 목록에 맞는 고정폭 +
+// 카드 사이 간격만 여기서 감싸서 정한다.
+const TripCardWrapper = styled(View)`
+  width: 248px;
   margin-right: 12px;
-`;
-
-const TripCardTopRow = styled(View)`
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-`;
-
-const TripCardTopRowRight = styled(View)`
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-`;
-
-const DeleteTripButton = styled(TouchableOpacity)`
-  padding: 2px;
-`;
-
-const TripCardTitle = styled(Text)`
-  font-size: 15px;
-  font-family: ${FONT.bold};
-  color: ${COLORS.gray900};
-  margin-bottom: 4px;
-`;
-
-const TripCardSub = styled(Text)`
-  font-family: ${FONT.regular};
-  font-size: 12px;
-  color: ${COLORS.gray500};
 `;
 
 const SectionHead = styled(View)`
@@ -584,6 +555,7 @@ export function HomeContent({
   openingItineraryId,
   onOpenItinerary,
   onDeleteItinerary,
+  onOpenSavedTrips,
   onBrowse,
   onOpenBasket,
   onLogin,
@@ -639,6 +611,15 @@ export function HomeContent({
     : user?.nickname
       ? `${user.nickname} 여행자님`
       : '불러오는 중...';
+
+  // "저장한 여행" 카드의 대표 사진 — 카드 개수만큼 상세 조회가 추가로 나가는 비용이 있어
+  // 사진 하나만 받아온다(hooks/useItineraryFirstStopPhotos.ts 상단 설명 참고).
+  const itineraryIds = useMemo(
+    () => itineraryHistory.map((item) => item.itineraryId),
+    [itineraryHistory],
+  );
+  const firstStopPhotos = useItineraryFirstStopPhotos(itineraryIds);
+  const { sharingItineraryId, shareSavedItinerary } = useItineraryShare();
 
   return (
     <Scroll showsVerticalScrollIndicator={false}>
@@ -869,38 +850,30 @@ export function HomeContent({
 
         {itineraryHistory.length > 0 && (
           <View style={{ marginBottom: 24 }}>
-            <SectionHead>
-              <SectionEyebrow>MY TRIP</SectionEyebrow>
-              <SectionTitle>저장한 여행</SectionTitle>
-            </SectionHead>
+            <SectionHeadRow>
+              <View>
+                <SectionEyebrow>MY TRIP</SectionEyebrow>
+                <SectionTitle>저장한 여행</SectionTitle>
+              </View>
+              <MoreLink onPress={onOpenSavedTrips} activeOpacity={0.7}>
+                <MoreLinkLabel>전체보기</MoreLinkLabel>
+                <Ionicons name="chevron-forward" size={12} color={COLORS.gray500} />
+              </MoreLink>
+            </SectionHeadRow>
             <TripRow horizontal showsHorizontalScrollIndicator={false}>
-              {itineraryHistory.map((item) => {
-                const isOpening = openingItineraryId === item.itineraryId;
-                return (
-                  <TripCard
-                    key={item.itineraryId}
-                    onPress={() => onOpenItinerary(item.itineraryId)}
-                    disabled={openingItineraryId != null}
-                    activeOpacity={0.8}
-                  >
-                    <TripCardTopRow>
-                      <Ionicons name="map-outline" size={20} color={COLORS.coral500} />
-                      <TripCardTopRowRight>
-                        {isOpening && <ActivityIndicator color={COLORS.coral500} />}
-                        <DeleteTripButton
-                          onPress={() => onDeleteItinerary(item.itineraryId, item.title)}
-                          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                          activeOpacity={0.7}
-                        >
-                          <Ionicons name="trash-outline" size={16} color={COLORS.gray400} />
-                        </DeleteTripButton>
-                      </TripCardTopRowRight>
-                    </TripCardTopRow>
-                    <TripCardTitle numberOfLines={1}>{item.title}</TripCardTitle>
-                    <TripCardSub numberOfLines={1}>{formatItinerarySub(item)}</TripCardSub>
-                  </TripCard>
-                );
-              })}
+              {itineraryHistory.map((item) => (
+                <TripCardWrapper key={item.itineraryId}>
+                  <SavedTripCard
+                    item={item}
+                    photoUrl={firstStopPhotos[item.itineraryId]}
+                    isOpening={openingItineraryId === item.itineraryId}
+                    isSharing={sharingItineraryId === item.itineraryId}
+                    onOpen={() => onOpenItinerary(item.itineraryId)}
+                    onDelete={() => onDeleteItinerary(item.itineraryId, item.title)}
+                    onShare={() => shareSavedItinerary(item)}
+                  />
+                </TripCardWrapper>
+              ))}
             </TripRow>
           </View>
         )}

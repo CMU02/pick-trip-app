@@ -17,6 +17,10 @@ import type { Content as ContentItem } from '../types/content';
 import type { CurrentUser } from '../types/user';
 import { formatItinerarySub } from '../utils/itineraryHistory';
 
+// "저장한 여행" 목록이 스크롤 없이 한 번에 보여주는 최대 개수 — 넘으면 TripScrollBox
+// 안에서만 스크롤되게 한다(마이페이지 전체 스크롤과는 별개).
+const VISIBLE_TRIP_COUNT = 4;
+
 const PROVIDER_LABELS: Record<string, string> = {
   kakao: '카카오',
   google: 'Google',
@@ -41,6 +45,8 @@ interface ProfileContentProps {
   openingItineraryId: string | null;
   onOpenItinerary: (itineraryId: string) => void;
   onDeleteItinerary: (itineraryId: string, title: string) => void;
+  // "저장한 여행" 섹션의 "전체보기" — 전체 목록 화면(SavedTripsScreen)으로 이동한다.
+  onOpenSavedTrips: () => void;
   onChangeCompanion: (companion: CompanionType) => void;
   onToggleStylePref: (pref: StylePreference) => void;
   onToggleRegion: (regionId: string) => void;
@@ -172,6 +178,12 @@ const TripSub = styled(Text)`
 
 const DeleteTripButton = styled(TouchableOpacity)`
   padding: 2px;
+`;
+
+// 저장한 여행이 많으면 이 목록 하나가 마이페이지 전체를 아래로 밀어버려서, 눈에 보이는
+// 개수를 VISIBLE_TRIP_COUNT로 제한하고 그 안에서만 세로로 스크롤하게 한다.
+const TripScrollBox = styled(ScrollView)`
+  max-height: 280px;
 `;
 
 const SectionTitleRow = styled(View)`
@@ -420,6 +432,7 @@ export function ProfileContent({
   openingItineraryId,
   onOpenItinerary,
   onDeleteItinerary,
+  onOpenSavedTrips,
   onChangeCompanion,
   onToggleStylePref,
   onToggleRegion,
@@ -522,10 +535,9 @@ export function ProfileContent({
           </Card>
         )}
 
-        {itineraryHistory.length > 0 && (
-          <Card>
-            <CardTitle>저장한 여행</CardTitle>
-            {itineraryHistory.map((item, index) => {
+        {itineraryHistory.length > 0 &&
+          (() => {
+            const tripRows = itineraryHistory.map((item, index) => {
               const isOpening = openingItineraryId === item.itineraryId;
               return (
                 <TripRow
@@ -559,9 +571,30 @@ export function ProfileContent({
                   )}
                 </TripRow>
               );
-            })}
-          </Card>
-        )}
+            });
+
+            return (
+              <Card>
+                <SectionTitleRow>
+                  <SectionTitleGroup>
+                    <SectionTitleText>저장한 여행</SectionTitleText>
+                    <SectionTitleCount>{itineraryHistory.length}</SectionTitleCount>
+                  </SectionTitleGroup>
+                  <SeeAllButton onPress={onOpenSavedTrips} activeOpacity={0.7}>
+                    <SeeAllLabel>전체보기</SeeAllLabel>
+                    <Ionicons name="chevron-forward" size={14} color={COLORS.gray400} />
+                  </SeeAllButton>
+                </SectionTitleRow>
+                {itineraryHistory.length > VISIBLE_TRIP_COUNT ? (
+                  <TripScrollBox nestedScrollEnabled showsVerticalScrollIndicator>
+                    {tripRows}
+                  </TripScrollBox>
+                ) : (
+                  tripRows
+                )}
+              </Card>
+            );
+          })()}
 
         <Card>
           <CardTitle>여행 취향</CardTitle>

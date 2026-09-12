@@ -7,6 +7,7 @@ export type RootStackParamList = {
   Priority: undefined;
   Itinerary: undefined;
   SavedItinerary: { itineraryId: string };
+  SavedTrips: undefined;
   Shared: { token: string };
   Favorites: undefined;
   ContentDetail: { contentId: string };
