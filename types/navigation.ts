@@ -12,7 +12,6 @@ export type RootStackParamList = {
   ContentDetail: { contentId: string };
   Terms: undefined;
   Privacy: undefined;
-  AccountManagement: undefined;
 };
 
 export type MainTabParamList = {

@@ -4,8 +4,7 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import { createStackNavigator } from '@react-navigation/stack';
 import { setStatusBarStyle } from 'expo-status-bar';
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, TouchableOpacity } from 'react-native';
-import { ConfirmModal } from '../components/molecules/ConfirmModal';
+import { TouchableOpacity } from 'react-native';
 import { COLORS } from '../constants/colors';
 import {
   PRIVACY_LAST_UPDATED,
@@ -15,8 +14,6 @@ import {
 } from '../constants/legalDocuments';
 import { FONT } from '../constants/typography';
 import { useAppState } from '../contexts/AppStateContext';
-import { useCurrentUser } from '../hooks/useCurrentUser';
-import { AccountManagementScreen } from '../screens/AccountManagementScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { ContentDetailScreen } from '../screens/ContentDetailScreen';
 import { FavoritesScreen } from '../screens/FavoritesScreen';
@@ -277,41 +274,6 @@ function PrivacyGate() {
   return <LegalDocumentScreen sections={PRIVACY_POLICY} lastUpdated={PRIVACY_LAST_UPDATED} />;
 }
 
-// 프로필의 "계정 관리" 행을 눌렀을 때 들어오는 화면. 되돌릴 수 없는 탈퇴 동작이라
-// 확인 모달을 한 번 더 거친다 — 실제로는 30일 유예 기간이 있지만(같은 계정으로
-// 재로그인하면 자동 복구), 그 안내는 모달 문구로 대신한다.
-function AccountManagementGate() {
-  const navigation = useNavigation<Nav>();
-  const { isGuest, handleWithdraw } = useAppState();
-  const { user } = useCurrentUser(!isGuest);
-  const [withdrawConfirmVisible, setWithdrawConfirmVisible] = useState(false);
-
-  const confirmWithdraw = async () => {
-    setWithdrawConfirmVisible(false);
-    const result = await handleWithdraw();
-    if (result.success) {
-      navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
-    } else {
-      Alert.alert('탈퇴에 실패했어요', result.message);
-    }
-  };
-
-  return (
-    <>
-      <AccountManagementScreen user={user} onWithdraw={() => setWithdrawConfirmVisible(true)} />
-      <ConfirmModal
-        visible={withdrawConfirmVisible}
-        title="정말 탈퇴하시겠어요?"
-        message="탈퇴 후 30일 안에 같은 계정으로 다시 로그인하면 자동으로 복구돼요. 그 기간이 지나면 계정과 모든 데이터가 완전히 삭제돼요."
-        confirmLabel="탈퇴하기"
-        destructive
-        onConfirm={confirmWithdraw}
-        onCancel={() => setWithdrawConfirmVisible(false)}
-      />
-    </>
-  );
-}
-
 function SharedGate({ route }: { route: { params: RootStackParamList['Shared'] } }) {
   const navigation = useNavigation<Nav>();
   return (
@@ -367,11 +329,6 @@ export function RootNavigator() {
         name="Privacy"
         component={PrivacyGate}
         options={{ title: '개인정보처리방침' }}
-      />
-      <Stack.Screen
-        name="AccountManagement"
-        component={AccountManagementGate}
-        options={{ title: '계정 관리' }}
       />
     </Stack.Navigator>
   );

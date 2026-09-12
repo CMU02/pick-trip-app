@@ -50,7 +50,7 @@ interface ProfileContentProps {
   onPressContent: (contentId: string) => void;
   onLogin: () => void;
   onLogout: () => void;
-  onOpenAccountManagement: () => void;
+  onWithdraw: () => void;
   tripReminderEnabled: boolean;
   onToggleTripReminder: (enabled: boolean) => void;
   onOpenTerms: () => void;
@@ -358,31 +358,6 @@ const ToggleKnob = styled(View)<{ $on: boolean }>`
   margin-left: ${({ $on }) => ($on ? 18 : 0)}px;
 `;
 
-const AccountManageCard = styled(TouchableOpacity)`
-  background-color: ${COLORS.white};
-  border-radius: 14px;
-  border-width: 1px;
-  border-color: ${COLORS.gray200};
-  padding: 18px;
-  margin-bottom: 16px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: space-between;
-`;
-
-const AccountManageTitle = styled(Text)`
-  font-size: 15px;
-  font-family: ${FONT.bold};
-  color: ${COLORS.gray900};
-  margin-bottom: 4px;
-`;
-
-const AccountManageDesc = styled(Text)`
-  font-family: ${FONT.regular};
-  font-size: 12px;
-  color: ${COLORS.gray500};
-`;
-
 const LogoutButton = styled(TouchableOpacity)`
   padding-vertical: 13px;
   border-radius: 12px;
@@ -390,12 +365,28 @@ const LogoutButton = styled(TouchableOpacity)`
   border-color: ${COLORS.gray200};
   align-items: center;
   background-color: ${COLORS.white};
+  margin-bottom: 10px;
 `;
 
 const LogoutLabel = styled(Text)`
   font-size: 14px;
   font-family: ${FONT.medium};
   color: ${COLORS.gray500};
+`;
+
+const WithdrawButton = styled(TouchableOpacity)`
+  padding-vertical: 13px;
+  border-radius: 12px;
+  border-width: 1px;
+  border-color: ${COLORS.coral300};
+  align-items: center;
+  background-color: ${COLORS.white};
+`;
+
+const WithdrawLabel = styled(Text)`
+  font-size: 14px;
+  font-family: ${FONT.medium};
+  color: ${COLORS.coral600};
 `;
 
 const LegalRow = styled(View)`
@@ -438,7 +429,7 @@ export function ProfileContent({
   onPressContent,
   onLogin,
   onLogout,
-  onOpenAccountManagement,
+  onWithdraw,
   tripReminderEnabled,
   onToggleTripReminder,
   onOpenTerms,
@@ -642,19 +633,14 @@ export function ProfileContent({
         </Card>
 
         {!isGuest && (
-          <AccountManageCard onPress={onOpenAccountManagement} activeOpacity={0.7}>
-            <View>
-              <AccountManageTitle>계정 관리</AccountManageTitle>
-              <AccountManageDesc>로그인 정보, 회원 탈퇴</AccountManageDesc>
-            </View>
-            <Ionicons name="chevron-forward" size={18} color={COLORS.gray400} />
-          </AccountManageCard>
-        )}
-
-        {!isGuest && (
-          <LogoutButton onPress={onLogout} activeOpacity={0.8}>
-            <LogoutLabel>로그아웃</LogoutLabel>
-          </LogoutButton>
+          <>
+            <LogoutButton onPress={onLogout} activeOpacity={0.8}>
+              <LogoutLabel>로그아웃</LogoutLabel>
+            </LogoutButton>
+            <WithdrawButton onPress={onWithdraw} activeOpacity={0.8}>
+              <WithdrawLabel>회원 탈퇴</WithdrawLabel>
+            </WithdrawButton>
+          </>
         )}
 
         <LegalRow>
