@@ -17,6 +17,10 @@ import {
   ensureNotificationPermission,
   scheduleTripReminder,
 } from '../services/notifications';
+import {
+  loadRecentlyViewedIds,
+  recordRecentlyViewed as recordRecentlyViewedStorage,
+} from '../services/recentlyViewedStorage';
 import { loadTripReminderEnabled, saveTripReminderEnabled } from '../services/tripReminderStorage';
 import { withdrawAccount } from '../services/userService';
 import type { CompanionType, StylePreference } from '../types/companion';
@@ -35,6 +39,7 @@ interface AppStateValue {
   selectedRegions: string[];
   setSelectedRegions: (value: string[]) => void;
   handleToggleRegion: (regionId: string) => void;
+  handleSelectRegion: (regionId: string) => void;
   tripDate: TripDate | null;
   setTripDate: (value: TripDate | null) => void;
   companion: CompanionType | null;
@@ -47,6 +52,8 @@ interface AppStateValue {
   removeSavedItinerary: (itineraryId: string) => void;
   favoriteIds: string[];
   handleToggleFavorite: (content: Content) => void;
+  recentlyViewedIds: string[];
+  recordRecentlyViewed: (contentId: string) => void;
   tripReminderEnabled: boolean;
   handleToggleTripReminder: (enabled: boolean) => void;
   initialStops: ItineraryStop[] | undefined;
@@ -89,6 +96,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [stylePrefs, setStylePrefs] = useState<StylePreference[]>([]);
   const [itineraryHistory, setItineraryHistory] = useState<SavedItinerarySummary[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
   const [initialStops, setInitialStops] = useState<ItineraryStop[] | undefined>(undefined);
   const [initialItineraryId, setInitialItineraryId] = useState<string | undefined>(undefined);
   const [initialItineraryTitle, setInitialItineraryTitle] = useState<string | undefined>(undefined);
@@ -209,6 +217,17 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     };
   }, [isAuthLoading, isGuest]);
 
+  // "최근에 본"은 계정이 아니라 기기 기준 로컬 히스토리라(services/recentlyViewedStorage.ts
+  // 참고), 로그인 여부와 상관없이 앱을 켤 때 한 번만 불러온다.
+  useEffect(() => {
+    loadRecentlyViewedIds().then(setRecentlyViewedIds);
+  }, []);
+
+  const recordRecentlyViewed = (contentId: string) => {
+    setRecentlyViewedIds((prev) => [contentId, ...prev.filter((id) => id !== contentId)]);
+    recordRecentlyViewedStorage(contentId);
+  };
+
   const handleToggleFavorite = async (content: Content) => {
     if (isGuest) {
       promptLogin();
@@ -318,6 +337,18 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  // 홈의 "어디부터 둘러볼까요?" 지역 카드는 프로필의 "선호 지역"(복수 선택 체크박스)과 달리
+  // 한 번에 하나만 고르는 단일 선택이다 — 지역을 고르면 그 지역 하나로 선택을 통째로
+  // 바꾸고(기존 다중 선택은 대체됨), 다른 지역 바구니 아이템과 섞이지 않도록 handleToggleRegion과
+  // 같은 규칙으로 바구니를 비운다.
+  const handleSelectRegion = (regionId: string) => {
+    if (selectedRegions.length === 1 && selectedRegions[0] === regionId) return;
+    if (basketItems.length > 0) {
+      clearItems();
+    }
+    setSelectedRegions([regionId]);
+  };
+
   const handleToggleStylePref = (pref: StylePreference) => {
     setStylePrefs((prev) =>
       prev.includes(pref) ? prev.filter((p) => p !== pref) : [...prev, pref],
@@ -360,6 +391,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     selectedRegions,
     setSelectedRegions,
     handleToggleRegion,
+    handleSelectRegion,
     tripDate,
     setTripDate,
     companion,
@@ -372,6 +404,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     removeSavedItinerary,
     favoriteIds,
     handleToggleFavorite,
+    recentlyViewedIds,
+    recordRecentlyViewed,
     tripReminderEnabled,
     handleToggleTripReminder,
     initialStops,

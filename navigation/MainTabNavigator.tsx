@@ -1,8 +1,9 @@
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import { useState } from 'react';
+import { setStatusBarStyle } from 'expo-status-bar';
+import { useCallback, useState } from 'react';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components';
 import { ConfirmModal } from '../components/molecules/ConfirmModal';
@@ -99,10 +100,22 @@ function HomeTabScreen() {
     setTripDate,
     favoriteIds,
     handleToggleFavorite,
+    recentlyViewedIds,
+    handleToggleContent,
+    handleSelectRegion,
   } = useAppState();
   const navigation = useNavigation<StackNavigationProp<RootStackParamList & MainTabParamList>>();
   const { itineraryHistory, openingItineraryId, openItinerary, deleteItinerary, deleteModal } =
     useOpenSavedItinerary();
+
+  // 홈 탭은 상단이 코랄색으로 상태바 아래까지 꽉 차 있어서, 이 탭에 있는 동안만 상태바
+  // 아이콘을 밝은색으로 바꾼다. 다른 탭으로 이동하면(blur) App.tsx의 기본값(dark)으로 되돌린다.
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('light');
+      return () => setStatusBarStyle('dark');
+    }, []),
+  );
 
   return (
     <>
@@ -123,6 +136,9 @@ function HomeTabScreen() {
         onToggleFavorite={handleToggleFavorite}
         onOpenFavorites={() => navigation.navigate('Favorites')}
         onPressDetail={(contentId) => navigation.navigate('ContentDetail', { contentId })}
+        onToggle={handleToggleContent}
+        recentlyViewedIds={recentlyViewedIds}
+        onSelectRegion={handleSelectRegion}
       />
       {deleteModal}
     </>

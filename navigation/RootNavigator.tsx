@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import { createStackNavigator } from '@react-navigation/stack';
-import { useEffect, useState } from 'react';
+import { setStatusBarStyle } from 'expo-status-bar';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, TouchableOpacity } from 'react-native';
 import { ConfirmModal } from '../components/molecules/ConfirmModal';
 import { COLORS } from '../constants/colors';
@@ -201,6 +202,15 @@ function LoginGate() {
   const navigation = useNavigation<Nav>();
   const { setIsGuest } = useAppState();
 
+  // 로그인 화면은 상단이 코랄색 브랜드 배경으로 상태바 아래까지 꽉 차 있어서, 이 화면에
+  // 있는 동안만 상태바 아이콘을 밝은색으로 바꾼다. 벗어나면 App.tsx의 기본값(dark)으로 되돌린다.
+  useFocusEffect(
+    useCallback(() => {
+      setStatusBarStyle('light');
+      return () => setStatusBarStyle('dark');
+    }, []),
+  );
+
   return (
     <AuthScreen
       onAuthed={() => {
@@ -230,7 +240,13 @@ function FavoritesGate() {
 // 화면으로 바꿨다 — 뒤로가기는 네이티브 헤더가 대신 처리해준다.
 function ContentDetailGate({ route }: { route: { params: RootStackParamList['ContentDetail'] } }) {
   const navigation = useNavigation<Nav>();
-  const { favoriteIds, handleToggleFavorite, selectedIds, handleToggleContent } = useAppState();
+  const {
+    favoriteIds,
+    handleToggleFavorite,
+    selectedIds,
+    handleToggleContent,
+    recordRecentlyViewed,
+  } = useAppState();
   const { contentId } = route.params;
 
   return (
@@ -240,7 +256,12 @@ function ContentDetailGate({ route }: { route: { params: RootStackParamList['Con
       onToggleFavorite={handleToggleFavorite}
       inBasket={selectedIds.includes(contentId)}
       onToggleBasket={handleToggleContent}
-      onTitleReady={(title) => navigation.setOptions({ title })}
+      onTitleReady={(title) => {
+        navigation.setOptions({ title });
+        // 콘텐츠가 실제로 로드된 시점(제목이 확정된 시점)에만 "최근에 본"에 남긴다 —
+        // 잘못된 id로 들어와 로딩에 실패한 경우까지 남기지 않기 위함.
+        recordRecentlyViewed(contentId);
+      }}
       onPressNearby={(nearbyContentId) =>
         navigation.push('ContentDetail', { contentId: nearbyContentId })
       }
