@@ -44,15 +44,19 @@ export function buildKakaoMapHtml(params: {
 
       new kakao.maps.Marker({ position: center, map: map });
 
+      // 기본 마커 이미지는 핀 끝(뾰족한 지점)이 좌표에 정확히 맞닿도록 세로 37px 크기로
+      // 렌더링된다(카카오맵 기본 마커 규격). 라벨을 핀 머리(이미지 맨 위) 바로 위에 띄우려면
+      // yAnchor:1(라벨 박스 하단을 좌표에 맞춤)로 기준을 잡은 뒤, 마커 높이(37px)만큼 위로
+      // 밀어 올리고 약간의 여백(6px)을 더한다.
       var content = document.createElement('div');
       content.style.cssText =
         'padding:4px 10px;background:#111827;color:#fff;font-size:12px;' +
-        'font-weight:600;border-radius:100px;white-space:nowrap;transform:translateY(-6px);';
+        'font-weight:600;border-radius:100px;white-space:nowrap;transform:translateY(-43px);';
       content.innerText = ${safeLabel};
       new kakao.maps.CustomOverlay({
         position: center,
         content: content,
-        yAnchor: 1.6,
+        yAnchor: 1,
       }).setMap(map);
 
       // 카카오맵은 지도를 만든 시점의 컨테이너 크기를 내부에 그대로 굳혀버려서, 그 뒤에
