@@ -191,6 +191,55 @@ const NearbySection = styled(View)`
   margin-bottom: 16px;
 `;
 
+const VisitorStatsSection = styled(View)`
+  margin-bottom: 16px;
+`;
+
+const VisitorStatsCard = styled(View)`
+  flex-direction: row;
+  background-color: ${COLORS.white};
+  border-radius: 12px;
+  border-width: 1px;
+  border-color: ${COLORS.gray200};
+  padding: 14px 0;
+`;
+
+const VisitorStatItem = styled(View)`
+  flex: 1;
+  align-items: center;
+  gap: 4px;
+`;
+
+const VisitorStatDivider = styled(View)`
+  width: 1px;
+  background-color: ${COLORS.gray200};
+`;
+
+const VisitorStatValue = styled(Text)`
+  font-size: 16px;
+  font-family: ${FONT.bold};
+  color: ${COLORS.gray900};
+`;
+
+const VisitorStatLabel = styled(Text)`
+  font-family: ${FONT.regular};
+  font-size: 11px;
+  color: ${COLORS.gray500};
+`;
+
+const VisitorStatPeriod = styled(Text)`
+  font-family: ${FONT.regular};
+  font-size: 9.5px;
+  color: ${COLORS.gray400};
+`;
+
+const VisitorStatsNotice = styled(Text)`
+  font-family: ${FONT.regular};
+  font-size: 11px;
+  color: ${COLORS.gray400};
+  margin-top: 8px;
+`;
+
 // "카카오맵으로 보기"와 "복사"를 나란히 두는 줄.
 const LocationButtonRow = styled(View)`
   flex-direction: row;
@@ -547,6 +596,44 @@ export function ContentDetailScreen({
                     </ExpandToggle>
                   )}
                 </SummarySection>
+              )}
+              {content.visitorStats && (
+                <VisitorStatsSection>
+                  <SectionTitle>방문자 수</SectionTitle>
+                  <VisitorStatsCard>
+                    <VisitorStatItem>
+                      {content.visitorStats.totalVisitors == null ? (
+                        <VisitorStatValue>-</VisitorStatValue>
+                      ) : (
+                        <VisitorStatValue>
+                          {content.visitorStats.totalVisitors.toLocaleString('ko-KR')}명
+                        </VisitorStatValue>
+                      )}
+                      <VisitorStatLabel>총 방문자수</VisitorStatLabel>
+                    </VisitorStatItem>
+                    {content.visitorStats.dailyAverageVisitors != null && (
+                      <>
+                        <VisitorStatDivider />
+                        <VisitorStatItem>
+                          <VisitorStatValue>
+                            {content.visitorStats.dailyAverageVisitors.toLocaleString('ko-KR')}명
+                          </VisitorStatValue>
+                          {/* 라벨은 이 값이 "일 평균"이라는 의미를 항상 보여줘야 한다 —
+                              period로 통째로 바꿔버리면 그 의미가 사라진다. period는
+                              그 아래 각주로만 덧붙인다. */}
+                          <VisitorStatLabel>일 평균</VisitorStatLabel>
+                          {content.visitorStats.period && (
+                            <VisitorStatPeriod>{content.visitorStats.period}</VisitorStatPeriod>
+                          )}
+                        </VisitorStatItem>
+                      </>
+                    )}
+                  </VisitorStatsCard>
+                  <VisitorStatsNotice>
+                    {regionName ?? '이 지역'} 기준 근사값이에요 ({content.visitorStats.baseDate}{' '}
+                    기준 · {content.visitorStats.source})
+                  </VisitorStatsNotice>
+                </VisitorStatsSection>
               )}
               <LocationSection>
                 <SectionTitle>위치</SectionTitle>

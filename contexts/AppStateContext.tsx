@@ -25,7 +25,7 @@ import { loadTripReminderEnabled, saveTripReminderEnabled } from '../services/tr
 import { withdrawAccount } from '../services/userService';
 import type { CompanionType, StylePreference } from '../types/companion';
 import type { Content } from '../types/content';
-import type { ItineraryStop } from '../types/itinerary';
+import type { GenerateMode, ItineraryStop, TravelMode } from '../types/itinerary';
 import type { Priority } from '../types/priority';
 import type { TripDate } from '../types/trip';
 import { toDateString, toDurationType } from '../utils/tripDate';
@@ -41,12 +41,32 @@ interface AppStateValue {
   handleToggleRegion: (regionId: string) => void;
   handleSelectRegion: (regionId: string) => void;
   tripDate: TripDate | null;
-  setTripDate: (value: TripDate | null) => void;
+  // 사용자가 실제로 날짜를 고르는 지점에서만 쓴다 — 일차별 시작 시각(dayStartTimesByDay)도
+  // 같이 비워서, 이전 여행에서 지정한 값이 새 여행에 조용히 실리지 않게 한다.
+  handleChangeTripDate: (value: TripDate) => void;
   companion: CompanionType | null;
   setCompanion: (value: CompanionType | null) => void;
   stylePrefs: StylePreference[];
   setStylePrefs: (value: StylePreference[]) => void;
   handleToggleStylePref: (pref: StylePreference) => void;
+  // 일정 생성(POST /itineraries/generate)이 만들 이동수단별 안(variant) 목록. 바구니 조건과
+  // 달리 서버에 동기화하지 않는 순수 요청 파라미터라 updateConditions에는 안 실어 보낸다.
+  travelModes: TravelMode[];
+  setTravelModes: (value: TravelMode[]) => void;
+  handleToggleTravelMode: (mode: TravelMode) => void;
+  // AI 일정 생성 모드. STRICT(기본) = 바구니에 담은 장소만으로 구성, AUGMENT = AI가 같은
+  // 지역의 다른 콘텐츠를 추가 제안할 수 있음. PrioritySelectScreen의 토글로 켜고 끈다.
+  generateMode: GenerateMode;
+  handleToggleAugmentMode: (enabled: boolean) => void;
+  // 시작 장소 고정(Phase 5). 바구니에 담은 장소 중 하나를 골라두면 그 장소부터 일정을
+  // 시작한다. null이면 AI가 시작 장소도 알아서 정한다.
+  startContentId: string | null;
+  setStartContentId: (value: string | null) => void;
+  // 일차별 하루 시작 시각("HH:mm"). 키는 일차 번호(1부터). 값이 없는 일차는 서버 기본값
+  // (09:00)으로 시작한다. 바구니 항목이 아니라 생성 요청 파라미터라 travelModes와 같은
+  // 자리에 둔다(세션 상태, 기기 저장 안 함).
+  dayStartTimesByDay: Record<number, string>;
+  setDayStartTimesByDay: (value: Record<number, string>) => void;
   itineraryHistory: SavedItinerarySummary[];
   recordSavedItinerary: (summary: SavedItinerarySummary) => void;
   removeSavedItinerary: (itineraryId: string) => void;
@@ -68,9 +88,12 @@ interface AppStateValue {
   hasBasketItems: boolean;
   selectedIds: string[];
   priorities: Record<string, Priority>;
+  // 사용자가 직접 지정한 희망 체류시간(분). 지정 안 했으면 null(콘텐츠 타입별 기본값을 따름).
+  stayMinutesByContentId: Record<string, number | null>;
   itemIdByContentId: Record<string, string>;
   handleToggleContent: (content: Content) => Promise<void>;
   updateItemPriority: (itemId: string, priority: Priority) => Promise<void>;
+  updateItemStayMinutes: (itemId: string, minutes: number) => Promise<void>;
   updateConditions: (input: {
     regionId: string | null;
     travelDate: string | null;
@@ -94,6 +117,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const [tripDate, setTripDate] = useState<TripDate | null>(null);
   const [companion, setCompanion] = useState<CompanionType | null>(null);
   const [stylePrefs, setStylePrefs] = useState<StylePreference[]>([]);
+  const [travelModes, setTravelModes] = useState<TravelMode[]>(['CAR']);
+  const [generateMode, setGenerateMode] = useState<GenerateMode>('STRICT');
+  const [startContentId, setStartContentId] = useState<string | null>(null);
+  const [dayStartTimesByDay, setDayStartTimesByDay] = useState<Record<number, string>>({});
   const [itineraryHistory, setItineraryHistory] = useState<SavedItinerarySummary[]>([]);
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
   const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>([]);
@@ -259,6 +286,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     removeItem,
     clearItems,
     updateItemPriority,
+    updateItemStayMinutes,
     updateConditions,
   } = useBasket();
 
@@ -304,9 +332,31 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
   const basketItems = basket?.items ?? [];
   const selectedIds = basketItems.map((item) => item.contentId);
   const priorities = Object.fromEntries(basketItems.map((item) => [item.contentId, item.priority]));
+  // 옛 버전에서 저장된 로컬 바구니엔 이 필드가 아예 없을 수 있어(services/basketStorage.ts
+  // 참고) ?? null로 방어한다.
+  const stayMinutesByContentId = Object.fromEntries(
+    basketItems.map((item) => [item.contentId, item.desiredStayMinutes ?? null]),
+  );
   const itemIdByContentId = Object.fromEntries(
     basketItems.map((item) => [item.contentId, item.itemId]),
   );
+
+  // 고정해둔 시작 장소가 바구니에서 빠지면(삭제/지역 변경으로 바구니 비움 등) 선택을 초기화한다.
+  useEffect(() => {
+    if (startContentId && !selectedIds.includes(startContentId)) {
+      setStartContentId(null);
+    }
+  }, [selectedIds, startContentId]);
+
+  // 일차별 시작 시각은 "이번 여행"에만 의미가 있다. 지역·날짜를 실제로 바꾸는 지점
+  // (handleChangeTripDate·handleToggleRegion·handleSelectRegion)에서 직접 비운다 —
+  // selectedRegions/tripDate를 지켜보는 반응형 effect로 하면 복원 시점에도 값이 "바뀌어"
+  // 보여서 예외 처리가 필요해지고, effect 의존성 배열에 쓰기만 하고 안 읽는 파생값을
+  // 넣어야 해서 지저분해진다.
+  const handleChangeTripDate = (value: TripDate) => {
+    setTripDate(value);
+    setDayStartTimesByDay({});
+  };
 
   const handleToggleContent = async (content: Content) => {
     try {
@@ -332,8 +382,10 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     const isSelecting = !selectedRegions.includes(regionId);
     // 담아둔 콘텐츠는 특정 지역에 속해있으므로, 새 지역을 고르면 이전 지역 것과 섞이지
     // 않도록 바구니를 비운다. 지역 해제(선택 취소)는 그냥 둔다.
-    if (isSelecting && basketItems.length > 0) {
-      clearItems();
+    if (isSelecting) {
+      if (basketItems.length > 0) clearItems();
+      // 이전 여행에서 지정한 일차별 시작 시각이 새 지역(=새 여행)에 조용히 실리지 않게 한다.
+      setDayStartTimesByDay({});
     }
     setSelectedRegions((prev) =>
       isSelecting ? [...prev, regionId] : prev.filter((id) => id !== regionId),
@@ -349,6 +401,8 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     if (basketItems.length > 0) {
       clearItems();
     }
+    // 이전 여행에서 지정한 일차별 시작 시각이 새 지역(=새 여행)에 조용히 실리지 않게 한다.
+    setDayStartTimesByDay({});
     setSelectedRegions([regionId]);
   };
 
@@ -356,6 +410,19 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     setStylePrefs((prev) =>
       prev.includes(pref) ? prev.filter((p) => p !== pref) : [...prev, pref],
     );
+  };
+
+  const handleToggleTravelMode = (mode: TravelMode) => {
+    setTravelModes((prev) => {
+      if (!prev.includes(mode)) return [...prev, mode];
+      // 최소 하나는 선택된 상태를 유지한다 — 다 해제하면 이동수단 없이 생성을 시도하게 된다.
+      if (prev.length === 1) return prev;
+      return prev.filter((m) => m !== mode);
+    });
+  };
+
+  const handleToggleAugmentMode = (enabled: boolean) => {
+    setGenerateMode(enabled ? 'AUGMENT' : 'STRICT');
   };
 
   const resetSessionState = () => {
@@ -396,12 +463,21 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     handleToggleRegion,
     handleSelectRegion,
     tripDate,
-    setTripDate,
+    handleChangeTripDate,
     companion,
     setCompanion,
     stylePrefs,
     setStylePrefs,
     handleToggleStylePref,
+    travelModes,
+    setTravelModes,
+    handleToggleTravelMode,
+    generateMode,
+    handleToggleAugmentMode,
+    startContentId,
+    setStartContentId,
+    dayStartTimesByDay,
+    setDayStartTimesByDay,
     itineraryHistory,
     recordSavedItinerary,
     removeSavedItinerary,
@@ -421,9 +497,11 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     hasBasketItems: basketItems.length > 0,
     selectedIds,
     priorities,
+    stayMinutesByContentId,
     itemIdByContentId,
     handleToggleContent,
     updateItemPriority,
+    updateItemStayMinutes,
     updateConditions,
     resetSessionState,
     handleLogout,
