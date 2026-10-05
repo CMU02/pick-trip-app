@@ -48,7 +48,8 @@ interface ContentListResponse {
   items: ContentSummaryResponse[];
 }
 
-// 탐색 화면 "더보기" 단위와 맞춘 페이지 크기. 너무 크면 첫 화면 로딩이 오래 걸린다.
+// 탐색 화면이 한 번에 받는 개수. 지역 여러 개를 고르면 지역마다 나눠 받아 합계를 맞춘다 —
+// 지역당 20개면 3개 지역에서 60개를 한꺼번에 그려 첫 화면과 이미지 로딩이 느려졌다.
 const PAGE_SIZE = 20;
 
 function toContent(item: ContentSummaryResponse): Content {
@@ -82,18 +83,22 @@ export interface ContentPage {
 async function fetchContentsPage(
   regionId: string,
   page: number,
+  size: number,
 ): Promise<{ items: Content[]; totalCount: number }> {
   const { data } = await apiClient.get<ContentListResponse>('/contents', {
-    params: { region: regionId.toUpperCase(), page, size: PAGE_SIZE },
+    params: { region: regionId.toUpperCase(), page, size },
   });
   return { items: data.items.map(toContent), totalCount: data.totalCount };
 }
 
 export async function fetchContents(regionIds: string[], page: number): Promise<ContentPage> {
-  const results = await Promise.all(regionIds.map((regionId) => fetchContentsPage(regionId, page)));
+  const size = Math.ceil(PAGE_SIZE / Math.max(1, regionIds.length));
+  const results = await Promise.all(
+    regionIds.map((regionId) => fetchContentsPage(regionId, page, size)),
+  );
   return {
     items: results.flatMap((r) => r.items),
-    hasMore: results.some((r) => (page + 1) * PAGE_SIZE < r.totalCount),
+    hasMore: results.some((r) => (page + 1) * size < r.totalCount),
   };
 }
 
