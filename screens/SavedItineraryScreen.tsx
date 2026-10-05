@@ -18,6 +18,7 @@ import { FONT } from '../constants/typography';
 import { useContents } from '../hooks/useContents';
 import { useContentsByIds } from '../hooks/useContentsByIds';
 import { useItineraryRoutes } from '../hooks/useItineraryRoutes';
+import { setAddPlaceHandler } from '../services/addPlaceBridge';
 import { toErrorMessage } from '../services/apiError';
 import type { SavedItinerarySummary } from '../services/itineraryHistoryStorage';
 import {
@@ -37,6 +38,8 @@ interface SavedItineraryScreenProps {
   // 저장에 성공하면 홈/마이페이지 목록도 같이 최신화할 수 있도록 알려준다. 목록 화면이 없는
   // 경로(딥링크 등)에서는 안 넘겨도 되게 선택값으로 둔다.
   onSaved?: (summary: SavedItinerarySummary) => void;
+  // 편집 모드의 "+ 장소 추가"를 누르면 별도 화면(AddPlaceScreen)으로 이동한다. 고른 장소는 addPlaceBridge로 돌아온다.
+  onOpenAddPlace: (params: { regionIds: string[]; excludeIds: string[] }) => void;
 }
 
 // 이 화면은 네이티브 스택 헤더(RootNavigator의 headerScreenOptions)가 이미 위에 떠 있어서
@@ -344,22 +347,6 @@ const AddButtonLabel = styled(Text)`
   font-family: ${FONT.bold};
 `;
 
-const CandidateRow = styled(TouchableOpacity)`
-  background-color: ${COLORS.white};
-  border-radius: 8px;
-  border-width: 1px;
-  border-color: ${COLORS.gray200};
-  margin-horizontal: 20px;
-  margin-bottom: 8px;
-  padding: 10px 14px;
-`;
-
-const CandidateName = styled(Text)`
-  font-family: ${FONT.regular};
-  font-size: 14px;
-  color: ${COLORS.gray900};
-`;
-
 const RouteDivider = styled(View)`
   height: 1px;
   background-color: ${COLORS.gray100};
@@ -436,7 +423,11 @@ const PrimaryButtonLabel = styled(Text)`
 // 나타나서 지금 하려는 게 "수정"인지 "새로 만들기"인지 헷갈렸다. 이제는 "일정 수정" 버튼이
 // 이 화면 자체를 편집 모드로 바꿔서, 같은 화면 안에서 장소 추가·삭제·순서 변경을 하고
 // 바로 저장한다.
-export function SavedItineraryScreen({ itineraryId, onSaved }: SavedItineraryScreenProps) {
+export function SavedItineraryScreen({
+  itineraryId,
+  onSaved,
+  onOpenAddPlace,
+}: SavedItineraryScreenProps) {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<'loading' | 'done' | 'error'>('loading');
   const [plan, setPlan] = useState<ItineraryPlan | null>(null);
@@ -444,7 +435,6 @@ export function SavedItineraryScreen({ itineraryId, onSaved }: SavedItineraryScr
   const [isSharing, setIsSharing] = useState(false);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [isAddingPlace, setIsAddingPlace] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ItineraryStop | null>(null);
   const [editSaveState, setEditSaveState] = useState<'idle' | 'saving' | 'error'>('idle');
 
@@ -473,15 +463,15 @@ export function SavedItineraryScreen({ itineraryId, onSaved }: SavedItineraryScr
 
   const stopIds = stops.map((s) => s.contentId);
   const { contents: stopContents } = useContentsByIds(stopIds);
-  // 후보 장소 목록은 편집 모드에서 "장소 추가"를 눌러야만 필요하다 — 그냥 보기만 할 때도
-  // 지역 전체 콘텐츠를 매번 불러오지 않도록 편집 모드에서만 활성화한다.
+  // 장소 추가 화면(AddPlaceScreen)과 같은 쿼리 키라 그 화면에서 불러온 페이지를 그대로 공유한다 —
+  // 방금 추가한 장소의 이름·좌표가 stopContents 재조회를 기다리지 않고 바로 보인다. 그냥 보기만
+  // 할 때도 지역 전체 콘텐츠를 매번 불러오지 않도록 편집 모드에서만 활성화한다.
   const { contents: regionContents } = useContents(isEditing && plan ? [plan.region] : []);
   const contentById = useMemo(() => {
     const map = Object.fromEntries(regionContents.map((c) => [c.id, c]));
     for (const c of stopContents) map[c.id] = c;
     return map;
   }, [regionContents, stopContents]);
-  const candidates = regionContents.filter((c) => !stopIds.includes(c.id));
 
   // totalDays는 지도·일차 탭(useItineraryRoutes)에도 필요해서, 로딩/에러 조기 return보다
   // 앞에 둬야 훅 호출 순서가 렌더마다 흔들리지 않는다. plan이 아직 없으면(로딩 중) 1로 둔다 —
@@ -517,7 +507,6 @@ export function SavedItineraryScreen({ itineraryId, onSaved }: SavedItineraryScr
 
   const handleStartEdit = () => {
     setIsEditing(true);
-    setIsAddingPlace(false);
     setEditSaveState('idle');
   };
 
@@ -525,7 +514,6 @@ export function SavedItineraryScreen({ itineraryId, onSaved }: SavedItineraryScr
     // 저장을 안 눌렀으니 지금까지 편집 중이던 변경사항은 버리고 원래 저장된 내용으로 되돌린다.
     if (plan) setStops(plan.stops);
     setIsEditing(false);
-    setIsAddingPlace(false);
     setEditSaveState('idle');
   };
 
@@ -550,7 +538,6 @@ export function SavedItineraryScreen({ itineraryId, onSaved }: SavedItineraryScr
       setPlan(saved);
       setStops(saved.stops);
       setIsEditing(false);
-      setIsAddingPlace(false);
       setEditSaveState('idle');
       // "저장한 여행" 카드 사진은 첫 방문지 콘텐츠를 기준으로 캐시돼 있다(useItineraryFirstStopPhotos).
       // 방문지 순서를 바꾸거나 첫 방문지를 지웠는데 이 캐시를 그대로 두면, 홈은 루트 스택
@@ -837,23 +824,16 @@ export function SavedItineraryScreen({ itineraryId, onSaved }: SavedItineraryScr
           })
         )}
         {isEditing && (
-          <>
-            <AddButton onPress={() => setIsAddingPlace((prev) => !prev)}>
-              <AddButtonLabel>+ 장소 추가</AddButtonLabel>
-            </AddButton>
-            {isAddingPlace &&
-              candidates.map((candidate) => (
-                <CandidateRow
-                  key={candidate.id}
-                  onPress={() => {
-                    setStops((prev) => addStop(prev, candidate.id, activeDay));
-                    setIsAddingPlace(false);
-                  }}
-                >
-                  <CandidateName>{candidate.name}</CandidateName>
-                </CandidateRow>
-              ))}
-          </>
+          <AddButton
+            onPress={() => {
+              // 고른 장소는 지금 보고 있는 일차에 넣는다 — 화면을 연 시점의 activeDay를 묶어둔다.
+              const day = activeDay;
+              setAddPlaceHandler((contentId) => setStops((prev) => addStop(prev, contentId, day)));
+              onOpenAddPlace({ regionIds: plan ? [plan.region] : [], excludeIds: stopIds });
+            }}
+          >
+            <AddButtonLabel>+ 장소 추가</AddButtonLabel>
+          </AddButton>
         )}
 
         <RouteDivider />

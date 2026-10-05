@@ -15,6 +15,7 @@ import {
 import { FONT } from '../constants/typography';
 import { useAppState } from '../contexts/AppStateContext';
 import { useOpenSavedItinerary } from '../hooks/useOpenSavedItinerary';
+import { AddPlaceScreen } from '../screens/AddPlaceScreen';
 import { AuthScreen } from '../screens/AuthScreen';
 import { ContentDetailScreen } from '../screens/ContentDetailScreen';
 import { FavoritesScreen } from '../screens/FavoritesScreen';
@@ -25,6 +26,7 @@ import { SavedItineraryScreen } from '../screens/SavedItineraryScreen';
 import { SavedTripsScreen } from '../screens/SavedTripsScreen';
 import { SharedItineraryScreen } from '../screens/SharedItineraryScreen';
 import { SplashScreen } from '../screens/SplashScreen';
+import { consumeAddPlace } from '../services/addPlaceBridge';
 import type { RootStackParamList } from '../types/navigation';
 import { toDateString } from '../utils/tripDate';
 import { MainTabNavigator } from './MainTabNavigator';
@@ -213,6 +215,7 @@ function ItineraryGate() {
       onRequireLogin={() => navigation.navigate('Login')}
       onSaved={recordSavedItinerary}
       onGoHome={() => navigation.reset({ index: 0, routes: [{ name: 'Main' }] })}
+      onOpenAddPlace={(params) => navigation.navigate('AddPlace', params)}
     />
   );
 }
@@ -226,9 +229,30 @@ function SavedItineraryGate({
 }: {
   route: { params: RootStackParamList['SavedItinerary'] };
 }) {
+  const navigation = useNavigation<Nav>();
   const { recordSavedItinerary } = useAppState();
   return (
-    <SavedItineraryScreen itineraryId={route.params.itineraryId} onSaved={recordSavedItinerary} />
+    <SavedItineraryScreen
+      itineraryId={route.params.itineraryId}
+      onSaved={recordSavedItinerary}
+      onOpenAddPlace={(params) => navigation.navigate('AddPlace', params)}
+    />
+  );
+}
+
+// 일정 화면(생성 결과·저장한 일정 편집)의 "+ 장소 추가"가 여는 화면. 고른 장소는 그 화면이
+// 등록해둔 핸들러(addPlaceBridge)로 넘기고 바로 돌아간다 — 콜백은 라우트 params에 못 넣는다.
+function AddPlaceGate({ route }: { route: { params: RootStackParamList['AddPlace'] } }) {
+  const navigation = useNavigation<Nav>();
+  return (
+    <AddPlaceScreen
+      regionIds={route.params.regionIds}
+      excludeIds={route.params.excludeIds}
+      onSelect={(contentId) => {
+        consumeAddPlace(contentId);
+        navigation.goBack();
+      }}
+    />
   );
 }
 
@@ -384,6 +408,7 @@ export function RootNavigator() {
         component={ContentDetailGate}
         options={{ title: '콘텐츠 정보' }}
       />
+      <Stack.Screen name="AddPlace" component={AddPlaceGate} options={{ title: '장소 추가' }} />
       <Stack.Screen name="Terms" component={TermsGate} options={{ title: '이용약관' }} />
       <Stack.Screen
         name="Privacy"

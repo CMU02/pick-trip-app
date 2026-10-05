@@ -21,6 +21,7 @@ import { FONT } from '../constants/typography';
 import { useContents } from '../hooks/useContents';
 import { useContentsByIds } from '../hooks/useContentsByIds';
 import { useItineraryRoutes } from '../hooks/useItineraryRoutes';
+import { setAddPlaceHandler } from '../services/addPlaceBridge';
 import { toErrorMessage } from '../services/apiError';
 import { syncBasketToServer } from '../services/basketService';
 import { generateItinerary } from '../services/generateItinerary';
@@ -72,6 +73,8 @@ interface ItineraryResultScreenProps {
   onRequireLogin: () => void;
   onSaved?: (summary: SavedItinerarySummary) => void;
   onGoHome: () => void;
+  // "+ 장소 추가"를 누르면 별도 화면(AddPlaceScreen)으로 이동한다. 고른 장소는 addPlaceBridge로 돌아온다.
+  onOpenAddPlace: (params: { regionIds: string[]; excludeIds: string[] }) => void;
 }
 
 const GENERATING_STEPS = [
@@ -504,22 +507,6 @@ const AddButtonLabel = styled(Text)`
   font-family: ${FONT.bold};
 `;
 
-const CandidateRow = styled(TouchableOpacity)`
-  background-color: ${COLORS.white};
-  border-radius: 8px;
-  border-width: 1px;
-  border-color: ${COLORS.gray200};
-  margin-horizontal: 20px;
-  margin-bottom: 8px;
-  padding: 10px 14px;
-`;
-
-const CandidateName = styled(Text)`
-  font-family: ${FONT.regular};
-  font-size: 14px;
-  color: ${COLORS.gray900};
-`;
-
 const RouteDivider = styled(View)`
   height: 1px;
   background-color: ${COLORS.gray100};
@@ -604,6 +591,7 @@ export function ItineraryResultScreen({
   onRequireLogin,
   onSaved,
   onGoHome,
+  onOpenAddPlace,
 }: ItineraryResultScreenProps) {
   const [status, setStatus] = useState<'loading' | 'done' | 'error'>(
     initialStops ? 'done' : 'loading',
@@ -626,7 +614,6 @@ export function ItineraryResultScreen({
   } | null>(null);
   // 일차 탭 하나로 장소 리스트와 동선 섹션(지도·구간 거리)이 함께 갱신된다.
   const [selectedDay, setSelectedDay] = useState(1);
-  const [isAddingPlace, setIsAddingPlace] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<ItineraryStop | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [showSaveModal, setShowSaveModal] = useState(false);
@@ -883,7 +870,6 @@ export function ItineraryResultScreen({
   );
 
   const usedIds = stops.map((s) => s.contentId);
-  const candidates = regionContents.filter((c) => !usedIds.includes(c.id));
 
   // totalDays는 지도·일차 탭(useItineraryRoutes)에도 필요해서, 로딩/에러 조기 return보다
   // 앞에 둬야 훅 호출 순서가 렌더마다 흔들리지 않는다.
@@ -1190,21 +1176,16 @@ export function ItineraryResultScreen({
             );
           })
         )}
-        <AddButton onPress={() => setIsAddingPlace((prev) => !prev)}>
+        <AddButton
+          onPress={() => {
+            // 고른 장소는 지금 보고 있는 일차에 넣는다 — 화면을 연 시점의 activeDay를 묶어둔다.
+            const day = activeDay;
+            setAddPlaceHandler((contentId) => setStops((prev) => addStop(prev, contentId, day)));
+            onOpenAddPlace({ regionIds: selectedRegions, excludeIds: usedIds });
+          }}
+        >
           <AddButtonLabel>+ 장소 추가</AddButtonLabel>
         </AddButton>
-        {isAddingPlace &&
-          candidates.map((candidate) => (
-            <CandidateRow
-              key={candidate.id}
-              onPress={() => {
-                setStops((prev) => addStop(prev, candidate.id, activeDay));
-                setIsAddingPlace(false);
-              }}
-            >
-              <CandidateName>{candidate.name}</CandidateName>
-            </CandidateRow>
-          ))}
 
         <RouteDivider />
         <ItineraryRouteMap
