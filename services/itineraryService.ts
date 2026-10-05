@@ -68,7 +68,8 @@ function stopsToDays(stops: ItineraryStop[], titleByContentId: Record<string, st
       .filter((s) => s.day === dayIndex)
       .map((s, order) => ({
         contentId: s.contentId,
-        title: titleByContentId[s.contentId] ?? null,
+        // ''는 nullish가 아니라 그대로 나가던 값 — 이름을 아직 못 불러온 장소(AI 추가)는 null로 보낸다.
+        title: titleByContentId[s.contentId] || null,
         order,
         reason: s.reason,
         pinned: false,
@@ -96,12 +97,15 @@ interface SavePlanInput {
   titleByContentId: Record<string, string>;
 }
 
-function toSaveBody(input: SavePlanInput) {
+// 서버 SaveItineraryRequest 계약: title(1자 이상)·region(enum)·duration(필수)·days(1개 이상).
+// 날짜를 안 고르고 만든 일정은 박 수가 null이라, 일정에 실제로 있는 마지막 일차를 일수로 쓴다.
+export function toSaveBody(input: SavePlanInput) {
+  const lastDay = Math.max(1, ...input.stops.map((s) => s.day));
   return {
-    title: input.title,
+    title: input.title.trim(),
     region: input.region.toUpperCase(),
     travelDate: input.travelDate,
-    duration: nightsToApiDuration(input.duration),
+    duration: nightsToApiDuration(input.duration) ?? lastDay,
     days: stopsToDays(input.stops, input.titleByContentId),
   };
 }
