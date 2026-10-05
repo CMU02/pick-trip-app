@@ -24,11 +24,20 @@ describe('toUseTimeLines', () => {
     ]);
   });
 
-  // 시각 범위의 하이픈은 글머리표가 아니다 — 뒤에 숫자가 오면 쪼개지 않는다.
+  // 시각 범위의 하이픈은 글머리표가 아니다 — 앞에 공백이 있거나 뒤에 숫자가 오면 쪼개지 않는다.
   it('"09:00 - 18:00" 같은 시각 범위는 한 줄로 둔다', () => {
     expect(toUseTimeLines('09:00 - 18:00')).toEqual([{ kind: 'text', text: '09:00 - 18:00' }]);
     expect(toUseTimeLines('09:00  -  18:00')).toEqual([{ kind: 'text', text: '09:00  -  18:00' }]);
     expect(toUseTimeLines('10:00-12:00')).toEqual([{ kind: 'text', text: '10:00-12:00' }]);
+    expect(toUseTimeLines('18:00 - 익일 02:00')).toEqual([
+      { kind: 'text', text: '18:00 - 익일 02:00' },
+    ]);
+    expect(toUseTimeLines('오전 9시 - 오후 6시')).toEqual([
+      { kind: 'text', text: '오전 9시 - 오후 6시' },
+    ]);
+    expect(toUseTimeLines('09:00 - (입장마감 17:00)')).toEqual([
+      { kind: 'text', text: '09:00 - (입장마감 17:00)' },
+    ]);
   });
 
   it('구분 없는 한 줄은 그대로', () => {
