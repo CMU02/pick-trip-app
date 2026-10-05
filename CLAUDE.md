@@ -1,5 +1,13 @@
 @AGENTS.md
 
+## Figma
+
+앱 아이콘·스토어 그래픽 원본: https://www.figma.com/design/uo8esxICkQgHAVrLTnH79t/PickTrip-Assets (fileKey `uo8esxICkQgHAVrLTnH79t`)
+
+- `Page 1` > `App Icon - Fixed (2026-10-05)` 프레임들이 `assets/` 아이콘 PNG의 원본이다. 프레임 이름이 파일 이름과 같다.
+- `Play Store` 페이지: 스토어 아이콘·피처 그래픽.
+- 내보낼 때는 `get_screenshot`에 `contentsOnly: true`를 준다. 안 주면 부모 프레임 배경이 찍혀 투명 영역이 불투명해진다.
+
 ## graphify
 
 This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
