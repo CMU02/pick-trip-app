@@ -799,7 +799,8 @@ export function SavedItineraryScreen({ itineraryId, onSaved }: SavedItineraryScr
                         <StopAddress numberOfLines={1}>{content.address}</StopAddress>
                       </AddressRow>
                     )}
-                    <ReasonText>{stop.reason}</ReasonText>
+                    {/* 이유가 비어 있으면 회색 상자만 덩그러니 남으니 상자째 숨긴다. */}
+                    {stop.reason ? <ReasonText>{stop.reason}</ReasonText> : null}
                   </StopBody>
                   {isEditing && (
                     <OpsColumn>
