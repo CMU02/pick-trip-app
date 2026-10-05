@@ -19,4 +19,4 @@ jobs:
     needs: [check]
     type: update
     params:
-      branch: production
+      branch: main
