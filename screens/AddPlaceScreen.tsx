@@ -149,7 +149,8 @@ export function AddPlaceScreen({ regionIds, excludeIds, onSelect }: AddPlaceScre
         ListEmptyComponent={
           isLoading ? (
             <ActivityIndicator style={{ marginTop: 60 }} color={COLORS.coral500} />
-          ) : (
+          ) : hasNextPage ? null : (
+            // 다음 페이지가 남아 있으면 onEndReached가 계속 불러오는 중이라(하단 스피너) 아직 없다고 단정하지 않는다.
             <Empty>추가할 수 있는 장소가 없어요</Empty>
           )
         }
