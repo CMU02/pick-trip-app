@@ -1,4 +1,4 @@
-import * as Linking from 'expo-linking';
+import { WEB_BASE_URL } from '../constants/api';
 import type { ItineraryStop } from '../types/itinerary';
 import { apiDurationToNights } from '../utils/tripDate';
 import { apiClient } from './apiClient';
@@ -7,9 +7,15 @@ interface ShareCreateResponse {
   token: string;
 }
 
+// 공유는 웹 공유 페이지로 보낸다. 메신저가 OG 미리보기 카드(제목·지역·일정 요약)를 띄우고,
+// 누르면 앱 설치 여부와 무관하게 일정 UI가 열린다 — picktrip:// 스킴은 메신저에서 링크가 안 된다.
+export function buildShareUrl(token: string): string {
+  return `${WEB_BASE_URL}/share/${token}`;
+}
+
 export async function createShareLink(itineraryId: string): Promise<string> {
   const { data } = await apiClient.post<ShareCreateResponse>(`/itineraries/${itineraryId}/share`);
-  return Linking.createURL(`share/${data.token}`);
+  return buildShareUrl(data.token);
 }
 
 interface SharedItem {
