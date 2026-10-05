@@ -94,6 +94,8 @@ interface AppStateValue {
   handleToggleContent: (content: Content) => Promise<void>;
   updateItemPriority: (itemId: string, priority: Priority) => Promise<void>;
   updateItemStayMinutes: (itemId: string, minutes: number) => Promise<void>;
+  // 일정 저장에 성공하면 바구니를 비울 때 쓴다(RootNavigator ItineraryGate).
+  clearItems: () => Promise<void>;
   updateConditions: (input: {
     regionId: string | null;
     travelDate: string | null;
@@ -502,6 +504,7 @@ export function AppStateProvider({ children }: { children: ReactNode }) {
     handleToggleContent,
     updateItemPriority,
     updateItemStayMinutes,
+    clearItems,
     updateConditions,
     resetSessionState,
     handleLogout,
