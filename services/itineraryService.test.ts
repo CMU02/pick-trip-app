@@ -39,6 +39,9 @@ describe('toSaveBody', () => {
   // 예전엔 null을 보내 400(입력값을 확인해주세요)이 났다 — 일정의 일수로 채운다.
   it('박 수가 없으면 일정의 마지막 일차를 일수로 보낸다', () => {
     expect(toSaveBody({ ...base, travelDate: null, duration: null }).duration).toBe(2);
+    // 장소 수(3)와 구분되도록 일차를 건너뛴 일정으로도 확인한다.
+    const stops = [stop('a', 1), stop('b', 3), stop('c', 3)];
+    expect(toSaveBody({ ...base, travelDate: null, duration: null, stops }).duration).toBe(3);
   });
 
   it('지역은 대문자 enum으로 보낸다', () => {
