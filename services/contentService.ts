@@ -48,8 +48,9 @@ interface ContentListResponse {
   items: ContentSummaryResponse[];
 }
 
-// 탐색 화면이 한 번에 받는 개수. 지역 여러 개를 고르면 지역마다 나눠 받아 합계를 맞춘다 —
-// 지역당 20개면 3개 지역에서 60개를 한꺼번에 그려 첫 화면과 이미지 로딩이 느려졌다.
+// 지역당 한 페이지 크기. 탐색 화면(splitAcrossRegions)은 이 개수를 지역 수로 나눠 받아 합계를 맞춘다 —
+// 지역당 20개면 3개 지역에서 60개를 한꺼번에 그려 첫 화면과 이미지 로딩이 느려졌다. 첫 페이지만
+// 쓰는 화면(일정 결과의 장소 추가 후보, 홈 FOR YOU)은 다음 페이지를 못 불러오니 지역당 20개를 유지한다.
 const PAGE_SIZE = 20;
 
 function toContent(item: ContentSummaryResponse): Content {
@@ -91,8 +92,14 @@ async function fetchContentsPage(
   return { items: data.items.map(toContent), totalCount: data.totalCount };
 }
 
-export async function fetchContents(regionIds: string[], page: number): Promise<ContentPage> {
-  const size = Math.ceil(PAGE_SIZE / Math.max(1, regionIds.length));
+export async function fetchContents(
+  regionIds: string[],
+  page: number,
+  splitAcrossRegions = false,
+): Promise<ContentPage> {
+  const size = splitAcrossRegions
+    ? Math.ceil(PAGE_SIZE / Math.max(1, regionIds.length))
+    : PAGE_SIZE;
   const results = await Promise.all(
     regionIds.map((regionId) => fetchContentsPage(regionId, page, size)),
   );

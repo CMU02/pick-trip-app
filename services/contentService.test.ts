@@ -21,16 +21,24 @@ describe('fetchContents', () => {
   });
 
   // 지역마다 20개씩 받으면 3개 지역 선택 시 한 번에 60개를 그린다 — 합계가 20개 남짓이 되게 나눈다.
-  it('지역 3개면 지역당 7개씩 요청한다', async () => {
+  it('splitAcrossRegions면 지역 3개일 때 지역당 7개씩 요청한다', async () => {
     get.mockResolvedValue(page(100, 7));
-    await fetchContents(['hadong', 'yeongju', 'yecheon'], 0);
+    await fetchContents(['hadong', 'yeongju', 'yecheon'], 0, true);
     expect(get).toHaveBeenCalledTimes(3);
     for (const call of get.mock.calls) expect(call[1].params.size).toBe(7);
   });
 
+  // 장소 추가 후보·홈 FOR YOU는 첫 페이지만 쓰므로 나누면 후보가 줄어든다.
+  it('기본값은 지역 수와 상관없이 지역당 20개씩 요청한다', async () => {
+    get.mockResolvedValue(page(100, 20));
+    await fetchContents(['hadong', 'yeongju', 'yecheon'], 0);
+    expect(get).toHaveBeenCalledTimes(3);
+    for (const call of get.mock.calls) expect(call[1].params.size).toBe(20);
+  });
+
   it('hasMore는 지역별 크기로 계산한다', async () => {
     get.mockResolvedValue(page(14, 7));
-    expect((await fetchContents(['hadong', 'yeongju', 'yecheon'], 0)).hasMore).toBe(true);
-    expect((await fetchContents(['hadong', 'yeongju', 'yecheon'], 1)).hasMore).toBe(false);
+    expect((await fetchContents(['hadong', 'yeongju', 'yecheon'], 0, true)).hasMore).toBe(true);
+    expect((await fetchContents(['hadong', 'yeongju', 'yecheon'], 1, true)).hasMore).toBe(false);
   });
 });

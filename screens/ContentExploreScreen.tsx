@@ -180,7 +180,7 @@ export function ContentExploreScreen({
   const [searchQuery, setSearchQuery] = useState('');
 
   const { contents, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useContents(regionIds);
+    useContents(regionIds, { splitAcrossRegions: true });
 
   const filtered = useMemo(() => {
     const keyword = searchQuery.trim().toLowerCase();
