@@ -257,7 +257,9 @@ export function ContentExploreScreen({
                 <RetryLabel>다시 시도</RetryLabel>
               </RetryButton>
             </CenterBox>
-          ) : (
+          ) : hasNextPage ? null : (
+            // 검색·카테고리에 맞는 카드가 아직 없어도 다음 페이지가 남아 있으면 onEndReached가
+            // 계속 불러오는 중이다(하단 스피너) — 그때 "없어요"를 띄우면 틀린 안내가 된다.
             <CenterBox>
               <EmptyText>조건에 맞는 콘텐츠가 없어요</EmptyText>
             </CenterBox>
