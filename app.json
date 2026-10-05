@@ -20,9 +20,8 @@
       "package": "com.hyeonjun1968.picktrip",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundImage": "./assets/adaptive-icon-background.png",
         "monochromeImage": "./assets/monochrome-icon.png",
-        "backgroundColor": "#DA4339"
+        "backgroundColor": "#E8614D"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
