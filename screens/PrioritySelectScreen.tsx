@@ -7,6 +7,7 @@ import styled from 'styled-components';
 import { ConfirmModal } from '../components/molecules/ConfirmModal';
 import { FlowStepBar } from '../components/molecules/FlowStepBar';
 import { PriorityCardSkeleton } from '../components/molecules/PriorityCardSkeleton';
+import { TimeSelectModal } from '../components/molecules/TimeSelectModal';
 import { TripDatePickerModal } from '../components/molecules/TripDatePickerModal';
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
@@ -22,6 +23,7 @@ import {
   STAY_MIN_MINUTES,
   STAY_STEP_MINUTES,
 } from '../utils/stayDuration';
+import { buildTimeOptions } from '../utils/timeOptions';
 import { formatMinutesDuration } from '../utils/tripDate';
 
 interface PrioritySelectScreenProps {
@@ -54,6 +56,7 @@ const DAY_START_MIN_MINUTES = 5 * 60;
 const DAY_START_MAX_MINUTES = 18 * 60;
 const DAY_START_STEP_MINUTES = 30;
 const DAY_START_DEFAULT = '09:00';
+const DAY_START_OPTIONS = buildTimeOptions('05:00', '18:00', DAY_START_STEP_MINUTES);
 
 function timeToMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number);
@@ -558,6 +561,8 @@ export function PrioritySelectScreen({
     Object.fromEntries(selectedIds.map((id) => [id, initialStayMinutes[id] ?? null])),
   );
   const [dayStartTimes, setDayStartTimes] = useState<Record<number, string>>(initialDayStartTimes);
+  // 시작 시각 선택 모달을 연 일차. null이면 닫힘.
+  const [editingDay, setEditingDay] = useState<number | null>(null);
 
   const handleChange = (id: string, priority: Priority) => {
     setPriorities((prev) => ({ ...prev, [id]: priority }));
@@ -709,7 +714,7 @@ export function PrioritySelectScreen({
                 <DayStartLabel>{day}일차 시작</DayStartLabel>
                 {value == null ? (
                   <DayStartDefaultButton
-                    onPress={() => handleAdjustDayStart(day, 0)}
+                    onPress={() => setEditingDay(day)}
                     activeOpacity={0.7}
                     hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                   >
@@ -726,7 +731,14 @@ export function PrioritySelectScreen({
                     >
                       <DayStartStepButtonLabel>−</DayStartStepButtonLabel>
                     </DayStartStepButton>
-                    <DayStartValueLabel>{value}</DayStartValueLabel>
+                    <TouchableOpacity
+                      onPress={() => setEditingDay(day)}
+                      activeOpacity={0.7}
+                      hitSlop={{ top: 6, bottom: 6 }}
+                      accessibilityLabel={`${day}일차 시작 시각 선택`}
+                    >
+                      <DayStartValueLabel>{value}</DayStartValueLabel>
+                    </TouchableOpacity>
                     <DayStartStepButton
                       $disabled={timeToMinutes(value) >= DAY_START_MAX_MINUTES}
                       disabled={timeToMinutes(value) >= DAY_START_MAX_MINUTES}
@@ -856,6 +868,18 @@ export function PrioritySelectScreen({
           </View>
         )}
       </ScrollView>
+
+      <TimeSelectModal
+        visible={editingDay != null}
+        title={`${editingDay ?? ''}일차 시작 시각`}
+        options={DAY_START_OPTIONS}
+        selected={editingDay != null ? (dayStartTimes[editingDay] ?? DAY_START_DEFAULT) : null}
+        onSelect={(time) => {
+          if (editingDay != null) setDayStartTimes((prev) => ({ ...prev, [editingDay]: time }));
+          setEditingDay(null);
+        }}
+        onClose={() => setEditingDay(null)}
+      />
 
       <BottomBarWrap>
         <FadeStrip colors={['transparent', COLORS.gray50]} />
