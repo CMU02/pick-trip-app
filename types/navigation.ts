@@ -11,6 +11,7 @@ export type RootStackParamList = {
   Shared: { token: string };
   Favorites: undefined;
   ContentDetail: { contentId: string };
+  AddPlace: { regionIds: string[]; excludeIds: string[] };
   Terms: undefined;
   Privacy: undefined;
 };
