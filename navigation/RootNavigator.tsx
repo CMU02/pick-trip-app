@@ -192,6 +192,7 @@ function ItineraryGate() {
     initialItineraryTitle,
     isGuest,
     recordSavedItinerary,
+    clearItems,
   } = useAppState();
 
   return (
@@ -214,7 +215,13 @@ function ItineraryGate() {
       isGuest={isGuest}
       onRequireLogin={() => navigation.navigate('Login')}
       onSaved={recordSavedItinerary}
-      onGoHome={() => navigation.reset({ index: 0, routes: [{ name: 'Main' }] })}
+      // onGoHome은 저장에 성공했을 때만 불린다(ItineraryResultScreen.handleConfirmSave).
+      // 바구니는 이번 일정을 만들려고 담은 것이라, 저장이 끝나면 비워야 다음 여행을
+      // 빈 바구니에서 시작한다. 서버 바구니는 다음 일정 생성 전 syncBasketToServer가 맞춘다.
+      onGoHome={() => {
+        clearItems();
+        navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+      }}
       onOpenAddPlace={(params) => navigation.navigate('AddPlace', params)}
     />
   );

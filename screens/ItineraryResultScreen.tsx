@@ -32,7 +32,7 @@ import {
   updateItineraryPlan,
 } from '../services/itineraryService';
 import { addStop, moveStop, removeStop, swapStops } from '../services/scheduleActions';
-import { buildShareText, shareItinerary } from '../services/shareItinerary';
+import { shareItinerary } from '../services/shareItinerary';
 import { createShareLink } from '../services/shareService';
 import type { CompanionType, StylePreference } from '../types/companion';
 import type {
@@ -429,19 +429,33 @@ const CategoryLabel = styled(Text)`
   color: ${COLORS.coral700};
 `;
 
-const StopAddress = styled(Text)`
-  font-family: ${FONT.regular};
-  font-size: 11px;
-  color: ${COLORS.gray500};
+// 주소는 위치 아이콘을 붙인 한 줄 메타 정보, 추천 이유는 옅은 배경 상자로 분리한다 —
+// 예전엔 둘 다 11px 회색 글씨라 어디까지가 주소고 어디부터가 설명인지 구분이 안 됐다.
+const AddressRow = styled(View)`
+  flex-direction: row;
+  align-items: center;
+  gap: 3px;
   margin-top: 5px;
 `;
 
+const StopAddress = styled(Text)`
+  flex: 1;
+  font-family: ${FONT.regular};
+  font-size: 11px;
+  color: ${COLORS.gray500};
+`;
+
+// 정류지 행이 화면 배경(gray50) 위에 바로 놓여 있어 gray50 상자는 묻힌다 — 한 단계 진한 gray100을 쓴다.
 const ReasonText = styled(Text)`
   font-family: ${FONT.regular};
-  font-size: 11.5px;
+  font-size: 12px;
   line-height: 18px;
   color: ${COLORS.gray700};
-  margin-top: 9px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background-color: ${COLORS.gray100};
+  overflow: hidden;
 `;
 
 const OpsColumn = styled(View)`
@@ -778,7 +792,10 @@ export function ItineraryResultScreen({
       // travelDate/duration prop을 fallback으로 써야 값이 비어 저장되지 않는다.
       const input = {
         title,
-        region: plan?.region ?? selectedRegions[0] ?? '',
+        // 지역이 비면 ''.toUpperCase()가 나가 서버 enum 검증에서 400이 난다 — 일정의 첫 장소 지역으로 채운다.
+        // ''도 걸러야 해서 ??가 아니라 ||로 잇는다.
+        region:
+          plan?.region || selectedRegions[0] || contentById[stops[0]?.contentId]?.regionId || '',
         travelDate: plan?.travelDate ?? travelDate,
         duration: plan?.duration ?? duration,
         stops,
@@ -839,8 +856,7 @@ export function ItineraryResultScreen({
     setIsSharing(true);
     try {
       const link = await createShareLink(itineraryId);
-      const text = `${buildShareText({ stops, contentById })}\n\n일정 보기: ${link}`;
-      await shareItinerary(text);
+      await shareItinerary(plan?.title ?? initialItineraryTitle ?? '나만의 여행 일정', link);
     } catch (error) {
       // 원인을 남기지 않으면 서버 응답인지 네트워크 문제인지 구분할 수 없다.
       console.warn('[share] 공유 링크 생성 실패', { itineraryId, error });
@@ -1117,9 +1133,13 @@ export function ItineraryResultScreen({
                       <StopName>{content?.name}</StopName>
                     </NameRow>
                     {content?.address && (
-                      <StopAddress numberOfLines={1}>{content.address}</StopAddress>
+                      <AddressRow>
+                        <Ionicons name="location-outline" size={11} color={COLORS.gray400} />
+                        <StopAddress numberOfLines={1}>{content.address}</StopAddress>
+                      </AddressRow>
                     )}
-                    <ReasonText>{stop.reason}</ReasonText>
+                    {/* 이유가 비어 있으면 회색 상자만 덩그러니 남으니 상자째 숨긴다. */}
+                    {stop.reason ? <ReasonText>{stop.reason}</ReasonText> : null}
                   </StopBody>
                   <OpsColumn>
                     <OpsButton
