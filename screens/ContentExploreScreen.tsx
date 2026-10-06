@@ -1,13 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useMemo, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ActivityIndicator, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import styled from 'styled-components';
 import { CategoryFilter } from '../components/molecules/CategoryFilter';
@@ -86,7 +79,12 @@ const FilterRow = styled(View)`
   padding-vertical: 12px;
 `;
 
-const CardList = styled(View)`
+// 카드 사이 간격. 예전 CardList의 gap 12px을 FlatList 구분선으로 옮긴 것.
+const CardSeparator = styled(View)`
+  height: 12px;
+`;
+
+const SkeletonList = styled(View)`
   gap: 12px;
 `;
 
@@ -155,26 +153,6 @@ const FooterLoading = styled(View)`
   padding-vertical: 20px;
 `;
 
-const LoadMoreButton = styled(TouchableOpacity)`
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin-top: 8px;
-  margin-horizontal: 20px;
-  padding-vertical: 12px;
-  border-radius: 12px;
-  border-width: 1px;
-  border-color: ${COLORS.gray200};
-  background-color: ${COLORS.white};
-`;
-
-const LoadMoreLabel = styled(Text)`
-  font-family: ${FONT.medium};
-  font-size: 14px;
-  color: ${COLORS.gray700};
-`;
-
 // 초기 로딩 시 보여줄 스켈레톤 카드 개수 (화면 한 번에 보이는 카드 수 정도)
 const SKELETON_COUNT = 4;
 
@@ -201,8 +179,13 @@ export function ContentExploreScreen({
   // 전체를 보여준다 — 그래야 비어있는 목록으로 시작하지 않는다.
   const [searchQuery, setSearchQuery] = useState('');
 
+  // 고른 지역만 받는다 — 늘 3개 지역을 받아 화면에서 거르면 페이지 크기가 지역당 7개로 고정돼,
+  // 예천만 골라도 한 페이지에 예천 카드는 7개뿐이고, 하동(가장 많음)이 끝날 때까지 안 보일
+  // 카드만 받는 다음 페이지 요청이 계속 이어졌다.
   const { contents, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useContents(regionIds);
+    useContents(selectedRegions.length > 0 ? selectedRegions : regionIds, {
+      splitAcrossRegions: true,
+    });
 
   const filtered = useMemo(() => {
     const keyword = searchQuery.trim().toLowerCase();
@@ -246,18 +229,32 @@ export function ContentExploreScreen({
         />
         <CategoryFilter selected={selectedCategory} onSelect={setSelectedCategory} />
       </FilterRow>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: selectedIds.length > 0 ? 120 + TAB_BAR_TOTAL : 40 + TAB_BAR_CLEARANCE,
-        }}
-      >
-        <CardList>
-          {isLoading ? (
-            Array.from({ length: SKELETON_COUNT }, (_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: 로딩 중 고정 개수의 자리표시자라 인덱스 키로 충분
-              <ContentCardSkeleton key={i} />
-            ))
+      {/* ScrollView + map은 받아온 카드를 전부 한 번에 그려, 페이지가 쌓일수록 느려졌다.
+          FlatList는 화면 근처 카드만 그리고, 끝에 닿으면 다음 페이지를 자동으로 부른다. */}
+      <FlatList
+        data={isLoading || isError ? [] : filtered}
+        keyExtractor={(content) => content.id}
+        renderItem={({ item: content }) => (
+          <ContentCard
+            content={content}
+            selected={selectedIds.includes(content.id)}
+            onPress={() => onPressDetail(content.id)}
+            onPressDetail={() => onPressDetail(content.id)}
+            favorite={favoriteIds.includes(content.id)}
+            onToggleFavorite={onToggleFavorite}
+            onToggleBasket={onToggle}
+            showRegion
+          />
+        )}
+        ItemSeparatorComponent={CardSeparator}
+        ListEmptyComponent={
+          isLoading ? (
+            <SkeletonList>
+              {Array.from({ length: SKELETON_COUNT }, (_, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: 로딩 중 고정 개수의 자리표시자라 인덱스 키로 충분
+                <ContentCardSkeleton key={i} />
+              ))}
+            </SkeletonList>
           ) : isError ? (
             <CenterBox>
               <EmptyText>컨텐츠를 불러오지 못했습니다. 다시 시도해주세요.</EmptyText>
@@ -265,40 +262,36 @@ export function ContentExploreScreen({
                 <RetryLabel>다시 시도</RetryLabel>
               </RetryButton>
             </CenterBox>
-          ) : filtered.length === 0 ? (
+          ) : hasNextPage ? null : (
+            // 검색·카테고리에 맞는 카드가 아직 없어도 다음 페이지가 남아 있으면 onEndReached가
+            // 계속 불러오는 중이다(하단 스피너) — 그때 "없어요"를 띄우면 틀린 안내가 된다.
             <CenterBox>
               <EmptyText>조건에 맞는 콘텐츠가 없어요</EmptyText>
             </CenterBox>
-          ) : (
-            filtered.map((content) => (
-              <ContentCard
-                key={content.id}
-                content={content}
-                selected={selectedIds.includes(content.id)}
-                onPress={() => onPressDetail(content.id)}
-                onPressDetail={() => onPressDetail(content.id)}
-                favorite={favoriteIds.includes(content.id)}
-                onToggleFavorite={onToggleFavorite}
-                onToggleBasket={onToggle}
-                showRegion
-              />
-            ))
-          )}
-        </CardList>
-        {isFetchingNextPage ? (
-          <FooterLoading>
-            <ActivityIndicator color={COLORS.coral500} />
-          </FooterLoading>
-        ) : (
-          hasNextPage &&
-          filtered.length > 0 && (
-            <LoadMoreButton onPress={() => fetchNextPage()} activeOpacity={0.7}>
-              <LoadMoreLabel>더보기</LoadMoreLabel>
-              <Ionicons name="chevron-down-outline" size={14} color={COLORS.gray700} />
-            </LoadMoreButton>
           )
-        )}
-      </ScrollView>
+        }
+        ListFooterComponent={
+          isFetchingNextPage ? (
+            <FooterLoading>
+              <ActivityIndicator color={COLORS.coral500} />
+            </FooterLoading>
+          ) : null
+        }
+        // 검색·필터로 받아온 페이지가 화면을 못 채워도 멈추지 않는다 — 다음 페이지를 부르는 동안
+        // 하단 로딩 표시가 붙었다 빠지며 목록 길이가 바뀌어 onEndReached가 다시 불린다.
+        // 다음 페이지가 실패하면(isError) 같은 이유로 실패 요청을 끝없이 반복하므로 막고,
+        // 오류 화면의 "다시 시도"로 넘긴다.
+        onEndReached={() => {
+          if (hasNextPage && !isFetchingNextPage && !isError) fetchNextPage();
+        }}
+        onEndReachedThreshold={0.6}
+        initialNumToRender={6}
+        windowSize={7}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: selectedIds.length > 0 ? 120 + TAB_BAR_TOTAL : 40 + TAB_BAR_CLEARANCE,
+        }}
+      />
       {selectedIds.length > 0 && (
         <BottomBar>
           <BasketCount>{selectedIds.length}개 담음</BasketCount>
