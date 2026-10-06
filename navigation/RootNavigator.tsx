@@ -249,6 +249,9 @@ function AddPlaceGate({ route }: { route: { params: RootStackParamList['AddPlace
       regionIds={route.params.regionIds}
       excludeIds={route.params.excludeIds}
       onSelect={(contentId) => {
+        // 행을 빠르게 두 번 누르면 두 번째 goBack이 일정 화면까지 닫아 저장 안 한 일정을 잃는다 —
+        // 첫 goBack으로 이미 포커스를 잃었으면 무시한다. 핸들러 유무와 상관없이 화면은 한 번 닫힌다.
+        if (!navigation.isFocused()) return;
         consumeAddPlace(contentId);
         navigation.goBack();
       }}
