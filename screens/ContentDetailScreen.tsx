@@ -28,6 +28,7 @@ import { useNearbyContents } from '../hooks/useNearbyContents';
 import { fetchContentDetail } from '../services/contentService';
 import type { Content } from '../types/content';
 import { buildKakaoMapHtml } from '../utils/kakaoMapHtml';
+import { toUseTimeLines } from '../utils/useTimeLines';
 
 interface ContentDetailScreenProps {
   contentId: string;
@@ -336,6 +337,28 @@ const InfoTableValue = styled(Text)`
   line-height: 19px;
 `;
 
+// 운영시간 전용 — [구분] 제목은 굵게, "- " 항목은 점을 붙이고, ※ 안내는 옅게 보여준다.
+// 줄 높이는 InfoTableValue와 같은 19px로 둬야 아이콘·라벨이 첫 줄과 높이가 맞는다.
+const UseTimeColumn = styled(View)`
+  flex: 1;
+  gap: 2px;
+`;
+
+const UseTimeHeader = styled(Text)<{ $first: boolean }>`
+  font-family: ${FONT.bold};
+  font-size: 13px;
+  line-height: 19px;
+  color: ${COLORS.gray900};
+  margin-top: ${({ $first }) => ($first ? 0 : 6)}px;
+`;
+
+const UseTimeText = styled(Text)<{ $muted?: boolean }>`
+  font-family: ${FONT.medium};
+  font-size: ${({ $muted }) => ($muted ? 12 : 13)}px;
+  line-height: 19px;
+  color: ${({ $muted }) => ($muted ? COLORS.gray500 : COLORS.gray900)};
+`;
+
 const CenterBox = styled(View)`
   height: 260px;
   align-items: center;
@@ -562,7 +585,25 @@ export function ContentDetailScreen({
                       style={{ marginTop: 2 }}
                     />
                     <InfoTableLabel>{row.label}</InfoTableLabel>
-                    <InfoTableValue>{withLineBreaks(row.value as string)}</InfoTableValue>
+                    {row.label === '운영시간' ? (
+                      <UseTimeColumn>
+                        {toUseTimeLines(row.value as string).map((line, i) =>
+                          line.kind === 'header' ? (
+                            // biome-ignore lint/suspicious/noArrayIndexKey: 같은 문구가 반복될 수 있는 고정 목록
+                            <UseTimeHeader key={i} $first={i === 0}>
+                              {line.text}
+                            </UseTimeHeader>
+                          ) : (
+                            // biome-ignore lint/suspicious/noArrayIndexKey: 같은 문구가 반복될 수 있는 고정 목록
+                            <UseTimeText key={i} $muted={line.kind === 'note'}>
+                              {line.kind === 'item' ? `· ${line.text}` : line.text}
+                            </UseTimeText>
+                          ),
+                        )}
+                      </UseTimeColumn>
+                    ) : (
+                      <InfoTableValue>{withLineBreaks(row.value as string)}</InfoTableValue>
+                    )}
                   </InfoTableRow>
                 ))}
               </InfoTable>
