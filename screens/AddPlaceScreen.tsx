@@ -92,13 +92,29 @@ const Empty = styled(Text)`
   margin-top: 60px;
 `;
 
+const RetryButton = styled(TouchableOpacity)`
+  align-self: center;
+  margin-top: 12px;
+  border-width: 1px;
+  border-color: ${COLORS.coral500};
+  border-radius: 8px;
+  padding-vertical: 8px;
+  padding-horizontal: 16px;
+`;
+
+const RetryLabel = styled(Text)`
+  color: ${COLORS.coral500};
+  font-size: 14px;
+  font-family: ${FONT.medium};
+`;
+
 // 일정 화면의 "+ 장소 추가"가 여는 화면. 예전엔 일정 아래에 이름만 있는 긴 목록이
 // 펼쳐졌는데, 지역 첫 페이지 20개뿐이고 검색·사진이 없어 고르기 어려웠다 — 검색·카테고리
 // 필터·사진이 있는 별도 화면에서 끝까지 스크롤하며 고르게 한다.
 export function AddPlaceScreen({ regionIds, excludeIds, onSelect }: AddPlaceScreenProps) {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<ContentCategory | 'all'>('all');
-  const { contents, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  const { contents, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useContents(regionIds);
 
   // ponytail: 검색은 지금까지 불러온 페이지 안에서만 거른다 — 서버 검색 API가 없어서.
@@ -131,7 +147,9 @@ export function AddPlaceScreen({ regionIds, excludeIds, onSelect }: AddPlaceScre
         <CategoryFilter selected={category} onSelect={setCategory} />
       </FilterRow>
       <FlatList
-        data={candidates}
+        // 실패하면 목록 대신 재시도 안내를 띄운다(ContentExploreScreen과 같은 동작) — 다음 페이지가
+        // 실패했을 때도 목록만 남아 있으면 더 불러올 방법이 없다.
+        data={isError ? [] : candidates}
         keyExtractor={(c) => c.id}
         renderItem={({ item }) => (
           <Row onPress={() => onSelect(item.id)} activeOpacity={0.7}>
@@ -149,6 +167,13 @@ export function AddPlaceScreen({ regionIds, excludeIds, onSelect }: AddPlaceScre
         ListEmptyComponent={
           isLoading ? (
             <ActivityIndicator style={{ marginTop: 60 }} color={COLORS.coral500} />
+          ) : isError ? (
+            <>
+              <Empty>컨텐츠를 불러오지 못했습니다. 다시 시도해주세요.</Empty>
+              <RetryButton onPress={() => refetch()} activeOpacity={0.8}>
+                <RetryLabel>다시 시도</RetryLabel>
+              </RetryButton>
+            </>
           ) : hasNextPage ? null : (
             // 다음 페이지가 남아 있으면 onEndReached가 계속 불러오는 중이라(하단 스피너) 아직 없다고 단정하지 않는다.
             <Empty>추가할 수 있는 장소가 없어요</Empty>
@@ -160,7 +185,8 @@ export function AddPlaceScreen({ regionIds, excludeIds, onSelect }: AddPlaceScre
           ) : null
         }
         onEndReached={() => {
-          if (hasNextPage && !isFetchingNextPage) fetchNextPage();
+          // 실패 중엔 부르지 않는다 — 하단 스피너가 사라지며 콘텐츠 높이가 바뀌면 onEndReached가 다시 불려 실패한 요청을 반복한다.
+          if (hasNextPage && !isFetchingNextPage && !isError) fetchNextPage();
         }}
         onEndReachedThreshold={0.6}
         keyboardShouldPersistTaps="handled"
