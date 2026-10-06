@@ -7,6 +7,7 @@ import styled from 'styled-components';
 import { ConfirmModal } from '../components/molecules/ConfirmModal';
 import { FlowStepBar } from '../components/molecules/FlowStepBar';
 import { PriorityCardSkeleton } from '../components/molecules/PriorityCardSkeleton';
+import { TimeSelectModal } from '../components/molecules/TimeSelectModal';
 import { TripDatePickerModal } from '../components/molecules/TripDatePickerModal';
 import { CATEGORIES } from '../constants/categories';
 import { COLORS } from '../constants/colors';
@@ -16,6 +17,13 @@ import { useContentsByIds } from '../hooks/useContentsByIds';
 import type { TravelMode } from '../types/itinerary';
 import { PRIORITY_LABELS, PRIORITY_ORDER, type Priority } from '../types/priority';
 import type { TripDate } from '../types/trip';
+import {
+  defaultStayMinutes,
+  STAY_MAX_MINUTES,
+  STAY_MIN_MINUTES,
+  STAY_STEP_MINUTES,
+} from '../utils/stayDuration';
+import { buildTimeOptions } from '../utils/timeOptions';
 import { formatMinutesDuration } from '../utils/tripDate';
 
 interface PrioritySelectScreenProps {
@@ -43,18 +51,12 @@ interface PrioritySelectScreenProps {
   ) => void;
 }
 
-// 희망 체류시간 스테퍼 범위. 서버 검증(10~480분)과 맞춘다.
-const STAY_MIN_MINUTES = 10;
-const STAY_MAX_MINUTES = 480;
-const STAY_STEP_MINUTES = 10;
-// 아직 지정 안 한 곳에서 "직접 설정"을 처음 누르면 시작하는 값.
-const STAY_DEFAULT_MINUTES = 60;
-
 // 일차 시작 시각 스테퍼 범위. 서버 검증(05:00~18:00)과 맞춘다.
 const DAY_START_MIN_MINUTES = 5 * 60;
 const DAY_START_MAX_MINUTES = 18 * 60;
 const DAY_START_STEP_MINUTES = 30;
 const DAY_START_DEFAULT = '09:00';
+const DAY_START_OPTIONS = buildTimeOptions('05:00', '18:00', DAY_START_STEP_MINUTES);
 
 function timeToMinutes(time: string): number {
   const [h, m] = time.split(':').map(Number);
@@ -559,17 +561,19 @@ export function PrioritySelectScreen({
     Object.fromEntries(selectedIds.map((id) => [id, initialStayMinutes[id] ?? null])),
   );
   const [dayStartTimes, setDayStartTimes] = useState<Record<number, string>>(initialDayStartTimes);
+  // 시작 시각 선택 모달을 연 일차. null이면 닫힘.
+  const [editingDay, setEditingDay] = useState<number | null>(null);
 
   const handleChange = (id: string, priority: Priority) => {
     setPriorities((prev) => ({ ...prev, [id]: priority }));
   };
 
-  // 처음 커스터마이즈를 시작할 때는 기본값(STAY_DEFAULT_MINUTES)에서 시작하고,
-  // 이후엔 스테퍼로 10분 단위 조정만 한다 — 되돌리기는 서버 제약상 지원하지 않는다.
-  const handleAdjustStay = (id: string, delta: number) => {
+  // 처음 커스터마이즈를 시작할 때는 콘텐츠의 "예상 체류"(stayDuration)에서 시작한다.
+  // 예전엔 60분 고정이라, 기본 2시간인 곳을 누르기만 해도 1시간으로 덮어써졌다 —
+  // 한 번 정한 값은 서버 제약상 null로 되돌릴 수 없어 그대로 일정에 반영됐다.
+  const handleAdjustStay = (id: string, delta: number, defaultMinutes: number) => {
     setStayMinutes((prev) => {
-      const current = prev[id];
-      const base = current ?? STAY_DEFAULT_MINUTES;
+      const base = prev[id] ?? defaultMinutes;
       const next = Math.min(STAY_MAX_MINUTES, Math.max(STAY_MIN_MINUTES, base + delta));
       return { ...prev, [id]: next };
     });
@@ -710,7 +714,7 @@ export function PrioritySelectScreen({
                 <DayStartLabel>{day}일차 시작</DayStartLabel>
                 {value == null ? (
                   <DayStartDefaultButton
-                    onPress={() => handleAdjustDayStart(day, 0)}
+                    onPress={() => setEditingDay(day)}
                     activeOpacity={0.7}
                     hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                   >
@@ -727,7 +731,14 @@ export function PrioritySelectScreen({
                     >
                       <DayStartStepButtonLabel>−</DayStartStepButtonLabel>
                     </DayStartStepButton>
-                    <DayStartValueLabel>{value}</DayStartValueLabel>
+                    <TouchableOpacity
+                      onPress={() => setEditingDay(day)}
+                      activeOpacity={0.7}
+                      hitSlop={{ top: 6, bottom: 6 }}
+                      accessibilityLabel={`${day}일차 시작 시각 선택`}
+                    >
+                      <DayStartValueLabel>{value}</DayStartValueLabel>
+                    </TouchableOpacity>
                     <DayStartStepButton
                       $disabled={timeToMinutes(value) >= DAY_START_MAX_MINUTES}
                       disabled={timeToMinutes(value) >= DAY_START_MAX_MINUTES}
@@ -771,6 +782,7 @@ export function PrioritySelectScreen({
               const priority = priorities[content.id] ?? 'good';
               const isStart = startContentId === content.id;
               const stay = stayMinutes[content.id] ?? null;
+              const stayDefault = defaultStayMinutes(content.stayDuration);
               return (
                 <Card key={content.id}>
                   <CardColorBar $color={PRIORITY_COLORS[priority].bg} />
@@ -812,7 +824,7 @@ export function PrioritySelectScreen({
                       <StayLabel>체류시간</StayLabel>
                       {stay == null ? (
                         <StayDefaultButton
-                          onPress={() => handleAdjustStay(content.id, 0)}
+                          onPress={() => handleAdjustStay(content.id, 0, stayDefault)}
                           activeOpacity={0.7}
                           hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                         >
@@ -828,7 +840,9 @@ export function PrioritySelectScreen({
                           <StayStepButton
                             $disabled={stay <= STAY_MIN_MINUTES}
                             disabled={stay <= STAY_MIN_MINUTES}
-                            onPress={() => handleAdjustStay(content.id, -STAY_STEP_MINUTES)}
+                            onPress={() =>
+                              handleAdjustStay(content.id, -STAY_STEP_MINUTES, stayDefault)
+                            }
                             hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                           >
                             <StayStepButtonLabel>−</StayStepButtonLabel>
@@ -837,7 +851,9 @@ export function PrioritySelectScreen({
                           <StayStepButton
                             $disabled={stay >= STAY_MAX_MINUTES}
                             disabled={stay >= STAY_MAX_MINUTES}
-                            onPress={() => handleAdjustStay(content.id, STAY_STEP_MINUTES)}
+                            onPress={() =>
+                              handleAdjustStay(content.id, STAY_STEP_MINUTES, stayDefault)
+                            }
                             hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                           >
                             <StayStepButtonLabel>＋</StayStepButtonLabel>
@@ -852,6 +868,18 @@ export function PrioritySelectScreen({
           </View>
         )}
       </ScrollView>
+
+      <TimeSelectModal
+        visible={editingDay != null}
+        title={`${editingDay ?? ''}일차 시작 시각`}
+        options={DAY_START_OPTIONS}
+        selected={editingDay != null ? (dayStartTimes[editingDay] ?? DAY_START_DEFAULT) : null}
+        onSelect={(time) => {
+          if (editingDay != null) setDayStartTimes((prev) => ({ ...prev, [editingDay]: time }));
+          setEditingDay(null);
+        }}
+        onClose={() => setEditingDay(null)}
+      />
 
       <BottomBarWrap>
         <FadeStrip colors={['transparent', COLORS.gray50]} />
