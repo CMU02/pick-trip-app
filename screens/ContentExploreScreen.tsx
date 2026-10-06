@@ -179,8 +179,13 @@ export function ContentExploreScreen({
   // 전체를 보여준다 — 그래야 비어있는 목록으로 시작하지 않는다.
   const [searchQuery, setSearchQuery] = useState('');
 
+  // 고른 지역만 받는다 — 늘 3개 지역을 받아 화면에서 거르면 페이지 크기가 지역당 7개로 고정돼,
+  // 예천만 골라도 한 페이지에 예천 카드는 7개뿐이고, 하동(가장 많음)이 끝날 때까지 안 보일
+  // 카드만 받는 다음 페이지 요청이 계속 이어졌다.
   const { contents, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
-    useContents(regionIds, { splitAcrossRegions: true });
+    useContents(selectedRegions.length > 0 ? selectedRegions : regionIds, {
+      splitAcrossRegions: true,
+    });
 
   const filtered = useMemo(() => {
     const keyword = searchQuery.trim().toLowerCase();
