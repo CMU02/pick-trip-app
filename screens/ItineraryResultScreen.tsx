@@ -805,7 +805,10 @@ export function ItineraryResultScreen({
       // travelDate/duration prop을 fallback으로 써야 값이 비어 저장되지 않는다.
       const input = {
         title,
-        region: plan?.region ?? selectedRegions[0] ?? '',
+        // 지역이 비면 ''.toUpperCase()가 나가 서버 enum 검증에서 400이 난다 — 일정의 첫 장소 지역으로 채운다.
+        // ''도 걸러야 해서 ??가 아니라 ||로 잇는다.
+        region:
+          plan?.region || selectedRegions[0] || contentById[stops[0]?.contentId]?.regionId || '',
         travelDate: plan?.travelDate ?? travelDate,
         duration: plan?.duration ?? duration,
         stops,
