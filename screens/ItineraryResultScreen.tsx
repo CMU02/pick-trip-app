@@ -31,7 +31,7 @@ import {
   updateItineraryPlan,
 } from '../services/itineraryService';
 import { addStop, moveStop, removeStop, swapStops } from '../services/scheduleActions';
-import { buildShareText, shareItinerary } from '../services/shareItinerary';
+import { shareItinerary } from '../services/shareItinerary';
 import { createShareLink } from '../services/shareService';
 import type { CompanionType, StylePreference } from '../types/companion';
 import type {
@@ -869,8 +869,7 @@ export function ItineraryResultScreen({
     setIsSharing(true);
     try {
       const link = await createShareLink(itineraryId);
-      const text = `${buildShareText({ stops, contentById })}\n\n일정 보기: ${link}`;
-      await shareItinerary(text);
+      await shareItinerary(plan?.title ?? initialItineraryTitle ?? '나만의 여행 일정', link);
     } catch (error) {
       // 원인을 남기지 않으면 서버 응답인지 네트워크 문제인지 구분할 수 없다.
       console.warn('[share] 공유 링크 생성 실패', { itineraryId, error });
