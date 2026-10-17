@@ -27,6 +27,7 @@ import { SavedTripsScreen } from '../screens/SavedTripsScreen';
 import { SharedItineraryScreen } from '../screens/SharedItineraryScreen';
 import { SplashScreen } from '../screens/SplashScreen';
 import { consumeAddPlace } from '../services/addPlaceBridge';
+import { completeLogin } from '../services/loginTransition';
 import type { RootStackParamList } from '../types/navigation';
 import { toDateString } from '../utils/tripDate';
 import { MainTabNavigator } from './MainTabNavigator';
@@ -286,7 +287,7 @@ function SavedTripsGate() {
 
 function LoginGate() {
   const navigation = useNavigation<Nav>();
-  const { setIsGuest } = useAppState();
+  const { setIsGuest, clearItems } = useAppState();
 
   // 로그인 화면은 상단이 코랄색 브랜드 배경으로 상태바 아래까지 꽉 차 있어서, 이 화면에
   // 있는 동안만 상태바 아이콘을 밝은색으로 바꾼다. 벗어나면 App.tsx의 기본값(dark)으로 되돌린다.
@@ -300,7 +301,7 @@ function LoginGate() {
   return (
     <AuthScreen
       onAuthed={() => {
-        setIsGuest(false);
+        completeLogin({ clearItems, setIsGuest });
         navigation.goBack();
       }}
       onOpenTerms={() => navigation.navigate('Terms')}
